@@ -3,9 +3,10 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { categories } from "@/lib/navigation/categories";
-import { UserIcon, CartIcon, IconLink } from "./header-icons";
+import { SearchIcon, UserIcon, CartIcon, IconLink } from "./header-icons";
 
 // Umbral en px: aproxima la altura total del Header original (barra de
 // aviso + fila principal + fila de categorías). Por debajo de este punto el
@@ -23,9 +24,18 @@ const REVEAL_THRESHOLD = 180;
 // de la página. Vuelve a ocultarse si el scroll continúa hacia abajo o si
 // se llega de nuevo cerca del tope (ahí ya se ve el Header real).
 export function StickyRevealHeader() {
+  const router = useRouter();
   const [visible, setVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const lastScrollY = useRef(0);
   const searchInputId = useId();
+
+  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
+  }
 
   useEffect(() => {
     lastScrollY.current = window.scrollY;
@@ -82,8 +92,8 @@ export function StickyRevealHeader() {
 
           <form
             role="search"
-            onSubmit={(e) => e.preventDefault()}
-            className="flex-1"
+            onSubmit={handleSearchSubmit}
+            className="relative flex-1"
           >
             <label htmlFor={searchInputId} className="sr-only">
               Buscar productos
@@ -93,8 +103,18 @@ export function StickyRevealHeader() {
               type="search"
               placeholder="Buscar productos..."
               tabIndex={visible ? 0 : -1}
-              className="w-full rounded-md border border-brand-slate/30 bg-brand-white px-4 py-2 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-md border border-brand-slate/30 bg-brand-white py-2 pl-4 pr-11 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
             />
+            <button
+              type="submit"
+              aria-label="Buscar"
+              tabIndex={visible ? 0 : -1}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-brand-slate hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+            >
+              <SearchIcon />
+            </button>
           </form>
 
           <div className="flex items-center gap-2">

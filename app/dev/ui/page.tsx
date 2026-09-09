@@ -92,7 +92,12 @@ export default function DevUiPage() {
         */}
         <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
           {mockProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <div
+              key={product.id}
+              className="flex w-64 shrink-0 snap-start sm:w-auto sm:shrink"
+            >
+              <ProductCard product={product} />
+            </div>
           ))}
         </div>
       </Section>

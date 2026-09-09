@@ -48,14 +48,20 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
 
   return (
     // Sin h-full: con height:100% el navegador no puede resolver un alto
-    // fijo (el contenedor padre en FeaturedProducts no tiene alto propio),
-    // así que el valor se vuelve indefinido y esta tarjeta deja de
-    // participar en el align-items:stretch por defecto de flex/grid —
-    // eso era lo que hacía que cada tarjeta tomara la altura de su propio
-    // contenido en móvil. Quitarlo deja que stretch iguale la altura de
-    // todas las tarjetas de la fila (móvil: flex row; desktop: grid row).
+    // fijo (el contenedor padre no tiene alto propio), así que el valor se
+    // vuelve indefinido y esta tarjeta deja de participar en el
+    // align-items:stretch por defecto de flex/grid — eso era lo que hacía
+    // que cada tarjeta tomara la altura de su propio contenido en móvil.
+    // Quitarlo deja que stretch iguale la altura de todas las tarjetas de
+    // la fila (flex row o grid row, según el contenedor).
+    //
+    // Sin ancho fijo tampoco: el ancho es responsabilidad de quien la
+    // coloca (FeaturedProducts la envuelve en w-64 para su scroll
+    // horizontal en móvil; ProductGrid la deja ocupar la celda completa de
+    // su grid) — ProductCard en sí no debe asumir un layout de contenedor
+    // en particular para poder reusarse en ambos.
     <div
-      className={`flex w-64 shrink-0 snap-start flex-col gap-2 rounded-lg bg-white p-4 shadow-sm sm:w-auto sm:shrink ${className}`}
+      className={`flex flex-col gap-2 rounded-lg bg-white p-4 shadow-sm ${className}`}
     >
       <div className="relative">
         <ProductImage product={product} />
