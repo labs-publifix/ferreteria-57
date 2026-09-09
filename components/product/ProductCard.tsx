@@ -48,64 +48,83 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
     : null;
 
   return (
-    // h-full explícito: el padre inmediato siempre es un elemento ya
-    // estirado por flex/grid (el wrapper de FeaturedProducts, o la celda
-    // de ProductGrid), así que su alto ya es un valor concreto — no el
-    // alto "auto" indefinido del bug original (ver historial de este
-    // archivo) donde el padre no tenía alto propio y height:100% no se
-    // podía resolver. Antes dejábamos que el stretch por defecto de dos
-    // niveles anidados (grid → wrapper flex → esta tarjeta) hiciera el
-    // trabajo de forma implícita; Chrome lo resuelve bien, pero Safari
-    // tiene bugs conocidos de larga fecha con el stretch de flex anidado
-    // dentro de flex/grid que no siempre propaga correctamente. Declarar
-    // h-full aquí hace explícito lo que antes dependía de esa propagación
-    // implícita, y es seguro precisamente porque el padre ya no es
-    // indefinido.
+    // Sin h-full: con height:100% el navegador no puede resolver un alto
+    // fijo (el contenedor padre no tiene alto propio), así que el valor se
+    // vuelve indefinido y esta tarjeta deja de participar en el
+    // align-items:stretch por defecto de flex/grid — eso era lo que hacía
+    // que cada tarjeta tomara la altura de su propio contenido en móvil.
+    // Quitarlo deja que stretch iguale la altura de todas las tarjetas de
+    // la fila (flex row o grid row, según el contenedor).
     //
-    // Sin ancho fijo: el ancho es responsabilidad de quien la coloca
-    // (FeaturedProducts la envuelve en w-64 para su scroll horizontal en
-    // móvil; ProductGrid la deja ocupar la celda completa de su grid) —
-    // ProductCard en sí no debe asumir un layout de contenedor en
-    // particular para poder reusarse en ambos.
+    // w-full SÍ es necesario (a diferencia del alto): el wrapper de
+    // FeaturedProducts es un `flex` (fila) con esta tarjeta como único
+    // hijo — el stretch por defecto de flex solo aplica al eje cruzado
+    // (alto), nunca al eje principal (ancho, en una fila); sin w-full la
+    // tarjeta solo ocupa el ancho de SU PROPIO contenido, que coincide con
+    // el ancho del wrapper por pura coincidencia cuando el nombre del
+    // producto es largo (fuerza 2 líneas) y se ve angosta cuando el
+    // nombre es corto (p. ej. "Martillo Truper 16 oz") — ese fue el bug
+    // real que el cliente reportó, nada que ver con Safari ni con el
+    // <Link>: nunca antes se había medido el ANCHO de las tarjetas en las
+    // verificaciones, solo el alto. En ProductGrid (donde esta tarjeta es
+    // hija directa de un grid) w-full no cambia nada porque el grid ya
+    // estira el ancho por defecto (justify-items:stretch) — así que es
+    // seguro en los dos contenedores donde se usa.
+    //
+    // "relative" porque el Link de abajo se posiciona contra este div.
     <div
-      className={`flex h-full flex-col gap-2 rounded-lg bg-white p-4 shadow-sm ${className}`}
+      className={`relative flex w-full flex-col gap-2 rounded-lg bg-white p-4 shadow-sm ${className}`}
     >
-      {/* Toda la parte informativa navega a la ficha de producto; el botón
-          de abajo queda fuera del Link a propósito (un <button> anidado
-          dentro de un <a> es HTML inválido y confunde el foco de teclado). */}
-      <Link href={`/producto/${product.slug}`} className="flex flex-col gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate">
-        <div className="relative">
-          <ProductImage product={product} />
-          {hasDiscount && (
-            <Badge className="absolute right-2 top-2">
-              Ahorra {discountPercent}%
-            </Badge>
-          )}
-        </div>
+      {/* Link "estirado" (patrón stretched-link): un overlay invisible que
+          cubre toda la tarjeta para que sea clickeable como unidad, SIN
+          envolver el contenido visual — ese contenido se queda exactamente
+          plano, como hijos directos de este div, igual que antes de tener
+          navegación. Envolverlo en un <Link> agregaba un nivel extra de
+          flex anidado (grid → wrapper → esta tarjeta → Link) que dejó de
+          verse simétrico en al menos un navegador de un cliente real (no
+          reproducible en Chromium); este patrón no le suma ningún nivel de
+          layout al contenido, solo una capa aparte.
+          El botón de abajo queda con z-10 para seguir siendo clickeable
+          por encima del Link (que no tiene z-index, así que pinta debajo);
+          así el botón resuelve su propio clic y el resto de la tarjeta
+          navega — sin anidar un <button> dentro de un <a> (HTML inválido). */}
+      <Link
+        href={`/producto/${product.slug}`}
+        aria-label={product.name}
+        className="absolute inset-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+      />
 
-        <p className="font-sans text-xs uppercase tracking-wide text-brand-slate/70">
-          {product.brand}
-        </p>
-        <p
-          className="line-clamp-2 font-sans text-sm text-brand-black sm:text-base"
-          title={product.name}
-        >
-          {product.name}
-        </p>
-
-        {/* rating es opcional en el contrato: un producto sin reseñas
-            todavía no debe mostrarse como si tuviera 0 estrellas. */}
-        {typeof product.rating === "number" && (
-          <RatingStars value={product.rating} />
+      <div className="relative">
+        <ProductImage product={product} />
+        {hasDiscount && (
+          <Badge className="absolute right-2 top-2">
+            Ahorra {discountPercent}%
+          </Badge>
         )}
+      </div>
 
-        {/* hideBadge: el descuento ya se muestra arriba, sobre la imagen; no
-            repetir el mismo pill aquí abajo. El tachado del precio anterior
-            sí se conserva porque es un dato distinto (cuánto costaba antes). */}
-        <PriceTag price={price} previousPrice={previousPrice} hideBadge />
-      </Link>
+      <p className="font-sans text-xs uppercase tracking-wide text-brand-slate/70">
+        {product.brand}
+      </p>
+      <p
+        className="line-clamp-2 font-sans text-sm text-brand-black sm:text-base"
+        title={product.name}
+      >
+        {product.name}
+      </p>
 
-      <Button variant="primary" className="mt-auto w-full">
+      {/* rating es opcional en el contrato: un producto sin reseñas
+          todavía no debe mostrarse como si tuviera 0 estrellas. */}
+      {typeof product.rating === "number" && (
+        <RatingStars value={product.rating} />
+      )}
+
+      {/* hideBadge: el descuento ya se muestra arriba, sobre la imagen; no
+          repetir el mismo pill aquí abajo. El tachado del precio anterior
+          sí se conserva porque es un dato distinto (cuánto costaba antes). */}
+      <PriceTag price={price} previousPrice={previousPrice} hideBadge />
+
+      <Button variant="primary" className="relative z-10 mt-auto w-full">
         Agregar al carrito
       </Button>
     </div>
