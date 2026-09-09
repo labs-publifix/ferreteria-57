@@ -3,6 +3,7 @@ import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { LoyaltySection } from "@/components/home/LoyaltySection";
 import { PromoBanners } from "@/components/home/PromoBanners";
 import { TrustBar } from "@/components/home/TrustBar";
+import { StickyRevealHeader } from "@/components/layout/StickyRevealHeader";
 
 // Home real del e-commerce. Header y Footer no se repiten aquí: ya envuelven
 // esta página desde app/layout.tsx (layout global). Mobile-first: cada
@@ -10,6 +11,12 @@ import { TrustBar } from "@/components/home/TrustBar";
 export default function HomePage() {
   return (
     <main className="pb-14 sm:pb-20">
+      {/* Solo en Home (por eso se monta aquí y no en el layout global) y
+          solo desktop: barra condensada que aparece al hacer scroll hacia
+          arriba, para no perder acceso rápido a búsqueda y categorías sin
+          volver hasta el tope de la página (ver ese archivo). */}
+      <StickyRevealHeader />
+
       {/* Full-bleed: fuera del contenedor con max-width para ocupar todo el
           ancho de la pantalla, a diferencia de las secciones de abajo. */}
       <PromoBanners />

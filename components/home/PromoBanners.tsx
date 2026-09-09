@@ -38,9 +38,10 @@ const banners: PromoBanner[] = [
 
 // Carrusel de portada completa: una portada visible a la vez, full-bleed
 // (lo posiciona app/page.tsx fuera del contenedor con max-width). Sin
-// autoplay todavía, per lo pedido. Flechas + puntos: con solo 2 portadas
-// el costo de dar ambos controles es mínimo y cubre tanto navegación
-// directa (puntos) como secuencial (flechas).
+// autoplay todavía, per lo pedido. En móvil las flechas ocupaban demasiada
+// área sobre el arte del banner y duplicaban lo que los puntos ya resuelven,
+// así que ahí solo se muestran los puntos (44x44 cada uno); desde sm: hay
+// espacio de sobra y se agregan las flechas como atajo directo prev/next.
 export function PromoBanners() {
   const [index, setIndex] = useState(0);
   const hasMultiple = banners.length > 1;
@@ -63,7 +64,7 @@ export function PromoBanners() {
         {banners.map((banner, i) => (
           <div
             key={banner.id}
-            className={`flex h-56 w-full shrink-0 flex-col justify-center gap-3 px-14 sm:h-72 sm:px-16 md:h-96 lg:px-20 ${banner.gradientClassName}`}
+            className={`flex h-56 w-full shrink-0 flex-col justify-center gap-3 px-5 sm:h-72 sm:px-16 md:h-96 lg:px-20 ${banner.gradientClassName}`}
             aria-hidden={i !== index}
           >
             <div className="mx-auto w-full max-w-6xl">
@@ -90,7 +91,7 @@ export function PromoBanners() {
             type="button"
             onClick={() => goTo(index - 1)}
             aria-label="Promoción anterior"
-            className="absolute left-2 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-slate shadow transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate sm:left-4"
+            className="absolute left-2 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-slate shadow transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate sm:left-4 sm:flex"
           >
             <ChevronLeft className="size-6" aria-hidden="true" />
           </button>
@@ -98,7 +99,7 @@ export function PromoBanners() {
             type="button"
             onClick={() => goTo(index + 1)}
             aria-label="Siguiente promoción"
-            className="absolute right-2 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-slate shadow transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate sm:right-4"
+            className="absolute right-2 top-1/2 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-slate shadow transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate sm:right-4 sm:flex"
           >
             <ChevronRight className="size-6" aria-hidden="true" />
           </button>

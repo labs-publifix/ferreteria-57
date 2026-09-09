@@ -47,13 +47,13 @@ export function Footer() {
   return (
     <footer className="bg-brand-slate text-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6 lg:px-8">
-        <div>
+        <div className="flex flex-col items-start">
           <Image
             src="/brand/logo-blanco.png"
             alt="Ferretería 57"
             width={983}
             height={302}
-            className="h-8 w-auto"
+            className="h-10 w-auto sm:h-12"
           />
           <p className="mt-3 font-sans text-sm text-white/85">
             Lateral Carretera Federal No. 57 230, Casa Blanca, 76030 Santiago
