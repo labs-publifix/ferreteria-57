@@ -61,22 +61,39 @@ function CloseIcon() {
 // Botón de icono base: 44x44 mínimo (target táctil), foco visible.
 // Todos son <Link> a rutas reales del sitio, aunque la página de destino
 // todavía no exista (mismo criterio que las categorías).
+// badgeCount es estático por ahora (sin lógica de carrito todavía): un solo
+// aria-label coherente en el Link en vez de que el badge visual compita con
+// su propio anuncio de lector de pantalla.
 function IconLink({
   href,
   label,
+  badgeCount,
   children,
 }: {
   href: string;
   label: string;
+  badgeCount?: number;
   children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
-      aria-label={label}
+      aria-label={
+        typeof badgeCount === "number" ? `${label} (${badgeCount})` : label
+      }
       className="flex size-11 items-center justify-center rounded-md text-brand-slate transition-colors hover:bg-brand-gray hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2"
     >
-      {children}
+      <span className="relative flex items-center justify-center">
+        {children}
+        {typeof badgeCount === "number" && (
+          <span
+            aria-hidden="true"
+            className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-brand-orange text-[10px] font-bold leading-none text-brand-black"
+          >
+            {badgeCount}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }
@@ -163,7 +180,7 @@ export function Header() {
             <IconLink href="/cuenta" label="Cuenta">
               <UserIcon />
             </IconLink>
-            <IconLink href="/carrito" label="Carrito de compras">
+            <IconLink href="/carrito" label="Carrito de compras" badgeCount={0}>
               <CartIcon />
             </IconLink>
           </div>
