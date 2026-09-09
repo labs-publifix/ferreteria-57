@@ -15,3 +15,5 @@ npm run dev
 - `tailwind.config.ts` — tokens de marca (`brand.orange`, `brand.slate`, `brand.black`, `brand.white`, `brand.gray`) y tipografías (`font-display` = Russo One, `font-sans` = Inter).
 
 `prelaunch-site/` es un sitio estático aparte (la página pública "Próximamente", desplegada a GitHub Pages) — no forma parte de la app de Next.js.
+
+El repo está conectado a Vercel: cada push genera su propio deployment de preview para revisar `/dev/ui` en vivo antes de fusionar a `main`.
