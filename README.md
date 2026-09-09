@@ -16,4 +16,4 @@ npm run dev
 
 `prelaunch-site/` es un sitio estático aparte (la página pública "Próximamente", desplegada a GitHub Pages) — no forma parte de la app de Next.js.
 
-El repo está conectado a Vercel: cada push genera su propio deployment de preview para revisar `/dev/ui` en vivo antes de fusionar a `main`.
+El repo está conectado a Vercel (Framework Preset: Next.js, sin overrides) — cada push genera su propio deployment de preview para revisar `/dev/ui` en vivo antes de fusionar a `main`.
