@@ -15,12 +15,11 @@ const baseStyles =
   "disabled:pointer-events-none disabled:opacity-50";
 
 // Contraste verificado (WCAG): blanco sobre #FF6600 da ~2.94:1, por debajo
-// del mínimo 4.5:1 para texto normal que exigen ambas skills instaladas.
-// Se implementa "texto blanco" tal como lo pidió el cliente porque el color
-// y el texto blanco fueron instrucciones explícitas y exactas; no se ajustó
-// el hex. Ver el resumen de la conversación para la alternativa accesible.
+// del mínimo 4.5:1 para texto normal (ambas skills instaladas lo marcan
+// severidad alta/crítica). El cliente autorizó el ajuste: texto negro-suave
+// da 5.93:1 y pasa AA. El hex del naranja no se tocó, solo el color de texto.
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-brand-orange text-white hover:bg-[#E65C00] active:bg-[#CC5200]",
+  primary: "bg-brand-orange text-brand-black hover:bg-[#E65C00] active:bg-[#CC5200]",
   secondary:
     "border-2 border-brand-slate bg-transparent text-brand-slate hover:bg-brand-slate hover:text-white active:bg-[#33424A]",
 };
