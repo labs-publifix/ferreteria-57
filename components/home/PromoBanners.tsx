@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
 
 interface PromoBanner {
@@ -8,8 +12,8 @@ interface PromoBanner {
   href: string;
 }
 
-// Arte de campaña pendiente: estos dos bloques son marcadores de posición
-// con gradiente (tokens de marca) hasta que llegue la fotografía real.
+// Arte de campaña pendiente: estos bloques son marcadores de posición con
+// gradiente (tokens de marca) hasta que llegue la fotografía real.
 // Reemplazar cuando exista: quitar gradientClassName y usar una imagen de
 // fondo real, el resto del layout (texto, botón) no debería tener que
 // cambiar.
@@ -32,25 +36,95 @@ const banners: PromoBanner[] = [
   },
 ];
 
+// Carrusel de portada completa: una portada visible a la vez, full-bleed
+// (lo posiciona app/page.tsx fuera del contenedor con max-width). Sin
+// autoplay todavía, per lo pedido. Flechas + puntos: con solo 2 portadas
+// el costo de dar ambos controles es mínimo y cubre tanto navegación
+// directa (puntos) como secuencial (flechas).
 export function PromoBanners() {
+  const [index, setIndex] = useState(0);
+  const hasMultiple = banners.length > 1;
+
+  function goTo(i: number) {
+    setIndex((i + banners.length) % banners.length);
+  }
+
   return (
-    <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0">
-      {banners.map((banner) => (
-        <div
-          key={banner.id}
-          className={`flex w-[85%] shrink-0 snap-center flex-col justify-center gap-3 rounded-xl p-6 sm:w-auto sm:shrink sm:p-8 ${banner.gradientClassName}`}
-          style={{ minHeight: "12rem" }}
-        >
-          <p className="max-w-[70%] font-display text-lg uppercase text-white sm:text-xl">
-            {banner.eyebrow}
-          </p>
-          <div>
-            <Link href={banner.href} className={buttonClassName("primary")}>
-              Ver más
-            </Link>
+    <div
+      className="relative w-full overflow-hidden"
+      role="region"
+      aria-roledescription="carrusel"
+      aria-label="Promociones"
+    >
+      <div
+        className="flex transition-transform duration-300 ease-out"
+        style={{ transform: `translateX(-${index * 100}%)` }}
+      >
+        {banners.map((banner, i) => (
+          <div
+            key={banner.id}
+            className={`flex h-56 w-full shrink-0 flex-col justify-center gap-3 px-14 sm:h-72 sm:px-16 md:h-96 lg:px-20 ${banner.gradientClassName}`}
+            aria-hidden={i !== index}
+          >
+            <div className="mx-auto w-full max-w-6xl">
+              <p className="max-w-[70%] font-display text-lg uppercase text-white sm:text-2xl md:text-3xl">
+                {banner.eyebrow}
+              </p>
+              <div className="mt-3">
+                <Link
+                  href={banner.href}
+                  tabIndex={i === index ? 0 : -1}
+                  className={buttonClassName("primary")}
+                >
+                  Ver más
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      {hasMultiple && (
+        <>
+          <button
+            type="button"
+            onClick={() => goTo(index - 1)}
+            aria-label="Promoción anterior"
+            className="absolute left-2 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-slate shadow transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate sm:left-4"
+          >
+            <ChevronLeft className="size-6" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => goTo(index + 1)}
+            aria-label="Siguiente promoción"
+            className="absolute right-2 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-slate shadow transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate sm:right-4"
+          >
+            <ChevronRight className="size-6" aria-hidden="true" />
+          </button>
+
+          <div className="absolute bottom-0 left-1/2 flex -translate-x-1/2">
+            {/* El punto visual es pequeño, pero cada botón mantiene un
+                área táctil de 44x44 (padding alrededor del punto). */}
+            {banners.map((banner, i) => (
+              <button
+                key={banner.id}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`Ir a la promoción ${i + 1}`}
+                aria-current={i === index}
+                className="flex size-11 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <span
+                  className={`size-2.5 rounded-full transition-colors ${
+                    i === index ? "bg-white" : "bg-white/50"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

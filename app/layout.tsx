@@ -21,10 +21,36 @@ const russoOne = Russo_One({
   display: "swap",
 });
 
+const title =
+  "Ferretería 57 — Herramienta y ferretería en Querétaro | Distribuidor autorizado Truper";
+// 147 caracteres, dentro del límite de 160.
+const description =
+  "Ferretería 57, distribuidor autorizado Truper en Querétaro. Herramienta y ferretería con asesoría experta y precio de mayoreo sin mínimo de compra.";
+
 export const metadata: Metadata = {
-  title: "Ferretería 57",
-  description:
-    "E-commerce de Ferretería 57, distribuidor autorizado Truper en Querétaro.",
+  // Se asume el dominio real del cliente (ya usado en su correo de
+  // contacto, contacto@ferreteria57.com). Ajustar aquí si el dominio final
+  // conectado a Vercel termina siendo otro — sin esto, Next.js resuelve las
+  // imágenes Open Graph contra localhost en vez del sitio real.
+  metadataBase: new URL("https://ferreteria57.com"),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    locale: "es_MX",
+    type: "website",
+    // Sin fotografía de campaña todavía: el logotipo real hace de imagen
+    // og provisional.
+    images: [
+      {
+        url: "/brand/logo-naranja.png",
+        width: 983,
+        height: 302,
+        alt: "Ferretería 57",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

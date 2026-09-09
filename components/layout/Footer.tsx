@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const ICON_PROPS = {
   viewBox: "0 0 24 24",
   fill: "none",
@@ -46,9 +48,13 @@ export function Footer() {
     <footer className="bg-brand-slate text-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6 lg:px-8">
         <div>
-          <h2 className="font-display text-sm uppercase text-white">
-            Ferretería 57
-          </h2>
+          <Image
+            src="/brand/logo-blanco.png"
+            alt="Ferretería 57"
+            width={983}
+            height={302}
+            className="h-8 w-auto"
+          />
           <p className="mt-3 font-sans text-sm text-white/85">
             Lateral Carretera Federal No. 57 230, Casa Blanca, 76030 Santiago
             de Querétaro, Qro.
