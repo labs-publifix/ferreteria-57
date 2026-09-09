@@ -10,3 +10,5 @@ export { PriceTag } from "./PriceTag";
 export type { PriceTagProps } from "./PriceTag";
 export { RatingStars } from "./RatingStars";
 export type { RatingStarsProps } from "./RatingStars";
+export { Select } from "./Select";
+export type { SelectProps, SelectOption } from "./Select";

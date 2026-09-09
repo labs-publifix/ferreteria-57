@@ -2,12 +2,18 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
-import { buttonClassName } from "@/components/ui";
+import { buttonClassName, Select } from "@/components/ui";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { CategoryFilters } from "./CategoryFilters";
 import type { Product } from "@/types/catalog";
 
 type SortOption = "relevancia" | "precio-asc" | "precio-desc";
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "relevancia", label: "Relevancia" },
+  { value: "precio-asc", label: "Precio: menor a mayor" },
+  { value: "precio-desc", label: "Precio: mayor a menor" },
+];
 
 // Recibe los productos YA filtrados por categoría (desde el Server
 // Component de la página): este componente solo aplica precio/stock/orden
@@ -18,7 +24,6 @@ export function CategoryProductBrowser({ products }: { products: Product[] }) {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sort, setSort] = useState<SortOption>("relevancia");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const sortId = useId();
   const drawerId = useId();
 
   // Mismo mecanismo de cierre con Escape que el menú móvil del Header.
@@ -100,19 +105,16 @@ export function CategoryProductBrowser({ products }: { products: Product[] }) {
             )}
           </button>
 
-          <label htmlFor={sortId} className="ml-auto flex items-center gap-2 font-sans text-sm text-brand-black">
+          <div className="ml-auto flex items-center gap-2 font-sans text-sm text-brand-black">
             <span className="hidden sm:inline">Ordenar por:</span>
-            <select
-              id={sortId}
+            <Select
               value={sort}
-              onChange={(event) => setSort(event.target.value as SortOption)}
-              className="min-h-11 rounded-md border border-brand-slate/30 bg-brand-white px-3 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-            >
-              <option value="relevancia">Relevancia</option>
-              <option value="precio-asc">Precio: menor a mayor</option>
-              <option value="precio-desc">Precio: mayor a menor</option>
-            </select>
-          </label>
+              onChange={(value) => setSort(value as SortOption)}
+              options={SORT_OPTIONS}
+              label="Ordenar por"
+              className="min-w-[13rem]"
+            />
+          </div>
         </div>
 
         {visibleProducts.length === 0 ? (

@@ -3,14 +3,28 @@ import { categories } from "@/lib/navigation/categories";
 import type { Product } from "@/types/catalog";
 
 // Capa de acceso a datos del catálogo. Hoy lee mockProducts en memoria, pero
-// /app/categoria/[slug] y /app/buscar solo conocen esta forma async — cuando
-// conectemos Supabase, el cuerpo de estas dos funciones cambia por una
-// consulta real, pero esas páginas (y su lógica de filtrado/orden en
-// CategoryProductBrowser) no cambian: siguen llamando
-// `await getCategoryProducts(slug)` / `await searchProducts(q)` igual que
-// hoy.
+// /app/categoria/[slug], /app/buscar y /app/producto/[slug] solo conocen
+// esta forma async — cuando conectemos Supabase, el cuerpo de estas
+// funciones cambia por una consulta real, pero esas páginas (y su lógica de
+// filtrado/orden en CategoryProductBrowser) no cambian: siguen llamando
+// `await getCategoryProducts(slug)` / `await searchProducts(q)` /
+// `await getProductBySlug(slug)` igual que hoy.
 export async function getCategoryProducts(categorySlug: string): Promise<Product[]> {
   return mockProducts.filter((product) => product.categoryId === categorySlug);
+}
+
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  return mockProducts.find((product) => product.slug === slug);
+}
+
+// Excluye el producto actual de sus propios relacionados.
+export async function getRelatedProducts(
+  categoryId: string,
+  excludeProductId: string
+): Promise<Product[]> {
+  return mockProducts.filter(
+    (product) => product.categoryId === categoryId && product.id !== excludeProductId
+  );
 }
 
 export async function searchProducts(query: string): Promise<Product[]> {

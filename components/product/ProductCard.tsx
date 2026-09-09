@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Badge, Button, PriceTag, RatingStars } from "@/components/ui";
 import type { Product, ProductVariant } from "@/types/catalog";
 
@@ -63,35 +64,40 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
     <div
       className={`flex flex-col gap-2 rounded-lg bg-white p-4 shadow-sm ${className}`}
     >
-      <div className="relative">
-        <ProductImage product={product} />
-        {hasDiscount && (
-          <Badge className="absolute right-2 top-2">
-            Ahorra {discountPercent}%
-          </Badge>
+      {/* Toda la parte informativa navega a la ficha de producto; el botón
+          de abajo queda fuera del Link a propósito (un <button> anidado
+          dentro de un <a> es HTML inválido y confunde el foco de teclado). */}
+      <Link href={`/producto/${product.slug}`} className="flex flex-col gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate">
+        <div className="relative">
+          <ProductImage product={product} />
+          {hasDiscount && (
+            <Badge className="absolute right-2 top-2">
+              Ahorra {discountPercent}%
+            </Badge>
+          )}
+        </div>
+
+        <p className="font-sans text-xs uppercase tracking-wide text-brand-slate/70">
+          {product.brand}
+        </p>
+        <p
+          className="line-clamp-2 font-sans text-sm text-brand-black sm:text-base"
+          title={product.name}
+        >
+          {product.name}
+        </p>
+
+        {/* rating es opcional en el contrato: un producto sin reseñas
+            todavía no debe mostrarse como si tuviera 0 estrellas. */}
+        {typeof product.rating === "number" && (
+          <RatingStars value={product.rating} />
         )}
-      </div>
 
-      <p className="font-sans text-xs uppercase tracking-wide text-brand-slate/70">
-        {product.brand}
-      </p>
-      <p
-        className="line-clamp-2 font-sans text-sm text-brand-black sm:text-base"
-        title={product.name}
-      >
-        {product.name}
-      </p>
-
-      {/* rating es opcional en el contrato: un producto sin reseñas
-          todavía no debe mostrarse como si tuviera 0 estrellas. */}
-      {typeof product.rating === "number" && (
-        <RatingStars value={product.rating} />
-      )}
-
-      {/* hideBadge: el descuento ya se muestra arriba, sobre la imagen; no
-          repetir el mismo pill aquí abajo. El tachado del precio anterior
-          sí se conserva porque es un dato distinto (cuánto costaba antes). */}
-      <PriceTag price={price} previousPrice={previousPrice} hideBadge />
+        {/* hideBadge: el descuento ya se muestra arriba, sobre la imagen; no
+            repetir el mismo pill aquí abajo. El tachado del precio anterior
+            sí se conserva porque es un dato distinto (cuánto costaba antes). */}
+        <PriceTag price={price} previousPrice={previousPrice} hideBadge />
+      </Link>
 
       <Button variant="primary" className="mt-auto w-full">
         Agregar al carrito
