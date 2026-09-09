@@ -48,7 +48,7 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
 
   return (
     <div
-      className={`flex w-64 shrink-0 snap-start flex-col gap-2 rounded-lg bg-white p-4 shadow-sm sm:w-auto sm:shrink ${className}`}
+      className={`flex h-full w-64 shrink-0 snap-start flex-col gap-2 rounded-lg bg-white p-4 shadow-sm sm:w-auto sm:shrink ${className}`}
     >
       <div className="relative">
         <ProductImage product={product} />
@@ -77,7 +77,7 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
 
       <PriceTag price={price} previousPrice={previousPrice} />
 
-      <Button variant="primary" className="mt-1 w-full">
+      <Button variant="primary" className="mt-auto w-full">
         Agregar al carrito
       </Button>
     </div>
