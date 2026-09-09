@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Russo_One } from "next/font/google";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import "./globals.css";
 
 // Cargadas con next/font/google: self-hosted en build, cero layout shift,
@@ -37,6 +38,7 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
+        <WhatsAppButton />
       </body>
     </html>
   );
