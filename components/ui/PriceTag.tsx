@@ -1,0 +1,60 @@
+import { Badge } from "./Badge";
+
+export interface PriceTagProps {
+  /** Precio actual, en pesos mexicanos (MXN). */
+  price: number;
+  /** Precio anterior, cuando existe descuento. Debe ser mayor que `price`. */
+  previousPrice?: number;
+  className?: string;
+}
+
+const currencyFormatter = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+});
+
+// El naranja marca "precios activos" (con descuento) mediante un badge
+// inline reutilizando <Badge>, nunca coloreando el texto del precio: el
+// naranja como color de TEXTO da ~2.6-2.9:1 de contraste sobre blanco o
+// gris claro, por debajo del mínimo 4.5:1 (ver resumen de la conversación).
+export function PriceTag({ price, previousPrice, className = "" }: PriceTagProps) {
+  const hasDiscount = typeof previousPrice === "number" && previousPrice > price;
+  const discountPercent = hasDiscount
+    ? Math.round(((previousPrice - price) / previousPrice) * 100)
+    : null;
+
+  const currentFormatted = currencyFormatter.format(price);
+  const previousFormatted = hasDiscount
+    ? currencyFormatter.format(previousPrice)
+    : null;
+
+  const accessibleLabel = hasDiscount
+    ? `Precio actual: ${currentFormatted}. Antes: ${previousFormatted}. Ahorras ${discountPercent}%.`
+    : `Precio: ${currentFormatted}.`;
+
+  return (
+    <div
+      className={`flex flex-wrap items-baseline gap-x-2 gap-y-1 ${className}`}
+      role="group"
+      aria-label={accessibleLabel}
+    >
+      <span
+        className="font-sans text-2xl font-bold text-brand-black sm:text-3xl"
+        aria-hidden="true"
+      >
+        {currentFormatted}
+      </span>
+      {hasDiscount && (
+        <>
+          <s
+            className="font-sans text-sm text-brand-slate sm:text-base"
+            aria-hidden="true"
+          >
+            {previousFormatted}
+          </s>
+          <Badge aria-hidden="true">Ahorra {discountPercent}%</Badge>
+        </>
+      )}
+    </div>
+  );
+}
