@@ -47,8 +47,15 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
     : null;
 
   return (
+    // Sin h-full: con height:100% el navegador no puede resolver un alto
+    // fijo (el contenedor padre en FeaturedProducts no tiene alto propio),
+    // así que el valor se vuelve indefinido y esta tarjeta deja de
+    // participar en el align-items:stretch por defecto de flex/grid —
+    // eso era lo que hacía que cada tarjeta tomara la altura de su propio
+    // contenido en móvil. Quitarlo deja que stretch iguale la altura de
+    // todas las tarjetas de la fila (móvil: flex row; desktop: grid row).
     <div
-      className={`flex h-full w-64 shrink-0 snap-start flex-col gap-2 rounded-lg bg-white p-4 shadow-sm sm:w-auto sm:shrink ${className}`}
+      className={`flex w-64 shrink-0 snap-start flex-col gap-2 rounded-lg bg-white p-4 shadow-sm sm:w-auto sm:shrink ${className}`}
     >
       <div className="relative">
         <ProductImage product={product} />
@@ -75,7 +82,10 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
         <RatingStars value={product.rating} />
       )}
 
-      <PriceTag price={price} previousPrice={previousPrice} />
+      {/* hideBadge: el descuento ya se muestra arriba, sobre la imagen; no
+          repetir el mismo pill aquí abajo. El tachado del precio anterior
+          sí se conserva porque es un dato distinto (cuánto costaba antes). */}
+      <PriceTag price={price} previousPrice={previousPrice} hideBadge />
 
       <Button variant="primary" className="mt-auto w-full">
         Agregar al carrito

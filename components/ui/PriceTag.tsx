@@ -6,6 +6,14 @@ export interface PriceTagProps {
   /** Precio anterior, cuando existe descuento. Debe ser mayor que `price`. */
   previousPrice?: number;
   className?: string;
+  /**
+   * Oculta el Badge inline de "Ahorra X%". Úsalo cuando el contenedor que
+   * envuelve a PriceTag ya muestra su propio badge de descuento (p. ej.
+   * ProductCard, sobre la imagen) para no repetir el mismo dato dos veces
+   * en la misma tarjeta. El precio tachado se conserva: sí aporta un dato
+   * nuevo (cuánto costaba antes).
+   */
+  hideBadge?: boolean;
 }
 
 const currencyFormatter = new Intl.NumberFormat("es-MX", {
@@ -17,7 +25,12 @@ const currencyFormatter = new Intl.NumberFormat("es-MX", {
 // inline reutilizando <Badge>, nunca coloreando el texto del precio: el
 // naranja como color de TEXTO da ~2.6-2.9:1 de contraste sobre blanco o
 // gris claro, por debajo del mínimo 4.5:1 (ver resumen de la conversación).
-export function PriceTag({ price, previousPrice, className = "" }: PriceTagProps) {
+export function PriceTag({
+  price,
+  previousPrice,
+  className = "",
+  hideBadge = false,
+}: PriceTagProps) {
   const hasDiscount = typeof previousPrice === "number" && previousPrice > price;
   const discountPercent = hasDiscount
     ? Math.round(((previousPrice - price) / previousPrice) * 100)
@@ -52,7 +65,9 @@ export function PriceTag({ price, previousPrice, className = "" }: PriceTagProps
           >
             {previousFormatted}
           </s>
-          <Badge aria-hidden="true">Ahorra {discountPercent}%</Badge>
+          {!hideBadge && (
+            <Badge aria-hidden="true">Ahorra {discountPercent}%</Badge>
+          )}
         </>
       )}
     </div>

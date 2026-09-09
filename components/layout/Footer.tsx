@@ -1,4 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
+import {
+  STORE_ADDRESS,
+  STORE_HORARIO,
+  STORE_PHONE_DISPLAY,
+  STORE_PHONE_TEL,
+} from "@/lib/store-info";
 
 const ICON_PROPS = {
   viewBox: "0 0 24 24",
@@ -37,33 +44,26 @@ function TikTokIcon() {
   );
 }
 
-const horario = [
-  "Lunes a viernes: 8:00 am – 7:00 pm",
-  "Sábados: 8:00 am – 3:00 pm",
-  "Domingo: cerrado",
-];
-
 export function Footer() {
   return (
     <footer className="bg-brand-slate text-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6 lg:px-8">
-        <div>
+        <div className="flex flex-col items-start">
           <Image
             src="/brand/logo-blanco.png"
             alt="Ferretería 57"
             width={983}
             height={302}
-            className="h-8 w-auto"
+            className="h-10 w-auto sm:h-12"
           />
           <p className="mt-3 font-sans text-sm text-white/85">
-            Lateral Carretera Federal No. 57 230, Casa Blanca, 76030 Santiago
-            de Querétaro, Qro.
+            {STORE_ADDRESS}
           </p>
           <a
-            href="tel:+524427782708"
+            href={`tel:${STORE_PHONE_TEL}`}
             className="mt-2 inline-block font-sans text-sm text-white underline underline-offset-2"
           >
-            442 778 2708
+            {STORE_PHONE_DISPLAY}
           </a>
         </div>
 
@@ -72,7 +72,7 @@ export function Footer() {
             Horario de atención
           </h2>
           <ul className="mt-3 flex flex-col gap-1 font-sans text-sm text-white/85">
-            {horario.map((linea) => (
+            {STORE_HORARIO.map((linea) => (
               <li key={linea}>{linea}</li>
             ))}
           </ul>
@@ -114,6 +114,29 @@ export function Footer() {
               <TikTokIcon />
             </a>
           </div>
+        </div>
+      </div>
+
+      {/* Barra legal aparte de la grilla de 3 columnas de arriba: agregar
+          una 4a columna ahí habría apretado ese layout ya verificado en
+          tablet (sm:grid-cols-3); una franja inferior es el patrón más
+          común para links legales y no toca nada existente. */}
+      <div className="border-t border-white/15 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-2 gap-y-2 font-sans text-xs text-white/70">
+          <span className="uppercase tracking-wide">Legal:</span>
+          <Link
+            href="/aviso-privacidad"
+            className="text-white underline underline-offset-2 hover:text-white/80"
+          >
+            Aviso de Privacidad
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link
+            href="/terminos"
+            className="text-white underline underline-offset-2 hover:text-white/80"
+          >
+            Términos y Condiciones
+          </Link>
         </div>
       </div>
     </footer>
