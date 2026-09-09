@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { categories } from "@/lib/navigation/categories";
 
@@ -209,10 +210,10 @@ export function Header() {
 
       {/* Mega-menú: fila horizontal desde md, oculto en móvil */}
       <nav
-        aria-label="Categorías"
+        aria-label="Navegación principal"
         className="hidden border-b border-brand-slate/10 bg-brand-white md:block"
       >
-        <ul className="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-1 px-4 py-2.5 sm:px-6 lg:px-8">
+        <ul className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2.5 sm:px-6 lg:px-8">
           {categories.map((category) => (
             <li key={category.href}>
               <Link
@@ -223,6 +224,22 @@ export function Header() {
               </Link>
             </li>
           ))}
+          {/*
+            Programa de Lealtad no es una categoría de producto: se separa
+            del resto con ml-auto (queda al otro extremo de la fila) y con
+            una píldora de fondo naranja (como Badge), no texto naranja sobre
+            blanco — ese combo da ~2.94:1 de contraste, por debajo del
+            mínimo, el mismo hallazgo que ya vimos con el botón primario.
+          */}
+          <li className="ml-auto">
+            <Link
+              href="/cuenta"
+              className="flex items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 font-sans text-sm font-semibold text-brand-black transition-colors hover:bg-[#E65C00]"
+            >
+              <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
+              Programa de Lealtad
+            </Link>
+          </li>
         </ul>
       </nav>
 
@@ -239,7 +256,7 @@ export function Header() {
           />
           <nav
             id={mobileMenuId}
-            aria-label="Categorías"
+            aria-label="Navegación principal"
             className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto bg-brand-white p-4 shadow-lg"
           >
             <div className="flex items-center justify-between pb-2">
@@ -255,6 +272,18 @@ export function Header() {
                 <CloseIcon />
               </button>
             </div>
+
+            {/* Mismo tratamiento que en escritorio: píldora naranja con
+                ícono, separado de las categorías con su propio margen. */}
+            <Link
+              href="/cuenta"
+              onClick={() => setMenuOpen(false)}
+              className="mb-3 flex min-h-11 items-center gap-1.5 rounded-full bg-brand-orange px-3 font-sans text-sm font-semibold text-brand-black"
+            >
+              <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
+              Programa de Lealtad
+            </Link>
+
             <ul className="flex flex-col">
               {categories.map((category) => (
                 <li key={category.href}>

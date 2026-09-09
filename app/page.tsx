@@ -1,5 +1,6 @@
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
+import { LoyaltySection } from "@/components/home/LoyaltySection";
 import { PromoBanners } from "@/components/home/PromoBanners";
 import { TrustBar } from "@/components/home/TrustBar";
 
@@ -36,6 +37,16 @@ export default function HomePage() {
             Productos destacados
           </h2>
           <FeaturedProducts />
+        </section>
+
+        {/*
+          Después de Productos destacados, antes del Footer: primero se
+          navega la tienda, y se cierra con la invitación al programa —
+          el flujo habitual de "explora, luego únete" en vez de interrumpir
+          la sección de compra con esto en medio.
+        */}
+        <section className="mt-14 sm:mt-20">
+          <LoyaltySection />
         </section>
       </div>
     </main>
