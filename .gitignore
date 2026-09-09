@@ -1,6 +1,14 @@
 __pycache__/
 *.pyc
 
+# Next.js
+/node_modules
+/.next/
+/out/
+.env*.local
+next-env.d.ts
+*.tsbuildinfo
+
 # impeccable-ignore-start
 # Ephemeral output, runtime state, and per-dev overrides.
 # Unanchored: .impeccable may sit at the repo root or under a nested
