@@ -52,13 +52,13 @@ export default function HomePage() {
         </section>
 
         {/*
-          Cifras de autoridad, reseñas reales y "Visítanos" van después de
-          Productos destacados (el núcleo de compra ya quedó arriba, sin
-          nada intercalado antes) y antes de Programa de Lealtad: primero
-          se refuerza confianza con números y voces reales de clientes,
-          luego se invita a conocer la tienda física, y se cierra con la
-          invitación a unirse al programa — el mismo flujo de "explora,
-          confía, luego únete" en vez de interrumpir la sección de compra.
+          Cifras de autoridad y reseñas reales van después de Productos
+          destacados (el núcleo de compra ya quedó arriba, sin nada
+          intercalado antes): primero se refuerza confianza con números y
+          voces reales de clientes. Programa de Lealtad va antes de
+          Visítanos — el acceso a Lealtad no debe quedar después del mapa,
+          para que se vea antes de llegar al cierre informativo de
+          ubicación/horario.
         */}
         <section className="mt-14 sm:mt-20" aria-label="Cifras de Ferretería 57">
           <StatsSection />
@@ -81,6 +81,10 @@ export default function HomePage() {
           <Testimonials />
         </section>
 
+        <section className="mt-14 sm:mt-20">
+          <LoyaltySection />
+        </section>
+
         <section className="mt-14 sm:mt-20" aria-labelledby="visitanos-heading">
           <h2
             id="visitanos-heading"
@@ -89,10 +93,6 @@ export default function HomePage() {
             Visítanos
           </h2>
           <VisitUs />
-        </section>
-
-        <section className="mt-14 sm:mt-20">
-          <LoyaltySection />
         </section>
       </div>
     </main>
