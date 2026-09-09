@@ -48,21 +48,27 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
     : null;
 
   return (
-    // Sin h-full: con height:100% el navegador no puede resolver un alto
-    // fijo (el contenedor padre no tiene alto propio), así que el valor se
-    // vuelve indefinido y esta tarjeta deja de participar en el
-    // align-items:stretch por defecto de flex/grid — eso era lo que hacía
-    // que cada tarjeta tomara la altura de su propio contenido en móvil.
-    // Quitarlo deja que stretch iguale la altura de todas las tarjetas de
-    // la fila (flex row o grid row, según el contenedor).
+    // h-full explícito: el padre inmediato siempre es un elemento ya
+    // estirado por flex/grid (el wrapper de FeaturedProducts, o la celda
+    // de ProductGrid), así que su alto ya es un valor concreto — no el
+    // alto "auto" indefinido del bug original (ver historial de este
+    // archivo) donde el padre no tenía alto propio y height:100% no se
+    // podía resolver. Antes dejábamos que el stretch por defecto de dos
+    // niveles anidados (grid → wrapper flex → esta tarjeta) hiciera el
+    // trabajo de forma implícita; Chrome lo resuelve bien, pero Safari
+    // tiene bugs conocidos de larga fecha con el stretch de flex anidado
+    // dentro de flex/grid que no siempre propaga correctamente. Declarar
+    // h-full aquí hace explícito lo que antes dependía de esa propagación
+    // implícita, y es seguro precisamente porque el padre ya no es
+    // indefinido.
     //
-    // Sin ancho fijo tampoco: el ancho es responsabilidad de quien la
-    // coloca (FeaturedProducts la envuelve en w-64 para su scroll
-    // horizontal en móvil; ProductGrid la deja ocupar la celda completa de
-    // su grid) — ProductCard en sí no debe asumir un layout de contenedor
-    // en particular para poder reusarse en ambos.
+    // Sin ancho fijo: el ancho es responsabilidad de quien la coloca
+    // (FeaturedProducts la envuelve en w-64 para su scroll horizontal en
+    // móvil; ProductGrid la deja ocupar la celda completa de su grid) —
+    // ProductCard en sí no debe asumir un layout de contenedor en
+    // particular para poder reusarse en ambos.
     <div
-      className={`flex flex-col gap-2 rounded-lg bg-white p-4 shadow-sm ${className}`}
+      className={`flex h-full flex-col gap-2 rounded-lg bg-white p-4 shadow-sm ${className}`}
     >
       {/* Toda la parte informativa navega a la ficha de producto; el botón
           de abajo queda fuera del Link a propósito (un <button> anidado
