@@ -1,10 +1,14 @@
 import { Badge, Button, PriceTag, RatingStars } from "@/components/ui";
+import { ProductCard } from "@/components/product/ProductCard";
+import { mockProducts } from "@/lib/mock-data/products";
 
 // Página de solo desarrollo: no es una pantalla real del e-commerce.
 // Muestra todas las variantes del kit atómico juntas para verificarlas
 // en un preview de Vercel antes de construir pantallas reales.
 // Mobile-first: cada bloque se diseñó primero para ~375-425px y luego
 // se expande con sm:/md:/lg: — nunca al revés.
+// Header y Footer ya envuelven esta página desde app/layout.tsx (layout
+// global), así que se ven junto con el kit en el mismo preview.
 
 function Section({
   title,
@@ -23,48 +27,6 @@ function Section({
   );
 }
 
-function PlaceholderImage() {
-  return (
-    <div
-      className="flex aspect-square w-full items-center justify-center rounded-lg bg-brand-gray text-sm text-brand-slate/60"
-      aria-hidden="true"
-    >
-      IMG
-    </div>
-  );
-}
-
-function ProductCardDemo({
-  name,
-  price,
-  previousPrice,
-  rating,
-}: {
-  name: string;
-  price: number;
-  previousPrice?: number;
-  rating: number;
-}) {
-  return (
-    <div className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm">
-      <div className="relative">
-        <PlaceholderImage />
-        {previousPrice && (
-          <Badge className="absolute right-2 top-2">
-            Ahorra {Math.round(((previousPrice - price) / previousPrice) * 100)}%
-          </Badge>
-        )}
-      </div>
-      <p className="font-sans text-sm text-brand-black sm:text-base">{name}</p>
-      <RatingStars value={rating} />
-      <PriceTag price={price} previousPrice={previousPrice} />
-      <Button variant="primary" className="w-full">
-        Agregar al carrito
-      </Button>
-    </div>
-  );
-}
-
 export default function DevUiPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-6 sm:pt-14 lg:px-8">
@@ -74,8 +36,8 @@ export default function DevUiPage() {
         </h1>
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-black sm:text-base">
           Vista de desarrollo — no es una pantalla real del sitio. Aquí se
-          verifican Button, Badge, PriceTag y RatingStars antes de usarlos
-          en pantallas reales.
+          verifican Button, Badge, PriceTag, RatingStars y ProductCard antes
+          de usarlos en pantallas reales.
         </p>
       </header>
 
@@ -97,10 +59,6 @@ export default function DevUiPage() {
           <Badge>Ahorra 18%</Badge>
           <Badge>Ahorra 40%</Badge>
           <Badge>Nuevo</Badge>
-        </div>
-        <div className="relative mt-4 w-40 sm:w-48">
-          <PlaceholderImage />
-          <Badge className="absolute right-2 top-2">Ahorra 18%</Badge>
         </div>
       </Section>
 
@@ -125,25 +83,17 @@ export default function DevUiPage() {
         </div>
       </Section>
 
-      <Section title="Composición: tarjeta de producto">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductCardDemo
-            name='Martillo de uña 16 oz Truper'
-            price={299}
-            previousPrice={365}
-            rating={4.3}
-          />
-          <ProductCardDemo
-            name="Taladro inalámbrico 20V Truper"
-            price={1299}
-            rating={5}
-          />
-          <ProductCardDemo
-            name="Juego de desarmadores 6 pzas"
-            price={189}
-            previousPrice={315}
-            rating={3.6}
-          />
+      <Section title="ProductCard">
+        {/*
+          Fila horizontal en todo ancho: en móvil es una franja con scroll
+          horizontal (snap-x) — patrón intencional de "carrusel", no el
+          overflow accidental que se evita en el resto del sitio. Desde sm
+          se convierte en una fila normal que ya no necesita scroll.
+        */}
+        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
+          {mockProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
         </div>
       </Section>
     </main>
