@@ -1,21 +1,48 @@
-// Contrato de datos del catálogo. No existía en el repo todavía — se define
-// aquí por primera vez, a partir de lo que ProductCard necesita mostrar
-// (imagen, nombre, marca, PriceTag, RatingStars, botón).
+// Contrato de datos del catálogo.
+export interface TechnicalSpec {
+  label: string;
+  value: string;
+}
+
+// El precio, precio de comparación y existencia viven en la variante, no en
+// el producto: un producto puede tener más de una presentación (medida,
+// capacidad, color) con su propio precio y stock.
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  label: string;
+  /** Precio de esta variante, en MXN. */
+  price: number;
+  /** Precio de comparación (tachado) en MXN, solo cuando hay descuento. */
+  compareAtPrice?: number;
+  stock: number;
+}
+
 export interface Product {
   id: string;
+  slug: string;
   name: string;
   brand: string;
-  /** Precio actual en MXN. */
-  price: number;
-  /** Precio anterior en MXN, solo cuando hay descuento. */
-  previousPrice?: number;
-  /** Calificación de 0 a 5. */
-  rating: number;
+  categoryId: string;
+  shortDescription: string;
+  technicalSpecs: TechnicalSpec[];
   /**
-   * Todavía no hay fotografía real de producto: cuando falta, ProductCard
-   * muestra un marcador de posición en vez de romper el layout o inventar
-   * una URL de imagen externa.
+   * Todavía no hay fotografía real de producto: un arreglo vacío es válido
+   * y esperado. ProductCard cae a un marcador de posición cuando está vacío,
+   * en vez de romper el layout o inventar una URL de imagen externa.
    */
+  images: string[];
+  variants: ProductVariant[];
+  rating?: number;
+  reviewCount?: number;
+}
+
+// parentId permite jerarquía (subcategorías) sin cambiar la forma del tipo:
+// una categoría raíz tiene parentId null.
+export interface Category {
+  id: string;
+  slug: string;
+  name: string;
+  parentId: string | null;
   imageUrl?: string;
-  imageAlt?: string;
 }

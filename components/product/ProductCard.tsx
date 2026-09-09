@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Badge, Button, PriceTag, RatingStars } from "@/components/ui";
-import type { Product } from "@/types/catalog";
+import type { Product, ProductVariant } from "@/types/catalog";
 
 export interface ProductCardProps {
   product: Product;
@@ -8,9 +8,10 @@ export interface ProductCardProps {
 }
 
 // Sin fotografía real todavía: mismo marcador de posición usado en
-// /app/dev/ui mientras no exista Product.imageUrl.
+// /app/dev/ui mientras Product.images siga vacío.
 function ProductImage({ product }: { product: Product }) {
-  if (!product.imageUrl) {
+  const firstImage = product.images[0];
+  if (!firstImage) {
     return (
       <div
         className="flex aspect-square w-full items-center justify-center rounded-lg bg-brand-gray text-sm text-brand-slate/60"
@@ -22,8 +23,8 @@ function ProductImage({ product }: { product: Product }) {
   }
   return (
     <Image
-      src={product.imageUrl}
-      alt={product.imageAlt ?? product.name}
+      src={firstImage}
+      alt={product.name}
       width={400}
       height={400}
       className="aspect-square w-full rounded-lg object-cover"
@@ -32,14 +33,17 @@ function ProductImage({ product }: { product: Product }) {
 }
 
 export function ProductCard({ product, className = "" }: ProductCardProps) {
+  // El precio vive en la variante, no directo en el producto (un producto
+  // puede tener más de una presentación). Por ahora se muestra la primera;
+  // un selector de variantes es trabajo de una fase posterior.
+  const variant: ProductVariant | undefined = product.variants[0];
+  const price = variant?.price ?? 0;
+  const previousPrice = variant?.compareAtPrice;
+
   const hasDiscount =
-    typeof product.previousPrice === "number" &&
-    product.previousPrice > product.price;
+    typeof previousPrice === "number" && previousPrice > price;
   const discountPercent = hasDiscount
-    ? Math.round(
-        ((product.previousPrice! - product.price) / product.previousPrice!) *
-          100
-      )
+    ? Math.round(((previousPrice - price) / previousPrice) * 100)
     : null;
 
   return (
@@ -65,8 +69,13 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
         {product.name}
       </p>
 
-      <RatingStars value={product.rating} />
-      <PriceTag price={product.price} previousPrice={product.previousPrice} />
+      {/* rating es opcional en el contrato: un producto sin reseñas
+          todavía no debe mostrarse como si tuviera 0 estrellas. */}
+      {typeof product.rating === "number" && (
+        <RatingStars value={product.rating} />
+      )}
+
+      <PriceTag price={price} previousPrice={previousPrice} />
 
       <Button variant="primary" className="mt-1 w-full">
         Agregar al carrito
