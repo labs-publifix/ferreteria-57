@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from "react";
+import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { getProductById } from "@/lib/mock-data/products";
 import { useToast } from "@/components/ui";
 
@@ -18,7 +18,8 @@ type CartAction =
   | { type: "HYDRATE"; lines: CartLine[] }
   | { type: "ADD_ITEM"; productId: string; variantId: string; quantity: number; maxStock: number }
   | { type: "SET_QUANTITY"; productId: string; variantId: string; quantity: number; maxStock: number }
-  | { type: "REMOVE_ITEM"; productId: string; variantId: string };
+  | { type: "REMOVE_ITEM"; productId: string; variantId: string }
+  | { type: "CLEAR" };
 
 const STORAGE_KEY = "ferreteria57:cart";
 
@@ -69,6 +70,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         lines: state.lines.filter((line) => !sameLine(line, action.productId, action.variantId)),
       };
 
+    case "CLEAR":
+      return { lines: [] };
+
     default:
       return state;
   }
@@ -77,9 +81,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 interface CartContextValue {
   lines: CartLine[];
   totalQuantity: number;
+  // false hasta que se termine de leer localStorage (ver más abajo) —
+  // quien necesite decidir algo basado en "¿el carrito está realmente
+  // vacío?" (p. ej. redirigir fuera de /checkout) debe esperar a que esto
+  // sea true, para no confundir "todavía no leímos localStorage" con
+  // "el carrito de verdad no tiene nada".
+  isHydrated: boolean;
   addItem: (productId: string, variantId: string, quantity?: number) => void;
   setQuantity: (productId: string, variantId: string, quantity: number) => void;
   removeItem: (productId: string, variantId: string) => void;
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -98,7 +109,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { lines: [] });
   const { showToast } = useToast();
-  const hasHydrated = useRef(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Cargar de localStorage una sola vez, después del primer render (nunca
   // durante SSR, que no tiene localStorage) — evita un error de
@@ -120,7 +131,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // localStorage corrupto, cuota llena o inaccesible (modo privado):
       // seguir con el carrito vacío en vez de romper la página.
     } finally {
-      hasHydrated.current = true;
+      setIsHydrated(true);
     }
   }, []);
 
@@ -128,14 +139,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // el primer render (carrito vacío, antes de leer localStorage)
   // sobreescribiría lo ya guardado antes de alcanzar a leerlo.
   useEffect(() => {
-    if (!hasHydrated.current) return;
+    if (!isHydrated) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ lines: state.lines }));
     } catch {
       // Cuota llena o inaccesible: no bloquear la compra por esto, solo no
       // persiste entre sesiones.
     }
-  }, [state.lines]);
+  }, [state.lines, isHydrated]);
 
   function addItem(productId: string, variantId: string, quantity = 1) {
     const product = getProductById(productId);
@@ -161,13 +172,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "REMOVE_ITEM", productId, variantId });
   }
 
+  // Vacía el carrito completo — usado al confirmar un pedido en checkout
+  // (ver CheckoutView), después de guardar el resumen de la orden aparte.
+  function clearCart() {
+    dispatch({ type: "CLEAR" });
+  }
+
   const totalQuantity = useMemo(
     () => state.lines.reduce((sum, line) => sum + line.quantity, 0),
     [state.lines]
   );
 
   return (
-    <CartContext.Provider value={{ lines: state.lines, totalQuantity, addItem, setQuantity, removeItem }}>
+    <CartContext.Provider
+      value={{ lines: state.lines, totalQuantity, isHydrated, addItem, setQuantity, removeItem, clearCart }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -1,45 +1,35 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { buttonClassName } from "@/components/ui";
-import { getProductById } from "@/lib/mock-data/products";
-import { useCart } from "./CartProvider";
+import { useResolvedCart } from "./useResolvedCart";
 import { CartLineItem } from "./CartLineItem";
-import type { Product, ProductVariant } from "@/types/catalog";
 
 const currencyFormatter = new Intl.NumberFormat("es-MX", {
   style: "currency",
   currency: "MXN",
 });
 
-interface ResolvedLine {
-  product: Product;
-  variant: ProductVariant;
-  quantity: number;
-}
-
 export function CartView() {
-  const { lines } = useCart();
+  const { items, subtotal, isHydrated } = useResolvedCart();
+  const searchParams = useSearchParams();
+  // Checkout redirige aquí con ?empty=checkout cuando se llega ahí sin
+  // nada que pagar — mensaje distinto para que quede claro por qué se
+  // interrumpió, en vez del genérico "está vacío" sin contexto.
+  const cameFromCheckout = searchParams.get("empty") === "checkout";
 
-  // Cada línea del carrito solo guarda productId/variantId/cantidad — el
-  // producto/variante real se resuelve aquí, al momento de mostrarse,
-  // nunca se duplica en el carrito (ver CartProvider). Una línea que ya
-  // no resuelve (mock-data cambió entre sesiones) se descarta en vez de
-  // romper la página.
-  const resolvedLines: ResolvedLine[] = lines.reduce<ResolvedLine[]>((acc, line) => {
-    const product = getProductById(line.productId);
-    const variant = product?.variants.find((item) => item.id === line.variantId);
-    if (product && variant) {
-      acc.push({ product, variant, quantity: line.quantity });
-    }
-    return acc;
-  }, []);
+  // Antes de saber si localStorage tenía algo, no mostrar el estado
+  // vacío (sería un parpadeo incorrecto para quien sí tiene productos).
+  if (!isHydrated) return null;
 
-  if (resolvedLines.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-lg bg-brand-gray px-6 py-16 text-center">
         <p className="font-sans text-base text-brand-black">
-          Tu carrito está vacío.
+          {cameFromCheckout
+            ? "Necesitas productos en tu carrito para continuar a pago."
+            : "Tu carrito está vacío."}
         </p>
         <Link href="/" className={buttonClassName("primary")}>
           Ir al inicio
@@ -48,15 +38,10 @@ export function CartView() {
     );
   }
 
-  const subtotal = resolvedLines.reduce(
-    (sum, { variant, quantity }) => sum + variant.price * quantity,
-    0
-  );
-
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:gap-10">
       <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
-        {resolvedLines.map(({ product, variant, quantity }) => (
+        {items.map(({ product, variant, quantity }) => (
           <CartLineItem
             key={`${product.id}-${variant.id}`}
             product={product}

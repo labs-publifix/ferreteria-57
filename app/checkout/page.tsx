@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
+import { CheckoutView } from "@/components/checkout/CheckoutView";
 
 export const metadata: Metadata = {
   title: "Checkout — Ferretería 57",
-  description: "Checkout — próximamente.",
+  description: "Completa tu pedido: contacto, entrega y método de pago.",
 };
 
-// Placeholder mínimo: el checkout real con Mercado Pago es una fase
-// posterior. Header y Footer no se repiten aquí, ya envuelven la página
-// desde app/layout.tsx.
+// Header y Footer no se repiten aquí, ya envuelven la página desde
+// app/layout.tsx. Checkout de una sola página (no wizard): las 3
+// secciones del formulario y el resumen conviven en la misma pantalla,
+// todas dentro de un único <form> (ver CheckoutView) para que la
+// validación nativa del navegador cubra el flujo completo al enviar.
+// Todavía simulado — sin Mercado Pago real (fase posterior).
 export default function CheckoutPage() {
   return (
-    <main className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 py-16 text-center sm:py-24">
-      <h1 className="font-display text-2xl uppercase text-brand-slate sm:text-3xl">
-        Checkout — próximamente
+    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <h1 className="mb-6 font-display text-2xl uppercase text-brand-slate sm:mb-8 sm:text-3xl">
+        Checkout
       </h1>
-      <p className="max-w-prose font-sans text-sm text-brand-black sm:text-base">
-        El pago real con Mercado Pago llega en una fase posterior.
-      </p>
+      <CheckoutView />
     </main>
   );
 }
