@@ -8,6 +8,7 @@ import { Gift } from "lucide-react";
 import type { Category } from "@/lib/navigation/categories";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
+import { CategoryNavRail } from "./CategoryNavRail";
 import { SearchIcon, UserIcon, CartIcon, IconLink } from "./header-icons";
 
 // Umbral en px: aproxima la altura total del Header original (barra de
@@ -143,29 +144,17 @@ export function StickyRevealHeader({ categories }: { categories: Category[] }) {
       </div>
 
       <nav aria-label="Navegación principal" className="bg-brand-white">
-        <ul className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-6 py-2 lg:px-8">
-          {categories.map((category) => (
-            <li key={category.href}>
-              <Link
-                href={category.href}
-                tabIndex={visible ? 0 : -1}
-                className="font-sans text-sm font-medium text-brand-slate hover:text-brand-black hover:underline underline-offset-4"
-              >
-                {category.label}
-              </Link>
-            </li>
-          ))}
-          <li className="ml-auto">
-            <Link
-              href="/cuenta"
-              tabIndex={visible ? 0 : -1}
-              className="flex items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 font-sans text-sm font-semibold text-brand-black transition-colors hover:bg-[#E65C00]"
-            >
-              <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
-              Programa de Lealtad
-            </Link>
-          </li>
-        </ul>
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-2 lg:px-8">
+          <CategoryNavRail categories={categories} tabIndex={visible ? 0 : -1} />
+          <Link
+            href="/cuenta"
+            tabIndex={visible ? 0 : -1}
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 font-sans text-sm font-semibold text-brand-black transition-colors hover:bg-[#E65C00]"
+          >
+            <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            Programa de Lealtad
+          </Link>
+        </div>
       </nav>
     </div>
   );
