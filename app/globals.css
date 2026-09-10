@@ -7,3 +7,19 @@
     @apply bg-brand-gray text-brand-black font-sans antialiased;
   }
 }
+
+@layer utilities {
+  /* Para rieles de scroll horizontal con snap (PromoRail, FeaturedProducts
+     en móvil): el swipe + el borde de la siguiente tarjeta asomando ya son
+     pista suficiente, la barra de scroll nativa solo agrega ruido debajo
+     de las tarjetas. Sigue siendo funcional con touch/trackpad/flechas,
+     solo se oculta el indicador visual. */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

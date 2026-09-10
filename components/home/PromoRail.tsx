@@ -50,7 +50,7 @@ export function PromoRail() {
     <div className="relative" role="region" aria-label="Promociones y beneficios">
       <div
         ref={scrollerRef}
-        className="-mx-4 flex snap-x gap-4 overflow-x-auto scroll-pl-4 px-4 pb-2 sm:-mx-6 sm:scroll-pl-6 sm:px-6 lg:-mx-8 lg:scroll-pl-8 lg:px-8"
+        className="scrollbar-hide -mx-4 flex snap-x gap-4 overflow-x-auto scroll-pl-4 px-4 pb-2 sm:-mx-6 sm:scroll-pl-6 sm:px-6 lg:-mx-8 lg:scroll-pl-8 lg:px-8"
       >
         {promos.map((promo) => (
           <PromoCard key={promo.id} promo={promo} />
