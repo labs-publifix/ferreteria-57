@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { categories } from "@/lib/navigation/categories";
+import { useCart } from "@/components/cart/CartProvider";
 import { SearchIcon, UserIcon, CartIcon, IconLink } from "./header-icons";
 
 // Umbral en px: aproxima la altura total del Header original (barra de
@@ -25,6 +26,7 @@ const REVEAL_THRESHOLD = 180;
 // se llega de nuevo cerca del tope (ahí ya se ve el Header real).
 export function StickyRevealHeader() {
   const router = useRouter();
+  const { totalQuantity } = useCart();
   const [visible, setVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const lastScrollY = useRef(0);
@@ -124,7 +126,7 @@ export function StickyRevealHeader() {
             <IconLink
               href="/carrito"
               label="Carrito de compras"
-              badgeCount={0}
+              badgeCount={totalQuantity > 0 ? totalQuantity : undefined}
               tabIndex={visible ? 0 : -1}
             >
               <CartIcon />

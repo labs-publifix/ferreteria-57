@@ -230,3 +230,16 @@ export const mockProducts: Product[] = [
     reviewCount: 5,
   },
 ];
+
+// Lookup síncrono (a diferencia de lib/catalog/queries.ts, que es async
+// pensando en Supabase): el carrito vive enteramente en el cliente y
+// necesita resolver producto/variante en cada render sin esperar una
+// promesa — sus líneas solo guardan productId/variantId/cantidad (ver
+// CartProvider), nunca precio/nombre/imagen duplicados. Cuando el
+// catálogo se mueva a una fuente real, este helper es el único punto que
+// cambiaría de síncrono a async (y los componentes que lo llaman pasarían
+// a resolverlo en un efecto o Server Component); el carrito en sí no
+// cambia de forma.
+export function getProductById(id: string): Product | undefined {
+  return mockProducts.find((product) => product.id === id);
+}

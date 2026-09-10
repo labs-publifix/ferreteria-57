@@ -1,6 +1,9 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
+import { useCart } from "@/components/cart/CartProvider";
 import { Badge, Button, PriceTag, RatingStars } from "@/components/ui";
+import { ProductThumbnail } from "./ProductThumbnail";
 import type { Product, ProductVariant } from "@/types/catalog";
 
 export interface ProductCardProps {
@@ -8,38 +11,16 @@ export interface ProductCardProps {
   className?: string;
 }
 
-// Sin fotografía real todavía: mismo marcador de posición usado en
-// /app/dev/ui mientras Product.images siga vacío.
-function ProductImage({ product }: { product: Product }) {
-  const firstImage = product.images[0];
-  if (!firstImage) {
-    return (
-      <div
-        className="flex aspect-square w-full items-center justify-center rounded-lg bg-brand-gray text-sm text-brand-slate/60"
-        aria-hidden="true"
-      >
-        IMG
-      </div>
-    );
-  }
-  return (
-    <Image
-      src={firstImage}
-      alt={product.name}
-      width={400}
-      height={400}
-      className="aspect-square w-full rounded-lg object-cover"
-    />
-  );
-}
-
 export function ProductCard({ product, className = "" }: ProductCardProps) {
+  const { addItem } = useCart();
+
   // El precio vive en la variante, no directo en el producto (un producto
   // puede tener más de una presentación). Por ahora se muestra la primera;
   // un selector de variantes es trabajo de una fase posterior.
   const variant: ProductVariant | undefined = product.variants[0];
   const price = variant?.price ?? 0;
   const previousPrice = variant?.compareAtPrice;
+  const inStock = (variant?.stock ?? 0) > 0;
 
   const hasDiscount =
     typeof previousPrice === "number" && previousPrice > price;
@@ -95,7 +76,7 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
       />
 
       <div className="relative">
-        <ProductImage product={product} />
+        <ProductThumbnail product={product} className="aspect-square w-full" />
         {hasDiscount && (
           <Badge className="absolute right-2 top-2">
             Ahorra {discountPercent}%
@@ -124,8 +105,14 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
           sí se conserva porque es un dato distinto (cuánto costaba antes). */}
       <PriceTag price={price} previousPrice={previousPrice} hideBadge />
 
-      <Button variant="primary" className="relative z-10 mt-auto w-full">
-        Agregar al carrito
+      <Button
+        type="button"
+        variant="primary"
+        className="relative z-10 mt-auto w-full"
+        disabled={!variant || !inStock}
+        onClick={() => variant && addItem(product.id, variant.id, 1)}
+      >
+        {inStock ? "Agregar al carrito" : "Agotado"}
       </Button>
     </div>
   );

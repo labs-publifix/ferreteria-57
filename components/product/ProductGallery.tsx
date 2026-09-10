@@ -2,19 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-
-// Mismo placeholder "IMG" que ProductCard cuando no hay fotografía real
-// todavía (Product.images vacío es válido y esperado, ver types/catalog.ts).
-function ImagePlaceholder() {
-  return (
-    <div
-      className="flex aspect-square w-full items-center justify-center rounded-lg bg-brand-gray text-sm text-brand-slate/60"
-      aria-hidden="true"
-    >
-      IMG
-    </div>
-  );
-}
+import { ProductImagePlaceholder } from "@/components/ui";
 
 export function ProductGallery({
   images,
@@ -38,7 +26,7 @@ export function ProductGallery({
           className="aspect-square w-full rounded-lg object-cover"
         />
       ) : (
-        <ImagePlaceholder />
+        <ProductImagePlaceholder className="aspect-square w-full" />
       )}
 
       {/* Con una sola imagen (o ninguna) no tiene sentido "elegir" entre

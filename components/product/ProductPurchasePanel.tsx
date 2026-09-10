@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Minus, Plus } from "lucide-react";
+import { useCart } from "@/components/cart/CartProvider";
 import { Button, PriceTag, RatingStars } from "@/components/ui";
 import type { Product } from "@/types/catalog";
 
 export function ProductPurchasePanel({ product }: { product: Product }) {
+  const { addItem } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState(
     product.variants[0]?.id
   );
@@ -14,11 +16,25 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
   const variant =
     product.variants.find((item) => item.id === selectedVariantId) ??
     product.variants[0];
-  const inStock = (variant?.stock ?? 0) > 0;
+  const stock = variant?.stock ?? 0;
+  const inStock = stock > 0;
   const hasMultipleVariants = product.variants.length > 1;
 
+  // Cambiar de variante puede bajar el tope de stock por debajo de la
+  // cantidad ya elegida (p. ej. de "2 baterías" con 4 en existencia a "1
+  // batería 4Ah" agotada) — reencuadrar la cantidad para que nunca quede
+  // pidiendo más de lo disponible de la variante actual.
+  useEffect(() => {
+    setQuantity((qty) => Math.max(1, Math.min(qty, stock || 1)));
+  }, [stock]);
+
   function handleQuantityChange(delta: number) {
-    setQuantity((qty) => Math.max(1, qty + delta));
+    setQuantity((qty) => Math.max(1, Math.min(qty + delta, stock)));
+  }
+
+  function handleAddToCart() {
+    if (!variant || !inStock) return;
+    addItem(product.id, variant.id, quantity);
   }
 
   return (
@@ -111,18 +127,23 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
           <button
             type="button"
             onClick={() => handleQuantityChange(1)}
+            disabled={quantity >= stock}
             aria-label="Aumentar cantidad"
-            className="flex size-11 items-center justify-center text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+            className="flex size-11 items-center justify-center text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:pointer-events-none disabled:opacity-40"
           >
             <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} />
           </button>
         </div>
       </div>
 
-      {/* Sin lógica de carrito real todavía (fase posterior): mismo estilo
-          y comportamiento visual que el botón de ProductCard. */}
-      <Button variant="primary" className="w-full sm:w-auto" disabled={!inStock}>
-        Agregar al carrito
+      <Button
+        type="button"
+        variant="primary"
+        className="w-full sm:w-auto"
+        disabled={!inStock}
+        onClick={handleAddToCart}
+      >
+        {inStock ? "Agregar al carrito" : "Agotado"}
       </Button>
     </div>
   );

@@ -3,6 +3,8 @@ import { Inter, Russo_One } from "next/font/google";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { CartProvider } from "@/components/cart/CartProvider";
+import { ToastProvider } from "@/components/ui";
 import "./globals.css";
 
 // Cargadas con next/font/google: self-hosted en build, cero layout shift,
@@ -61,10 +63,17 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${russoOne.variable}`}>
       <body>
-        <Header />
-        {children}
-        <Footer />
-        <WhatsAppButton />
+        {/* ToastProvider por fuera de CartProvider: el carrito dispara el
+            toast de confirmación (useToast) al agregar un producto, así
+            que necesita que el provider de toasts ya exista por encima. */}
+        <ToastProvider>
+          <CartProvider>
+            <Header />
+            {children}
+            <Footer />
+            <WhatsAppButton />
+          </CartProvider>
+        </ToastProvider>
       </body>
     </html>
   );

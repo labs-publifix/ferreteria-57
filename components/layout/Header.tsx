@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { categories } from "@/lib/navigation/categories";
+import { useCart } from "@/components/cart/CartProvider";
 import {
   ICON_PROPS,
   SearchIcon,
@@ -32,6 +33,7 @@ function CloseIcon() {
 
 export function Header() {
   const router = useRouter();
+  const { totalQuantity } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -133,7 +135,11 @@ export function Header() {
             <IconLink href="/cuenta" label="Cuenta">
               <UserIcon />
             </IconLink>
-            <IconLink href="/carrito" label="Carrito de compras" badgeCount={0}>
+            <IconLink
+              href="/carrito"
+              label="Carrito de compras"
+              badgeCount={totalQuantity > 0 ? totalQuantity : undefined}
+            >
               <CartIcon />
             </IconLink>
           </div>
