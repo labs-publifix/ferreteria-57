@@ -48,6 +48,12 @@ export function CartIcon() {
 // badgeCount es estático por ahora (sin lógica de carrito todavía): un solo
 // aria-label coherente en el Link en vez de que el badge visual compita con
 // su propio anuncio de lector de pantalla.
+// signedIn refleja el estado de sesión de Supabase (ver AuthProvider): el
+// ícono pasa de pizarra a negro-suave (más "presente") y se agrega un
+// punto naranja de fondo sólido — nunca naranja como color de ícono/texto
+// en primer plano, ese combo no llega al contraste mínimo (mismo hallazgo
+// que ya motivó el patrón de píldora en el link de Lealtad). El punto es
+// un refuerzo visual, no la única señal: el aria-label también cambia.
 // tabIndex es opcional: StickyRevealHeader lo pone en -1 mientras la barra
 // está oculta fuera de pantalla, para que Tab no salte a controles
 // invisibles.
@@ -55,12 +61,14 @@ export function IconLink({
   href,
   label,
   badgeCount,
+  signedIn,
   tabIndex,
   children,
 }: {
   href: string;
   label: string;
   badgeCount?: number;
+  signedIn?: boolean;
   tabIndex?: number;
   children: React.ReactNode;
 }) {
@@ -69,9 +77,15 @@ export function IconLink({
       href={href}
       tabIndex={tabIndex}
       aria-label={
-        typeof badgeCount === "number" ? `${label} (${badgeCount})` : label
+        typeof badgeCount === "number"
+          ? `${label} (${badgeCount})`
+          : signedIn
+            ? `${label} — sesión iniciada`
+            : label
       }
-      className="flex size-11 items-center justify-center rounded-md text-brand-slate transition-colors hover:bg-brand-gray hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2"
+      className={`flex size-11 items-center justify-center rounded-md transition-colors hover:bg-brand-gray hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2 ${
+        signedIn ? "text-brand-black" : "text-brand-slate"
+      }`}
     >
       <span className="relative flex items-center justify-center">
         {children}
@@ -82,6 +96,12 @@ export function IconLink({
           >
             {badgeCount}
           </span>
+        )}
+        {signedIn && (
+          <span
+            aria-hidden="true"
+            className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-brand-orange ring-2 ring-brand-white"
+          />
         )}
       </span>
     </Link>

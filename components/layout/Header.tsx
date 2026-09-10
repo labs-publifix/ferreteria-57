@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { categories } from "@/lib/navigation/categories";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
 import {
   ICON_PROPS,
@@ -34,6 +35,7 @@ function CloseIcon() {
 export function Header() {
   const router = useRouter();
   const { totalQuantity } = useCart();
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,7 +134,7 @@ export function Header() {
             >
               <SearchIcon />
             </button>
-            <IconLink href="/cuenta" label="Cuenta">
+            <IconLink href="/cuenta" label="Cuenta" signedIn={!!user}>
               <UserIcon />
             </IconLink>
             <IconLink
