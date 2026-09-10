@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Plus, Upload } from "lucide-react";
+import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { buttonClassName, ProductImagePlaceholder } from "@/components/ui";
 import { formatPrice } from "@/lib/formatPrice";
 import { createClient } from "@/lib/supabase/server";
@@ -104,9 +105,15 @@ export default async function AdminProductosPage({
         </div>
       </div>
 
-      {/* Navegación GET nativa: sin JS, el navegador recarga la página con
-          los filtros como query params — el propio Server Component los
-          lee de searchParams. */}
+      {/* Navegación GET nativa: el navegador recarga la página con los
+          filtros como query params — el propio Server Component los lee de
+          searchParams. Categoría/Estado usan el listbox propio (ver
+          FilterSelectField) en vez de <select> nativo: una vez abierto, el
+          menú de un <select> lo dibuja el sistema operativo con su propio
+          look, no el de la marca (mismo hallazgo ya resuelto para "Ordenar
+          por" en CategoryProductBrowser) — el input oculto que trae el
+          wrapper es lo que mantiene esos dos campos viajando en el mismo
+          submit GET. */}
       <form method="get" className="flex flex-wrap items-end gap-3 rounded-lg bg-white p-4 shadow-sm">
         <div className="min-w-[200px] flex-1">
           <label htmlFor="q" className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
@@ -122,41 +129,30 @@ export default async function AdminProductosPage({
         </div>
 
         <div>
-          <label
-            htmlFor="categoria"
-            className="mb-1.5 block font-sans text-sm font-medium text-brand-black"
-          >
-            Categoría
-          </label>
-          <select
-            id="categoria"
+          <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Categoría</span>
+          <FilterSelectField
             name="categoria"
             defaultValue={filters.categoria}
-            className="rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-          >
-            <option value="">Todas</option>
-            {(categories ?? []).map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+            label="Categoría"
+            options={[
+              { value: "", label: "Todas" },
+              ...(categories ?? []).map((category) => ({ value: category.id, label: category.name })),
+            ]}
+          />
         </div>
 
         <div>
-          <label htmlFor="estado" className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
-            Estado
-          </label>
-          <select
-            id="estado"
+          <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Estado</span>
+          <FilterSelectField
             name="estado"
             defaultValue={filters.estado}
-            className="rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-          >
-            <option value="">Todos</option>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
+            label="Estado"
+            options={[
+              { value: "", label: "Todos" },
+              { value: "activo", label: "Activo" },
+              { value: "inactivo", label: "Inactivo" },
+            ]}
+          />
         </div>
 
         <label className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black">
