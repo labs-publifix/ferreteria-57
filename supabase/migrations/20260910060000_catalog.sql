@@ -128,7 +128,12 @@ insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
 on conflict (id) do nothing;
 
-alter table storage.objects enable row level security;
+-- Sin "alter table storage.objects enable row level security": esa tabla
+-- ya trae RLS activo por default en todo proyecto de Supabase, y en
+-- algunos proyectos el rol que corre el SQL Editor no es "owner" de esa
+-- tabla — intentar la línea de arriba puede fallar por permisos y, al
+-- correr como parte de un solo script, revertir TODO lo anterior
+-- (categorías y productos incluidos) con ese error.
 
 drop policy if exists "Cualquiera lee imágenes de productos" on storage.objects;
 create policy "Cualquiera lee imágenes de productos"
