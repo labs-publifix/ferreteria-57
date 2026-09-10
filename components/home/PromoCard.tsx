@@ -1,0 +1,123 @@
+import Image from "next/image";
+import Link from "next/link";
+import type { Promo, PromoColorTheme } from "@/lib/mock-data/promos";
+
+// Contraste verificado por tema: naranja como fondo es el único de los 4
+// con poco margen (negro-suave sobre naranja da 5.93:1, justo arriba del
+// mínimo 4.5:1) — por eso ahí NINGÚN texto usa opacidad reducida, la
+// jerarquía (eyebrow/título/subtítulo/fine print) se logra solo con
+// tamaño y peso. Los otros 3 fondos tienen contraste de sobra y sí
+// admiten blanco/pizarra atenuado para el fine print sin arriesgar AA.
+const THEME_STYLES: Record<
+  PromoColorTheme,
+  { card: string; eyebrow: string; title: string; subtitle: string; fineprint: string; accent: string }
+> = {
+  naranja: {
+    card: "bg-brand-orange",
+    eyebrow: "text-brand-black",
+    title: "text-brand-black",
+    subtitle: "text-brand-black",
+    fineprint: "text-brand-black",
+    accent: "bg-brand-black/10",
+  },
+  pizarra: {
+    card: "bg-brand-slate",
+    eyebrow: "text-white/80",
+    title: "text-white",
+    subtitle: "text-white/85",
+    fineprint: "text-white/70",
+    accent: "bg-white/10",
+  },
+  negro: {
+    card: "bg-brand-black",
+    eyebrow: "text-white/80",
+    title: "text-white",
+    subtitle: "text-white/85",
+    fineprint: "text-white/70",
+    accent: "bg-white/10",
+  },
+  claro: {
+    card: "bg-brand-gray",
+    eyebrow: "text-brand-slate/80",
+    title: "text-brand-black",
+    subtitle: "text-brand-slate/90",
+    fineprint: "text-brand-slate/80",
+    accent: "bg-brand-slate/10",
+  },
+};
+
+// Acento diagonal sutil para cuando no hay fotografía: un triángulo en la
+// esquina de la zona visual, con un tono translúcido del MISMO color base
+// (nunca un color nuevo) — solo da profundidad, nada que compita con el
+// texto de arriba.
+function DiagonalAccent({ className }: { className: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`absolute inset-0 ${className}`}
+      style={{ clipPath: "polygon(40% 100%, 100% 30%, 100% 100%)" }}
+    />
+  );
+}
+
+export function PromoCard({ promo }: { promo: Promo }) {
+  const theme = THEME_STYLES[promo.colorTheme];
+
+  return (
+    // Sin botón/chip propio: la tarjeta COMPLETA es el link (patrón de la
+    // referencia de Amazon) — el título grande ya es el llamado a la
+    // acción. "relative" porque el fondo, la imagen (si existe) y el fine
+    // print se posicionan absolute contra este mismo contenedor.
+    <Link
+      href={promo.href}
+      aria-label={`${promo.title} — ${promo.subtitle}`}
+      className="group relative block aspect-[3/4] w-52 shrink-0 snap-start rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2 sm:w-56 lg:w-64"
+    >
+      {/* Fondo + texto: esta capa SÍ se recorta a las esquinas
+          redondeadas. La foto (cuando exista) vive fuera de ella para
+          poder sangrar por debajo del marco, ver el <img> más abajo. */}
+      <div
+        className={`absolute inset-0 grid grid-rows-[42%_1fr] overflow-hidden rounded-xl transition-transform duration-200 group-hover:scale-[1.02] motion-reduce:transition-none ${theme.card}`}
+      >
+        <div className="flex flex-col gap-1 px-5 pt-5">
+          {promo.eyebrow && (
+            <p className={`font-sans text-xs font-semibold uppercase tracking-wide ${theme.eyebrow}`}>
+              {promo.eyebrow}
+            </p>
+          )}
+          <h3 className={`line-clamp-2 font-display text-lg uppercase leading-tight sm:text-xl ${theme.title}`}>
+            {promo.title}
+          </h3>
+          <p className={`line-clamp-1 font-sans text-sm ${theme.subtitle}`}>
+            {promo.subtitle}
+          </p>
+        </div>
+
+        <div className="relative">
+          {!promo.imageUrl && <DiagonalAccent className={theme.accent} />}
+        </div>
+      </div>
+
+      {/* Foto real: hermana de la capa recortada de arriba (no su hijo),
+          así puede extenderse más allá del borde inferior de la tarjeta
+          — el efecto "sangrado fuera del marco" de la referencia de
+          Amazon — sin que el rounded-xl del fondo la recorte. */}
+      {promo.imageUrl && (
+        <div className="pointer-events-none absolute inset-x-4 bottom-0 h-[48%] translate-y-4">
+          <Image
+            src={promo.imageUrl}
+            alt=""
+            fill
+            className="object-contain object-bottom drop-shadow-lg"
+          />
+        </div>
+      )}
+
+      <p
+        className={`absolute inset-x-5 bottom-3 line-clamp-1 font-sans text-[11px] drop-shadow-sm ${theme.fineprint}`}
+      >
+        {promo.fineprint}
+      </p>
+    </Link>
+  );
+}
