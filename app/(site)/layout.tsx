@@ -1,28 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Russo_One } from "next/font/google";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { ToastProvider } from "@/components/ui";
-import "./globals.css";
-
-// Cargadas con next/font/google: self-hosted en build, cero layout shift,
-// sin <link> externo a Google Fonts (lineamiento de la skill ui-ux-pro-max
-// para el stack Next.js).
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const russoOne = Russo_One({
-  subsets: ["latin"],
-  weight: "400", // Russo One solo existe en un peso.
-  variable: "--font-russo-one",
-  display: "swap",
-});
+import { inter, russoOne } from "@/lib/fonts";
+import "../globals.css";
 
 const title =
   "Ferretería 57 — Herramienta y ferretería en Querétaro | Distribuidor autorizado Truper";
