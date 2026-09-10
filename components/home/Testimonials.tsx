@@ -3,9 +3,9 @@ import { GOOGLE_MAPS_REVIEWS_URL } from "@/lib/store-info";
 import { testimonials } from "@/lib/mock-data/testimonials";
 
 // Grid 2x2 desde sm:, apiladas en móvil (una sola columna): con solo 4
-// reseñas, otro carrusel habría repetido el mismo patrón de control
-// (flechas/puntos) que PromoBanners ya resuelve, sin necesidad real —
-// apilar es más simple y sigue siendo cómodo de leer en móvil.
+// reseñas, otro carrusel/riel habría repetido el mismo patrón de control
+// que PromoRail ya resuelve, sin necesidad real — apilar es más simple y
+// sigue siendo cómodo de leer en móvil.
 // Sin h-full en las tarjetas: mismo criterio que ProductCard (ver ese
 // componente) — se deja que el align-items:stretch por defecto de grid
 // iguale la altura de las tarjetas de cada fila en vez de forzar un alto

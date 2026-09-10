@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { LoyaltySection } from "@/components/home/LoyaltySection";
-import { PromoBanners } from "@/components/home/PromoBanners";
+import { PromoRail } from "@/components/home/PromoRail";
 import { StatsSection } from "@/components/home/StatsSection";
 import { Testimonials } from "@/components/home/Testimonials";
 import { TrustBar } from "@/components/home/TrustBar";
@@ -22,11 +22,16 @@ export default function HomePage() {
           volver hasta el tope de la página (ver ese archivo). */}
       <StickyRevealHeader />
 
-      {/* Full-bleed: fuera del contenedor con max-width para ocupar todo el
-          ancho de la pantalla, a diferencia de las secciones de abajo. */}
-      <PromoBanners />
-
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        {/* Riel de tarjetas de promoción: reemplaza el carrusel de portada
+            única. A diferencia de aquel (una sola imagen a pantalla
+            completa), esto es un grupo de tarjetas más pequeñas — encaja
+            mejor dentro del contenedor con max-width, como el resto de
+            las secciones, que full-bleed. */}
+        <section className="mt-6 sm:mt-8">
+          <PromoRail />
+        </section>
+
         <section className="mt-10 sm:mt-14" aria-label="Por qué comprar con nosotros">
           <TrustBar />
         </section>

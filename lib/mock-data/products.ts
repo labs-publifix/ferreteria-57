@@ -35,25 +35,46 @@ export const mockProducts: Product[] = [
   {
     id: "taladro-destornillador-20v",
     slug: "taladro-destornillador-1-2-20v",
-    name: "Taladro/destornillador 1/2 pulgada, 20V, 1 batería 2Ah, Truper",
+    // Sin "1 batería 2Ah" en el nombre: eso ahora varía por presentación
+    // (ver variants) — el nombre describe lo que comparten las 3, la
+    // etiqueta de cada variante describe en qué se diferencian.
+    name: "Taladro/destornillador 1/2 pulgada, 20V, Truper",
     brand: "Truper",
     categoryId: "herramienta",
     shortDescription:
-      "Taladro/destornillador inalámbrico con mandril de 1/2 pulgada, incluye una batería de 2Ah.",
+      "Taladro/destornillador inalámbrico con mandril de 1/2 pulgada, disponible con distintas configuraciones de batería.",
     technicalSpecs: [
       { label: "Voltaje", value: "20V" },
       { label: "Mandril", value: "1/2 pulgada" },
-      { label: "Batería incluida", value: "1 x 2Ah" },
     ],
     images: [],
+    // Producto de prueba para el selector de variante en /producto/[slug]:
+    // 3 presentaciones con precio distinto, una con descuento y una sin
+    // stock (para probar también el indicador "Agotado" cambiando de
+    // variante). El resto del catálogo mock se queda con una sola
+    // variante, como ya estaba.
     variants: [
       {
-        id: "taladro-destornillador-20v-1bat",
+        id: "taladro-destornillador-20v-1bat-2ah",
         sku: "TRU-TAL-20V-2AH",
         label: "1 batería 2Ah",
         price: 1299,
         compareAtPrice: 1799,
         stock: 7,
+      },
+      {
+        id: "taladro-destornillador-20v-2bat-2ah",
+        sku: "TRU-TAL-20V-2AH-X2",
+        label: "2 baterías 2Ah",
+        price: 1599,
+        stock: 4,
+      },
+      {
+        id: "taladro-destornillador-20v-1bat-4ah",
+        sku: "TRU-TAL-20V-4AH",
+        label: "1 batería 4Ah",
+        price: 1799,
+        stock: 0,
       },
     ],
     rating: 4.7,
@@ -209,3 +230,16 @@ export const mockProducts: Product[] = [
     reviewCount: 5,
   },
 ];
+
+// Lookup síncrono (a diferencia de lib/catalog/queries.ts, que es async
+// pensando en Supabase): el carrito vive enteramente en el cliente y
+// necesita resolver producto/variante en cada render sin esperar una
+// promesa — sus líneas solo guardan productId/variantId/cantidad (ver
+// CartProvider), nunca precio/nombre/imagen duplicados. Cuando el
+// catálogo se mueva a una fuente real, este helper es el único punto que
+// cambiaría de síncrono a async (y los componentes que lo llaman pasarían
+// a resolverlo en un efecto o Server Component); el carrito en sí no
+// cambia de forma.
+export function getProductById(id: string): Product | undefined {
+  return mockProducts.find((product) => product.id === id);
+}

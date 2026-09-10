@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { categories } from "@/lib/navigation/categories";
+import { useCart } from "@/components/cart/CartProvider";
 import {
   ICON_PROPS,
   SearchIcon,
@@ -30,8 +32,11 @@ function CloseIcon() {
 }
 
 export function Header() {
+  const router = useRouter();
+  const { totalQuantity } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const searchInputId = useId();
   const mobileMenuId = useId();
 
@@ -45,6 +50,16 @@ export function Header() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [menuOpen]);
+
+  // Un solo estado para las dos versiones del formulario (escritorio y la
+  // colapsada de móvil): ambas están siempre montadas, solo una es visible
+  // según el viewport, así que comparten el mismo valor sin duplicar nada.
+  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
+  }
 
   return (
     <header className="bg-brand-white">
@@ -84,8 +99,8 @@ export function Header() {
           {/* Búsqueda: visible siempre desde sm, icono expandible antes de sm */}
           <form
             role="search"
-            onSubmit={(e) => e.preventDefault()}
-            className="hidden flex-1 sm:block"
+            onSubmit={handleSearchSubmit}
+            className="relative hidden flex-1 sm:block"
           >
             <label htmlFor={searchInputId} className="sr-only">
               Buscar productos
@@ -94,8 +109,17 @@ export function Header() {
               id={searchInputId}
               type="search"
               placeholder="Buscar productos..."
-              className="w-full rounded-md border border-brand-slate/30 bg-brand-white px-4 py-2 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-md border border-brand-slate/30 bg-brand-white py-2 pl-4 pr-11 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
             />
+            <button
+              type="submit"
+              aria-label="Buscar"
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-brand-slate hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+            >
+              <SearchIcon />
+            </button>
           </form>
 
           <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:gap-2">
@@ -111,7 +135,11 @@ export function Header() {
             <IconLink href="/cuenta" label="Cuenta">
               <UserIcon />
             </IconLink>
-            <IconLink href="/carrito" label="Carrito de compras" badgeCount={0}>
+            <IconLink
+              href="/carrito"
+              label="Carrito de compras"
+              badgeCount={totalQuantity > 0 ? totalQuantity : undefined}
+            >
               <CartIcon />
             </IconLink>
           </div>
@@ -121,8 +149,8 @@ export function Header() {
         {searchOpen && (
           <form
             role="search"
-            onSubmit={(e) => e.preventDefault()}
-            className="mx-auto mt-3 max-w-6xl sm:hidden"
+            onSubmit={handleSearchSubmit}
+            className="relative mx-auto mt-3 max-w-6xl sm:hidden"
           >
             <label htmlFor={`${searchInputId}-mobile`} className="sr-only">
               Buscar productos
@@ -132,8 +160,17 @@ export function Header() {
               type="search"
               placeholder="Buscar productos..."
               autoFocus
-              className="w-full rounded-md border border-brand-slate/30 bg-brand-white px-4 py-2 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-md border border-brand-slate/30 bg-brand-white py-2 pl-4 pr-11 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
             />
+            <button
+              type="submit"
+              aria-label="Buscar"
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-brand-slate hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+            >
+              <SearchIcon />
+            </button>
           </form>
         )}
       </div>
