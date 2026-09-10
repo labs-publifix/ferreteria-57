@@ -6,6 +6,7 @@ import {
   LayoutGrid,
   Package,
   Image as ImageIcon,
+  ShieldCheck,
   Star,
   type LucideIcon,
 } from "lucide-react";
@@ -28,4 +29,10 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/top-banner", label: "Top Banner", icon: ImageIcon },
   { href: "/admin/promo-banners", label: "Promo Banners", icon: Images },
   { href: "/admin/lealtad", label: "Programa de Lealtad", icon: Gift },
+  // Al final: a diferencia de las 7 anteriores (gestión de contenido de la
+  // tienda), esta es administración del propio panel — mismo criterio que
+  // separa "Programa de Lealtad" del resto de categorías en el header de
+  // la tienda, aquí como el último ítem en vez de un tratamiento visual
+  // aparte.
+  { href: "/admin/accesos", label: "Accesos", icon: ShieldCheck },
 ];

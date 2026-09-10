@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, PasswordInput } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/authErrors";
 
@@ -84,23 +84,13 @@ export function AdminLoginForm() {
         />
       </div>
 
-      <div>
-        <label
-          htmlFor={passwordId}
-          className="mb-1.5 block font-sans text-sm font-medium text-brand-black"
-        >
-          Contraseña
-        </label>
-        <input
-          id={passwordId}
-          type="password"
-          required
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black placeholder:text-brand-slate/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-        />
-      </div>
+      <PasswordInput
+        id={passwordId}
+        label="Contraseña"
+        autoComplete="current-password"
+        value={password}
+        onChange={setPassword}
+      />
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Iniciando sesión…" : "Iniciar sesión"}
