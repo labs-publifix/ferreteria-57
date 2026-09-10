@@ -9,6 +9,20 @@ export interface ProductActionResult {
   error?: string;
 }
 
+// Muestra el mensaje real de Postgres/PostgREST en vez de uno genérico —
+// esta pantalla solo la ve un admin ya autenticado, así que no hay nada
+// que esconder, y el detalle real (p. ej. "no existe la tabla products"
+// cuando falta correr una migración) ahorra una vuelta completa de
+// "¿qué error te dio exactamente?".
+function describeDbError(fallbackMessage: string, error: { code?: string; message: string }) {
+  if (error.code === "23505") {
+    return error.message.includes("sku")
+      ? "Ya existe una variante con ese código (SKU)."
+      : "Ya existe un producto con ese slug.";
+  }
+  return `${fallbackMessage}: ${error.message}`;
+}
+
 interface VariantInput {
   id?: string;
   sku: string;
@@ -138,10 +152,11 @@ export async function createProduct(formData: FormData): Promise<ProductActionRe
     .single();
 
   if (productError || !product) {
-    if (productError?.code === "23505") {
-      return { error: "Ya existe un producto con ese slug." };
-    }
-    return { error: "No se pudo crear el producto." };
+    return {
+      error: productError
+        ? describeDbError("No se pudo crear el producto", productError)
+        : "No se pudo crear el producto.",
+    };
   }
 
   const { error: variantsError } = await supabase.from("product_variants").insert(
@@ -161,10 +176,7 @@ export async function createProduct(formData: FormData): Promise<ProductActionRe
     // dejar un producto sin ninguna presentación, un estado que la app
     // no espera en ningún otro lugar (ProductCard asume variants[0]).
     await supabase.from("products").delete().eq("id", product.id);
-    if (variantsError.code === "23505") {
-      return { error: "Ya existe una variante con ese código (SKU)." };
-    }
-    return { error: "No se pudieron guardar las presentaciones." };
+    return { error: describeDbError("No se pudieron guardar las presentaciones", variantsError) };
   }
 
   revalidatePath("/admin/productos");
@@ -198,10 +210,7 @@ export async function updateProduct(
     .eq("id", id);
 
   if (productError) {
-    if (productError.code === "23505") {
-      return { error: "Ya existe un producto con ese slug." };
-    }
-    return { error: "No se pudo actualizar el producto." };
+    return { error: describeDbError("No se pudo actualizar el producto", productError) };
   }
 
   // Reemplaza todas las variantes en vez de calcular un diff (agregar,
@@ -214,7 +223,9 @@ export async function updateProduct(
     .from("product_variants")
     .delete()
     .eq("product_id", id);
-  if (deleteError) return { error: "No se pudieron actualizar las presentaciones." };
+  if (deleteError) {
+    return { error: describeDbError("No se pudieron actualizar las presentaciones", deleteError) };
+  }
 
   const { error: insertError } = await supabase.from("product_variants").insert(
     parsed.variants.map((variant, index) => ({
@@ -229,10 +240,7 @@ export async function updateProduct(
   );
 
   if (insertError) {
-    if (insertError.code === "23505") {
-      return { error: "Ya existe una variante con ese código (SKU)." };
-    }
-    return { error: "No se pudieron guardar las presentaciones." };
+    return { error: describeDbError("No se pudieron guardar las presentaciones", insertError) };
   }
 
   revalidatePath("/admin/productos");

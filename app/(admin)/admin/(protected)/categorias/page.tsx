@@ -14,10 +14,21 @@ export const metadata: Metadata = { title: "Categorías — Panel de administrac
 async function getCategoriesWithCounts(): Promise<CategoryRow[]> {
   const supabase = await createClient();
 
-  const [{ data: categories }, { data: products }] = await Promise.all([
+  const [
+    { data: categories, error: categoriesError },
+    { data: products, error: productsError },
+  ] = await Promise.all([
     supabase.from("categories").select("id, name, slug, icon, position, active").order("position"),
     supabase.from("products").select("category_id"),
   ]);
+
+  // Supabase nunca lanza una excepción por un error de la base (tabla
+  // inexistente, RLS, etc.) — devuelve { data: null, error }. Sin este
+  // chequeo explícito, "categories ?? []" convertiría cualquier error en
+  // una lista vacía silenciosa ("no hay categorías") en vez de mostrar el
+  // problema real.
+  if (categoriesError) throw new Error(categoriesError.message);
+  if (productsError) throw new Error(productsError.message);
 
   const counts = new Map<string, number>();
   for (const product of products ?? []) {
@@ -36,8 +47,8 @@ export default async function AdminCategoriasPage() {
 
   try {
     categories = await getCategoriesWithCounts();
-  } catch {
-    loadError = "No se pudieron cargar las categorías.";
+  } catch (err) {
+    loadError = `No se pudieron cargar las categorías: ${err instanceof Error ? err.message : "error desconocido"}`;
   }
 
   return (

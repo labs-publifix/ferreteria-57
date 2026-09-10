@@ -9,6 +9,18 @@ export interface CategoryActionResult {
   error?: string;
 }
 
+// Muestra el mensaje real de Postgres/PostgREST en vez de uno genérico —
+// esta pantalla solo la ve un admin ya autenticado, así que no hay nada
+// que esconder, y el detalle real (p. ej. "no existe la tabla
+// categories" cuando falta correr una migración) ahorra una vuelta
+// completa de "¿qué error te dio exactamente?".
+function describeDbError(fallbackMessage: string, error: { code?: string; message: string }) {
+  if (error.code === "23505") {
+    return "Ya existe una categoría con ese slug.";
+  }
+  return `${fallbackMessage}: ${error.message}`;
+}
+
 // Mismo criterio de verificación que el resto del admin (ver
 // app/(admin)/admin/(protected)/accesos/actions.ts): cada Server Action
 // confirma is_admin() por su cuenta, sin asumir que nadie puede
@@ -63,10 +75,7 @@ export async function createCategory(formData: FormData): Promise<CategoryAction
   });
 
   if (error) {
-    if (error.code === "23505") {
-      return { error: "Ya existe una categoría con ese slug." };
-    }
-    return { error: "No se pudo crear la categoría." };
+    return { error: describeDbError("No se pudo crear la categoría", error) };
   }
 
   revalidatePath("/admin/categorias");
@@ -95,10 +104,7 @@ export async function updateCategory(
     .eq("id", id);
 
   if (error) {
-    if (error.code === "23505") {
-      return { error: "Ya existe una categoría con ese slug." };
-    }
-    return { error: "No se pudo actualizar la categoría." };
+    return { error: describeDbError("No se pudo actualizar la categoría", error) };
   }
 
   revalidatePath("/admin/categorias");
@@ -113,7 +119,7 @@ export async function toggleCategoryActive(
   if (!supabase) return { error: "No autorizado." };
 
   const { error } = await supabase.from("categories").update({ active }).eq("id", id);
-  if (error) return { error: "No se pudo actualizar la categoría." };
+  if (error) return { error: describeDbError("No se pudo actualizar la categoría", error) };
 
   revalidatePath("/admin/categorias");
   return {};
@@ -141,7 +147,7 @@ export async function deleteCategory(id: string): Promise<CategoryActionResult> 
   }
 
   const { error } = await supabase.from("categories").delete().eq("id", id);
-  if (error) return { error: "No se pudo eliminar la categoría." };
+  if (error) return { error: describeDbError("No se pudo eliminar la categoría", error) };
 
   revalidatePath("/admin/categorias");
   return {};

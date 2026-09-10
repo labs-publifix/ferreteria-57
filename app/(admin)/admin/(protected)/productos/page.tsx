@@ -37,7 +37,11 @@ async function getAdminProducts(filters: { q: string; categoria: string; estado:
   if (filters.estado === "activo") query = query.eq("active", true);
   if (filters.estado === "inactivo") query = query.eq("active", false);
 
-  const { data } = await query;
+  const { data, error } = await query;
+  // Supabase nunca lanza una excepción por un error de la base — devuelve
+  // { data: null, error }. Sin este chequeo, cualquier error se
+  // convertiría en "no hay productos" en vez de mostrar el problema real.
+  if (error) throw new Error(error.message);
   let rows = (data ?? []) as unknown as ProductRow[];
 
   const q = filters.q.trim().toLowerCase();
@@ -73,8 +77,8 @@ export default async function AdminProductosPage({
 
   try {
     products = await getAdminProducts(filters);
-  } catch {
-    loadError = "No se pudieron cargar los productos.";
+  } catch (err) {
+    loadError = `No se pudieron cargar los productos: ${err instanceof Error ? err.message : "error desconocido"}`;
   }
 
   return (
