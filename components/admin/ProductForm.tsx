@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui";
 import { ProductImageUploader } from "@/components/admin/ProductImageUploader";
+import { detectBrandFromName } from "@/lib/catalog/detectBrandFromName";
 import { slugify } from "@/lib/slugify";
 import {
   createProduct,
@@ -92,6 +93,10 @@ export function ProductForm({
     initialValues ?? emptyValues(defaultCategoryId ?? categories[0]?.id ?? "")
   );
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
+  // Igual criterio que slugTouched: en edición no se pisa una marca que ya
+  // viene guardada; en creación se sugiere sola hasta que el admin la
+  // edite a mano, momento en el que deja de recalcularse.
+  const [brandTouched, setBrandTouched] = useState(mode === "edit");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeWithoutImageWarning, setActiveWithoutImageWarning] = useState(false);
@@ -102,6 +107,14 @@ export function ProductForm({
       name,
       slug: slugTouched ? current.slug : slugify(name),
     }));
+  }
+
+  // Se dispara al terminar de escribir el Nombre (blur), no en cada tecla:
+  // detectBrandFromName necesita el texto completo para encontrar "Truper"
+  // o "Pretul" dentro de él, no tiene sentido evaluarlo letra por letra.
+  function handleNameBlur() {
+    if (brandTouched) return;
+    setValues((current) => ({ ...current, brand: detectBrandFromName(current.name) }));
   }
 
   function updateVariant(index: number, patch: Partial<VariantValues>) {
@@ -230,6 +243,7 @@ export function ProductForm({
               required
               value={values.name}
               onChange={(event) => handleNameChange(event.target.value)}
+              onBlur={handleNameBlur}
               className={inputClass}
             />
           </div>
@@ -244,13 +258,20 @@ export function ProductForm({
               required
               list={brandListId}
               value={values.brand}
-              onChange={(event) => setValues((current) => ({ ...current, brand: event.target.value }))}
+              onChange={(event) => {
+                setBrandTouched(true);
+                setValues((current) => ({ ...current, brand: event.target.value }));
+              }}
               className={inputClass}
             />
             <datalist id={brandListId}>
               <option value="Truper" />
               <option value="Pretul" />
+              <option value="Expert" />
             </datalist>
+            <p className="mt-1 font-sans text-xs text-brand-slate/70">
+              Se sugiere sola a partir del nombre — edítala si hace falta.
+            </p>
           </div>
         </div>
 

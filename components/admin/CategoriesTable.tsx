@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
+import { ConfirmDialog } from "@/components/ui";
 import {
   deleteCategory,
   toggleCategoryActive,
@@ -28,6 +29,7 @@ export function CategoriesTable({ categories }: { categories: CategoryRow[] }) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   async function handleToggleActive(id: string, active: boolean) {
     setPendingId(id);
@@ -40,10 +42,10 @@ export function CategoriesTable({ categories }: { categories: CategoryRow[] }) {
     router.refresh();
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!window.confirm(`¿Eliminar la categoría "${name}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
+    setDeleteTarget(null);
     setPendingId(id);
     setRowErrors((current) => ({ ...current, [id]: "" }));
     const result = await deleteCategory(id);
@@ -63,83 +65,99 @@ export function CategoriesTable({ categories }: { categories: CategoryRow[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
-      <table className="w-full min-w-[640px] text-left font-sans text-sm">
-        <thead>
-          <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
-            <th className="px-4 py-3">Categoría</th>
-            <th className="px-4 py-3">Slug</th>
-            <th className="px-4 py-3">Productos</th>
-            <th className="px-4 py-3">Posición</th>
-            <th className="px-4 py-3">Estado</th>
-            <th className="px-4 py-3">
-              <span className="sr-only">Acciones</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {categories.map((category) => {
-            const Icon = CATEGORY_ICONS[category.icon];
-            const isPending = pendingId === category.id;
-            const rowError = rowErrors[category.id];
-            return (
-              <tr key={category.id} className="border-b border-brand-slate/10 last:border-0">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    {Icon && (
-                      <Icon className="size-4 shrink-0 text-brand-slate" aria-hidden="true" strokeWidth={1.75} />
-                    )}
-                    <span className="font-medium text-brand-black">{category.name}</span>
-                  </div>
-                  {rowError && <p className="mt-1 text-xs text-red-700">{rowError}</p>}
-                </td>
-                <td className="px-4 py-3 text-brand-slate">{category.slug}</td>
-                <td className="px-4 py-3 text-brand-slate">{category.productCount}</td>
-                <td className="px-4 py-3 text-brand-slate">{category.position}</td>
-                <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => handleToggleActive(category.id, !category.active)}
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold disabled:opacity-50 ${
-                      category.active
-                        ? "bg-green-100 text-green-800"
-                        : "bg-brand-gray text-brand-slate"
-                    }`}
-                  >
-                    {category.active ? "Activa" : "Inactiva"}
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href={`/admin/productos/nuevo?categoria=${category.id}`}
-                      className="whitespace-nowrap font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
-                    >
-                      + Producto
-                    </Link>
-                    <Link
-                      href={`/admin/categorias/${category.id}/editar`}
-                      aria-label={`Editar ${category.name}`}
-                      className="flex size-9 items-center justify-center rounded-md text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-                    >
-                      <Pencil className="size-4" aria-hidden="true" strokeWidth={1.75} />
-                    </Link>
+    <>
+      <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+        <table className="w-full min-w-[640px] text-left font-sans text-sm">
+          <thead>
+            <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
+              <th className="px-4 py-3">Categoría</th>
+              <th className="px-4 py-3">Slug</th>
+              <th className="px-4 py-3">Productos</th>
+              <th className="px-4 py-3">Posición</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3">
+                <span className="sr-only">Acciones</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {categories.map((category) => {
+              const Icon = CATEGORY_ICONS[category.icon];
+              const isPending = pendingId === category.id;
+              const rowError = rowErrors[category.id];
+              return (
+                <tr key={category.id} className="border-b border-brand-slate/10 last:border-0">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {Icon && (
+                        <Icon className="size-4 shrink-0 text-brand-slate" aria-hidden="true" strokeWidth={1.75} />
+                      )}
+                      <span className="font-medium text-brand-black">{category.name}</span>
+                    </div>
+                    {rowError && <p className="mt-1 text-xs text-red-700">{rowError}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-brand-slate">{category.slug}</td>
+                  <td className="px-4 py-3 text-brand-slate">{category.productCount}</td>
+                  <td className="px-4 py-3 text-brand-slate">{category.position}</td>
+                  <td className="px-4 py-3">
                     <button
                       type="button"
                       disabled={isPending}
-                      onClick={() => handleDelete(category.id, category.name)}
-                      className="font-sans text-sm text-red-700 hover:underline disabled:opacity-50"
+                      onClick={() => handleToggleActive(category.id, !category.active)}
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold disabled:opacity-50 ${
+                        category.active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-brand-gray text-brand-slate"
+                      }`}
                     >
-                      Eliminar
+                      {category.active ? "Activa" : "Inactiva"}
                     </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/productos/nuevo?categoria=${category.id}`}
+                        className="whitespace-nowrap font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
+                      >
+                        + Producto
+                      </Link>
+                      <Link
+                        href={`/admin/categorias/${category.id}/editar`}
+                        aria-label={`Editar ${category.name}`}
+                        className="flex size-9 items-center justify-center rounded-md text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+                      >
+                        <Pencil className="size-4" aria-hidden="true" strokeWidth={1.75} />
+                      </Link>
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => setDeleteTarget({ id: category.id, name: category.name })}
+                        className="font-sans text-sm text-red-700 hover:underline disabled:opacity-50"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Eliminar categoría"
+        description={
+          deleteTarget
+            ? `¿Eliminar la categoría "${deleteTarget.name}"? Esta acción no se puede deshacer.`
+            : undefined
+        }
+        confirmLabel="Eliminar"
+        tone="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 }

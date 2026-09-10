@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { buttonClassName, ProductImagePlaceholder } from "@/components/ui";
 import { formatPrice } from "@/lib/formatPrice";
 import { createClient } from "@/lib/supabase/server";
@@ -25,7 +25,7 @@ interface ProductRow {
 // interpolado (PostgREST lo soporta, pero es un patrón frágil de escapar
 // bien) y el catálogo de una ferretería no es tan grande como para que
 // esto pese.
-async function getAdminProducts(filters: { q: string; categoria: string; estado: string }) {
+async function getAdminProducts(filters: { q: string; categoria: string; estado: string; sinImagen: boolean }) {
   const supabase = await createClient();
 
   let query = supabase
@@ -53,19 +53,26 @@ async function getAdminProducts(filters: { q: string; categoria: string; estado:
     );
   }
 
+  // Sin imagen: para dar seguimiento a lo que se acaba de importar por
+  // Excel (nace sin imágenes) y todavía necesita completarse a mano.
+  if (filters.sinImagen) {
+    rows = rows.filter((row) => row.images.length === 0);
+  }
+
   return rows;
 }
 
 export default async function AdminProductosPage({
   searchParams,
 }: {
-  searchParams: { q?: string; categoria?: string; estado?: string };
+  searchParams: { q?: string; categoria?: string; estado?: string; sinImagen?: string };
 }) {
   const supabase = await createClient();
   const filters = {
     q: searchParams.q ?? "",
     categoria: searchParams.categoria ?? "",
     estado: searchParams.estado ?? "",
+    sinImagen: searchParams.sinImagen === "1",
   };
 
   let products: ProductRow[] = [];
@@ -85,10 +92,16 @@ export default async function AdminProductosPage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-xl uppercase text-brand-slate sm:text-2xl">Productos</h1>
-        <Link href="/admin/productos/nuevo" className={buttonClassName("primary", "shrink-0")}>
-          <Plus className="size-4" aria-hidden="true" strokeWidth={2} />
-          Nuevo producto
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/admin/productos/importar" className={buttonClassName("secondary", "shrink-0")}>
+            <Upload className="size-4" aria-hidden="true" strokeWidth={2} />
+            Importar desde Excel
+          </Link>
+          <Link href="/admin/productos/nuevo" className={buttonClassName("primary", "shrink-0")}>
+            <Plus className="size-4" aria-hidden="true" strokeWidth={2} />
+            Nuevo producto
+          </Link>
+        </div>
       </div>
 
       {/* Navegación GET nativa: sin JS, el navegador recarga la página con
@@ -145,6 +158,17 @@ export default async function AdminProductosPage({
             <option value="inactivo">Inactivo</option>
           </select>
         </div>
+
+        <label className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black">
+          <input
+            type="checkbox"
+            name="sinImagen"
+            value="1"
+            defaultChecked={filters.sinImagen}
+            className="size-5 rounded border-brand-slate/40 accent-brand-orange"
+          />
+          Sin imagen
+        </label>
 
         <button type="submit" className={buttonClassName("secondary")}>
           Filtrar

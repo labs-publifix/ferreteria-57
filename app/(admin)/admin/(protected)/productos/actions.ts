@@ -2,25 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { resolveCategory } from "@/lib/catalog/resolveCategory";
+import {
+  createProductRecord,
+  describeDbError,
+  updateProductRecord,
+  type ProductWriteInput,
+} from "@/lib/catalog/productWrite";
+import { findTakenSkus } from "@/lib/catalog/skuAvailability";
 import { createClient } from "@/lib/supabase/server";
 import type { TechnicalSpec } from "@/types/catalog";
 
 export interface ProductActionResult {
   error?: string;
-}
-
-// Muestra el mensaje real de Postgres/PostgREST en vez de uno genérico —
-// esta pantalla solo la ve un admin ya autenticado, así que no hay nada
-// que esconder, y el detalle real (p. ej. "no existe la tabla products"
-// cuando falta correr una migración) ahorra una vuelta completa de
-// "¿qué error te dio exactamente?".
-function describeDbError(fallbackMessage: string, error: { code?: string; message: string }) {
-  if (error.code === "23505") {
-    return error.message.includes("sku")
-      ? "Ya existe una variante con ese código (SKU)."
-      : "Ya existe un producto con ese slug.";
-  }
-  return `${fallbackMessage}: ${error.message}`;
 }
 
 interface VariantInput {
@@ -135,49 +129,42 @@ export async function createProduct(formData: FormData): Promise<ProductActionRe
   const parsed = parseProductForm(formData);
   if ("error" in parsed) return parsed;
 
-  const { data: product, error: productError } = await supabase
-    .from("products")
-    .insert({
-      category_id: parsed.categoryId,
-      name: parsed.name,
-      slug: parsed.slug,
-      brand: parsed.brand,
-      short_description: parsed.shortDescription,
-      spec_sheet_url: parsed.specSheetUrl,
-      technical_specs: parsed.technicalSpecs,
-      images: parsed.images,
-      active: parsed.active,
-    })
-    .select("id")
-    .single();
-
-  if (productError || !product) {
-    return {
-      error: productError
-        ? describeDbError("No se pudo crear el producto", productError)
-        : "No se pudo crear el producto.",
-    };
+  const { data: categories, error: categoriesError } = await supabase
+    .from("categories")
+    .select("id, name, slug");
+  if (categoriesError) return { error: describeDbError("No se pudieron validar las categorías", categoriesError) };
+  if (!resolveCategory(categories ?? [], parsed.categoryId)) {
+    return { error: "La categoría seleccionada ya no existe. Recarga la página." };
   }
 
-  const { error: variantsError } = await supabase.from("product_variants").insert(
-    parsed.variants.map((variant, index) => ({
-      product_id: product.id,
-      sku: variant.sku,
-      label: variant.label,
-      price: variant.price,
-      compare_at_price: variant.compareAtPrice,
-      stock: variant.stock,
-      position: index,
-    }))
-  );
-
-  if (variantsError) {
-    // El producto ya se creó pero sus variantes no — se borra para no
-    // dejar un producto sin ninguna presentación, un estado que la app
-    // no espera en ningún otro lugar (ProductCard asume variants[0]).
-    await supabase.from("products").delete().eq("id", product.id);
-    return { error: describeDbError("No se pudieron guardar las presentaciones", variantsError) };
+  const skus = parsed.variants.map((variant) => variant.sku);
+  const taken = await findTakenSkus(supabase, skus);
+  const duplicate = skus.find((sku) => taken.has(sku));
+  if (duplicate) {
+    return { error: `Ya existe una variante con el código (SKU) "${duplicate}".` };
   }
+
+  const input: ProductWriteInput = {
+    categoryId: parsed.categoryId,
+    name: parsed.name,
+    slug: parsed.slug,
+    brand: parsed.brand,
+    shortDescription: parsed.shortDescription,
+    specSheetUrl: parsed.specSheetUrl,
+    technicalSpecs: parsed.technicalSpecs,
+    images: parsed.images,
+    active: parsed.active,
+    variants: parsed.variants.map(({ sku, label, price, compareAtPrice, stock }) => ({
+      sku,
+      label,
+      price,
+      compareAtPrice,
+      stock,
+    })),
+  };
+
+  const result = await createProductRecord(supabase, input);
+  if (result.error) return { error: result.error };
 
   revalidatePath("/admin/productos");
   redirect("/admin/productos");
@@ -193,55 +180,42 @@ export async function updateProduct(
   const parsed = parseProductForm(formData);
   if ("error" in parsed) return parsed;
 
-  const { error: productError } = await supabase
-    .from("products")
-    .update({
-      category_id: parsed.categoryId,
-      name: parsed.name,
-      slug: parsed.slug,
-      brand: parsed.brand,
-      short_description: parsed.shortDescription,
-      spec_sheet_url: parsed.specSheetUrl,
-      technical_specs: parsed.technicalSpecs,
-      images: parsed.images,
-      active: parsed.active,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
-
-  if (productError) {
-    return { error: describeDbError("No se pudo actualizar el producto", productError) };
+  const { data: categories, error: categoriesError } = await supabase
+    .from("categories")
+    .select("id, name, slug");
+  if (categoriesError) return { error: describeDbError("No se pudieron validar las categorías", categoriesError) };
+  if (!resolveCategory(categories ?? [], parsed.categoryId)) {
+    return { error: "La categoría seleccionada ya no existe. Recarga la página." };
   }
 
-  // Reemplaza todas las variantes en vez de calcular un diff (agregar,
-  // quitar, actualizar una por una): más simple y siempre queda
-  // consistente con lo que el formulario muestra. Si algún carrito
-  // guardado apuntaba a una variante que ya no existe, CartProvider ya la
-  // descarta solo al recargar (mismo comportamiento que un producto
-  // eliminado) — no es un caso nuevo que este admin tenga que resolver.
-  const { error: deleteError } = await supabase
-    .from("product_variants")
-    .delete()
-    .eq("product_id", id);
-  if (deleteError) {
-    return { error: describeDbError("No se pudieron actualizar las presentaciones", deleteError) };
+  const skus = parsed.variants.map((variant) => variant.sku);
+  const taken = await findTakenSkus(supabase, skus);
+  const duplicate = skus.find((sku) => taken.get(sku) && taken.get(sku) !== id);
+  if (duplicate) {
+    return { error: `Ya existe una variante con el código (SKU) "${duplicate}" en otro producto.` };
   }
 
-  const { error: insertError } = await supabase.from("product_variants").insert(
-    parsed.variants.map((variant, index) => ({
-      product_id: id,
-      sku: variant.sku,
-      label: variant.label,
-      price: variant.price,
-      compare_at_price: variant.compareAtPrice,
-      stock: variant.stock,
-      position: index,
-    }))
-  );
+  const input: ProductWriteInput = {
+    categoryId: parsed.categoryId,
+    name: parsed.name,
+    slug: parsed.slug,
+    brand: parsed.brand,
+    shortDescription: parsed.shortDescription,
+    specSheetUrl: parsed.specSheetUrl,
+    technicalSpecs: parsed.technicalSpecs,
+    images: parsed.images,
+    active: parsed.active,
+    variants: parsed.variants.map(({ sku, label, price, compareAtPrice, stock }) => ({
+      sku,
+      label,
+      price,
+      compareAtPrice,
+      stock,
+    })),
+  };
 
-  if (insertError) {
-    return { error: describeDbError("No se pudieron guardar las presentaciones", insertError) };
-  }
+  const result = await updateProductRecord(supabase, id, input);
+  if (result.error) return { error: result.error };
 
   revalidatePath("/admin/productos");
   redirect("/admin/productos");
