@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 // app/layout.tsx. CartView es "use client" (necesita useCart y
 // useSearchParams, de ahí el <Suspense>), por eso vive aparte: este
 // page.tsx se queda como Server Component y conserva su metadata
-// estática, igual que /cuenta con NotifyForm.
+// estática, igual que /cuenta con AuthTabs/ProfileView.
 export default function CarritoPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">

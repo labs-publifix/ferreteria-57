@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { categories } from "@/lib/navigation/categories";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
 import { SearchIcon, UserIcon, CartIcon, IconLink } from "./header-icons";
 
@@ -27,6 +28,7 @@ const REVEAL_THRESHOLD = 180;
 export function StickyRevealHeader() {
   const router = useRouter();
   const { totalQuantity } = useCart();
+  const { user } = useAuth();
   const [visible, setVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const lastScrollY = useRef(0);
@@ -120,7 +122,12 @@ export function StickyRevealHeader() {
           </form>
 
           <div className="flex items-center gap-2">
-            <IconLink href="/cuenta" label="Cuenta" tabIndex={visible ? 0 : -1}>
+            <IconLink
+              href="/cuenta"
+              label="Cuenta"
+              signedIn={!!user}
+              tabIndex={visible ? 0 : -1}
+            >
               <UserIcon />
             </IconLink>
             <IconLink

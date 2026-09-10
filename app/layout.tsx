@@ -3,6 +3,7 @@ import { Inter, Russo_One } from "next/font/google";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { ToastProvider } from "@/components/ui";
 import "./globals.css";
@@ -65,14 +66,18 @@ export default function RootLayout({
       <body>
         {/* ToastProvider por fuera de CartProvider: el carrito dispara el
             toast de confirmación (useToast) al agregar un producto, así
-            que necesita que el provider de toasts ya exista por encima. */}
+            que necesita que el provider de toasts ya exista por encima.
+            AuthProvider por fuera de ambos: Header lee el estado de sesión
+            para el ícono de cuenta, sin depender de carrito ni toasts. */}
         <ToastProvider>
-          <CartProvider>
-            <Header />
-            {children}
-            <Footer />
-            <WhatsAppButton />
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Header />
+              {children}
+              <Footer />
+              <WhatsAppButton />
+            </CartProvider>
+          </AuthProvider>
         </ToastProvider>
       </body>
     </html>
