@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
-import { categories } from "@/lib/navigation/categories";
+import { getActiveCategories } from "@/lib/navigation/categories";
 import { getProductBySlug, getRelatedProducts } from "@/lib/catalog/queries";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
@@ -28,14 +29,18 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
   const product = await getProductBySlug(params.slug);
   if (!product) notFound();
 
+  const categories = await getActiveCategories();
   const category = categories.find((item) => item.slug === product.categoryId);
   const relatedProducts = await getRelatedProducts(product.categoryId, product.id);
   const firstVariant = product.variants[0];
   const inStock = (firstVariant?.stock ?? 0) > 0;
 
   // JSON-LD Product: dangerouslySetInnerHTML es el patrón recomendado por
-  // Next.js para esto — seguro aquí porque el contenido sale de
-  // mockProducts (datos propios del proyecto), nunca de input de usuario.
+  // Next.js para esto. JSON.stringify ya escapa comillas/backslashes —
+  // el contenido ahora lo captura un admin real (antes salía de
+  // mockProducts, dato propio del proyecto), pero sigue siendo texto
+  // dentro de un <script type="application/ld+json">, no HTML/JS
+  // ejecutable, así que no hay inyección posible por esta vía.
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -114,6 +119,17 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
               </div>
             ))}
           </dl>
+        )}
+        {product.specSheetUrl && (
+          <a
+            href={product.specSheetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex items-center gap-1.5 font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
+          >
+            Ver ficha técnica completa en Truper
+            <ArrowUpRight className="size-4" aria-hidden="true" strokeWidth={2} />
+          </a>
         )}
       </section>
 

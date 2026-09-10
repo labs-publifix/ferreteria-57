@@ -1,6 +1,50 @@
 import { Badge, Button, PriceTag, RatingStars } from "@/components/ui";
 import { ProductCard } from "@/components/product/ProductCard";
-import { mockProducts } from "@/lib/mock-data/products";
+import type { Product } from "@/types/catalog";
+
+// Fijos aquí mismo (nunca desde Supabase): esta página es un preview
+// estático del kit de componentes, no una pantalla real — no debe
+// depender de que haya productos reales cargados para poder verificar
+// visualmente ProductCard.
+const previewProducts: Product[] = [
+  {
+    id: "preview-martillo",
+    slug: "preview-martillo",
+    name: "Martillo Truper 16 oz",
+    brand: "Truper",
+    categoryId: "herramienta",
+    shortDescription: "Martillo de uña con mango de fibra de vidrio.",
+    technicalSpecs: [],
+    images: [],
+    variants: [{ id: "v1", sku: "PREV-1", label: "Único", price: 299, stock: 24 }],
+    rating: 4.3,
+  },
+  {
+    id: "preview-taladro",
+    slug: "preview-taladro",
+    name: "Taladro/destornillador 1/2 pulgada, 20V, Truper",
+    brand: "Truper",
+    categoryId: "herramienta",
+    shortDescription: "Taladro inalámbrico con mandril de 1/2 pulgada.",
+    technicalSpecs: [],
+    images: [],
+    variants: [
+      { id: "v2", sku: "PREV-2", label: "1 batería 2Ah", price: 1299, compareAtPrice: 1799, stock: 7 },
+    ],
+    rating: 4.7,
+  },
+  {
+    id: "preview-candado",
+    slug: "preview-candado",
+    name: "Candado de seguridad 50mm con llave, Truper",
+    brand: "Truper",
+    categoryId: "cerrajeria",
+    shortDescription: "Candado de seguridad con llave, cuerpo de acero.",
+    technicalSpecs: [],
+    images: [],
+    variants: [{ id: "v3", sku: "PREV-3", label: "Único", price: 129, stock: 0 }],
+  },
+];
 
 // Página de solo desarrollo: no es una pantalla real del e-commerce.
 // Muestra todas las variantes del kit atómico juntas para verificarlas
@@ -91,7 +135,7 @@ export default function DevUiPage() {
           se convierte en una fila normal que ya no necesita scroll.
         */}
         <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
-          {mockProducts.map((product) => (
+          {previewProducts.map((product) => (
             <div
               key={product.id}
               className="flex w-64 shrink-0 snap-start sm:w-auto sm:shrink"

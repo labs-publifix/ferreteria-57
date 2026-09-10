@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { categories } from "@/lib/navigation/categories";
+import type { Category } from "@/lib/navigation/categories";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
 import {
@@ -32,7 +32,7 @@ function CloseIcon() {
   );
 }
 
-export function Header() {
+export function Header({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const { totalQuantity } = useCart();
   const { user } = useAuth();

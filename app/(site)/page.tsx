@@ -9,18 +9,23 @@ import { Testimonials } from "@/components/home/Testimonials";
 import { TrustBar } from "@/components/home/TrustBar";
 import { VisitUs } from "@/components/home/VisitUs";
 import { StickyRevealHeader } from "@/components/layout/StickyRevealHeader";
+import { getActiveCategories } from "@/lib/navigation/categories";
 
 // Home real del e-commerce. Header y Footer no se repiten aquí: ya envuelven
 // esta página desde app/layout.tsx (layout global). Mobile-first: cada
 // sección se pensó primero para ~375-425px y se expande con sm:/md:/lg:.
-export default function HomePage() {
+export default async function HomePage() {
+  // Una sola consulta para las dos secciones que necesitan categorías
+  // (StickyRevealHeader y CategoryGrid) — evita pedirlas dos veces.
+  const categories = await getActiveCategories();
+
   return (
     <main className="pb-14 sm:pb-20">
       {/* Solo en Home (por eso se monta aquí y no en el layout global) y
           solo desktop: barra condensada que aparece al hacer scroll hacia
           arriba, para no perder acceso rápido a búsqueda y categorías sin
           volver hasta el tope de la página (ver ese archivo). */}
-      <StickyRevealHeader />
+      <StickyRevealHeader categories={categories} />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* Riel de tarjetas de promoción: reemplaza el carrusel de portada
@@ -43,7 +48,7 @@ export default function HomePage() {
           >
             Categorías
           </h2>
-          <CategoryGrid />
+          <CategoryGrid categories={categories} />
         </section>
 
         <section className="mt-14 sm:mt-20" aria-labelledby="destacados-heading">

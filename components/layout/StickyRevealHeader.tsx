@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
-import { categories } from "@/lib/navigation/categories";
+import type { Category } from "@/lib/navigation/categories";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
 import { SearchIcon, UserIcon, CartIcon, IconLink } from "./header-icons";
@@ -25,7 +25,7 @@ const REVEAL_THRESHOLD = 180;
 // dando acceso rápido a búsqueda y categorías sin tener que volver al tope
 // de la página. Vuelve a ocultarse si el scroll continúa hacia abajo o si
 // se llega de nuevo cerca del tope (ahí ya se ve el Header real).
-export function StickyRevealHeader() {
+export function StickyRevealHeader({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const { totalQuantity } = useCart();
   const { user } = useAuth();

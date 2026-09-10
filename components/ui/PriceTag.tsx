@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/formatPrice";
 import { Badge } from "./Badge";
 
 export interface PriceTagProps {
@@ -16,11 +17,6 @@ export interface PriceTagProps {
   hideBadge?: boolean;
 }
 
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
-
 // El naranja marca "precios activos" (con descuento) mediante un badge
 // inline reutilizando <Badge>, nunca coloreando el texto del precio: el
 // naranja como color de TEXTO da ~2.6-2.9:1 de contraste sobre blanco o
@@ -36,10 +32,8 @@ export function PriceTag({
     ? Math.round(((previousPrice - price) / previousPrice) * 100)
     : null;
 
-  const currentFormatted = currencyFormatter.format(price);
-  const previousFormatted = hasDiscount
-    ? currencyFormatter.format(previousPrice)
-    : null;
+  const currentFormatted = formatPrice(price);
+  const previousFormatted = hasDiscount ? formatPrice(previousPrice) : null;
 
   const accessibleLabel = hasDiscount
     ? `Precio actual: ${currentFormatted}. Antes: ${previousFormatted}. Ahorras ${discountPercent}%.`

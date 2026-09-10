@@ -4,8 +4,10 @@ import { Header } from "@/components/layout/Header";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
+import { ProductCatalogProvider } from "@/components/cart/ProductCatalogProvider";
 import { ToastProvider } from "@/components/ui";
 import { inter, russoOne } from "@/lib/fonts";
+import { getActiveCategories } from "@/lib/navigation/categories";
 import "../globals.css";
 
 const title =
@@ -40,11 +42,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Categorías activas del catálogo real, resueltas una sola vez aquí y
+  // pasadas como prop a Header (Client Component: no puede hacer su
+  // propio await) — mismo dato que necesita el mega-menú y el menú móvil.
+  const categories = await getActiveCategories();
+
   return (
     <html lang="es" className={`${inter.variable} ${russoOne.variable}`}>
       <body>
@@ -52,15 +59,20 @@ export default function RootLayout({
             toast de confirmación (useToast) al agregar un producto, así
             que necesita que el provider de toasts ya exista por encima.
             AuthProvider por fuera de ambos: Header lee el estado de sesión
-            para el ícono de cuenta, sin depender de carrito ni toasts. */}
+            para el ícono de cuenta, sin depender de carrito ni toasts.
+            ProductCatalogProvider por fuera de CartProvider: el carrito
+            necesita resolver producto/variante de forma síncrona (ver ese
+            archivo) contra el catálogo real, no contra datos de prueba. */}
         <ToastProvider>
           <AuthProvider>
-            <CartProvider>
-              <Header />
-              {children}
-              <Footer />
-              <WhatsAppButton />
-            </CartProvider>
+            <ProductCatalogProvider>
+              <CartProvider>
+                <Header categories={categories} />
+                {children}
+                <Footer />
+                <WhatsAppButton />
+              </CartProvider>
+            </ProductCatalogProvider>
           </AuthProvider>
         </ToastProvider>
       </body>
