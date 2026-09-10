@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, PasswordInput } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/authErrors";
 
@@ -156,10 +156,9 @@ function LoginForm() {
         value={email}
         onChange={setEmail}
       />
-      <FormField
+      <PasswordInput
         id={passwordId}
         label="Contraseña"
-        type="password"
         autoComplete="current-password"
         value={password}
         onChange={setPassword}
@@ -253,10 +252,9 @@ function SignupForm() {
         value={email}
         onChange={setEmail}
       />
-      <FormField
+      <PasswordInput
         id={passwordId}
         label="Contraseña"
-        type="password"
         autoComplete="new-password"
         minLength={6}
         value={password}

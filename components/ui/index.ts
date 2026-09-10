@@ -14,3 +14,4 @@ export { Select } from "./Select";
 export type { SelectProps, SelectOption } from "./Select";
 export { ProductImagePlaceholder } from "./ProductImagePlaceholder";
 export { ToastProvider, useToast } from "./ToastProvider";
+export { PasswordInput } from "./PasswordInput";
