@@ -63,10 +63,12 @@ create trigger on_auth_user_created
 -- security definer y por lo tanto no pasa por RLS.
 alter table public.profiles enable row level security;
 
+drop policy if exists "Los usuarios ven su propio perfil" on public.profiles;
 create policy "Los usuarios ven su propio perfil"
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Los usuarios editan su propio perfil" on public.profiles;
 create policy "Los usuarios editan su propio perfil"
   on public.profiles for update
   using (auth.uid() = id);
