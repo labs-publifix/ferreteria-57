@@ -75,7 +75,12 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
         className="absolute inset-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
       />
 
-      <div className="relative">
+      {/* pointer-events-none: este wrapper es "position: relative" para
+          anclar el Badge, así que sin esto pintaría por encima del Link
+          estirado de arriba (mismo nivel de stacking, más tarde en el DOM)
+          y se robaría el clic sobre la foto — nada aquí adentro es
+          interactivo, así que dejar pasar el clic al Link es seguro. */}
+      <div className="relative pointer-events-none">
         <ProductThumbnail product={product} className="aspect-square w-full" />
         {hasDiscount && (
           <Badge className="absolute right-2 top-2">
