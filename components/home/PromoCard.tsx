@@ -120,7 +120,7 @@ export function PromoCard({ promo }: { promo: PromoBanner }) {
             {promo.title}
           </h3>
           {promo.subtitle && (
-            <p className="line-clamp-1 font-sans text-sm text-white/90">{promo.subtitle}</p>
+            <p className="line-clamp-2 font-sans text-sm text-white/90">{promo.subtitle}</p>
           )}
         </div>
 
@@ -156,7 +156,7 @@ export function PromoCard({ promo }: { promo: PromoBanner }) {
             {promo.title}
           </h3>
           {promo.subtitle && (
-            <p className={`line-clamp-1 font-sans text-sm ${theme.subtitle}`}>{promo.subtitle}</p>
+            <p className={`line-clamp-2 font-sans text-sm ${theme.subtitle}`}>{promo.subtitle}</p>
           )}
         </div>
 
