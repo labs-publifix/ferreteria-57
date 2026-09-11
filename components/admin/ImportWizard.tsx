@@ -199,7 +199,7 @@ export function ImportWizard() {
           </p>
         )}
 
-        <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+        <div className="min-w-0 overflow-x-auto rounded-lg bg-white shadow-sm">
           <table className="w-full min-w-[880px] text-left font-sans text-sm">
             <thead>
               <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">

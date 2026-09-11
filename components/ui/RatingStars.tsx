@@ -4,18 +4,26 @@ export interface RatingStarsProps {
   className?: string;
 }
 
-const STAR_PATH =
+export const STAR_PATH =
   "M12 2.5l2.9 6.06 6.6.77-4.86 4.6 1.27 6.58L12 17.4l-5.91 3.11 1.27-6.58-4.86-4.6 6.6-.77z";
 
 // Icono de estrella dibujado en SVG (un solo trazo/peso reutilizado para
 // llena y vacía), no glifos Unicode ni emoji, por indicación de la skill
 // Impeccable (craft-floor: "Unicode glyphs or emoji standing in for an
-// icon system" está prohibido).
-function Star({ filled }: { filled: boolean }) {
+// icon system" está prohibido). Exportado (no solo de uso interno): el
+// selector de calificación del formulario de reseñas (StarRatingInput)
+// dibuja la misma forma en vez de mantener un segundo trazo de estrella.
+// Sin tamaño por default: cada quien lo trae en className (RatingStars usa
+// "size-4 sm:size-5"; StarRatingInput, más grande por ser un control con el
+// que se interactúa) — dos clases `size-*` en el mismo elemento compiten
+// por especificidad de origen en la hoja generada, no por su orden dentro
+// del atributo class, así que es más seguro no fijar una acá que confiar
+// en que un tamaño pasado por className la reemplace.
+export function Star({ filled, className = "" }: { filled: boolean; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      className={`size-4 sm:size-5 ${filled ? "text-brand-slate" : "text-brand-slate/30"}`}
+      className={`${filled ? "text-brand-slate" : "text-brand-slate/30"} ${className}`}
       aria-hidden="true"
       fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
@@ -42,7 +50,7 @@ export function RatingStars({ value, className = "" }: RatingStarsProps) {
       aria-label={`Calificación: ${clamped} de 5 estrellas`}
     >
       {Array.from({ length: 5 }, (_, i) => (
-        <Star key={i} filled={i < filledCount} />
+        <Star key={i} filled={i < filledCount} className="size-4 sm:size-5" />
       ))}
     </div>
   );

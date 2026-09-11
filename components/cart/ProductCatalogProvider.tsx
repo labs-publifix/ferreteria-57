@@ -36,10 +36,15 @@ export function ProductCatalogProvider({ children }: { children: React.ReactNode
     async function load() {
       try {
         const supabase = createClient();
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("products")
           .select(PRODUCT_SELECT)
           .eq("active", true);
+        // Se degrada a catálogo vacío de todas formas (ver el catch de
+        // abajo) — esto solo deja rastro en la consola del navegador para
+        // no confundir un error real (p. ej. una migración sin correr)
+        // con "de verdad no hay productos activos".
+        if (error) console.error("[ProductCatalogProvider]", error.message);
         if (cancelled) return;
         const map = new Map<string, Product>();
         for (const row of data ?? []) {

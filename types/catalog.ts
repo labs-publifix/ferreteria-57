@@ -18,6 +18,18 @@ export interface ProductVariant {
   stock: number;
 }
 
+export type ReviewStatus = "pending" | "approved" | "rejected";
+
+export interface Review {
+  id: string;
+  productId: string;
+  authorName: string;
+  rating: number;
+  comment: string;
+  status: ReviewStatus;
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
   slug: string;
