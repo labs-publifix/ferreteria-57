@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { promos } from "@/lib/mock-data/promos";
+import type { PromoBanner } from "@/types/marketing";
 import { PromoCard } from "./PromoCard";
 
 // Riel de tarjetas de promoción (reemplaza el carrusel de portada única):
@@ -10,7 +10,12 @@ import { PromoCard } from "./PromoCard";
 // que en escritorio cambia a grid) — aquí siempre hay más tarjetas de las
 // que caben, así que el scroll con snap sigue siendo el patrón correcto
 // incluso en escritorio, con flechas como atajo para mouse/teclado.
-export function PromoRail() {
+//
+// promos ya viene resuelto (activas + dentro de vigencia + en orden) desde
+// getVisiblePromoBanners() — si llega vacío, el llamador (Home) ni
+// siquiera monta este componente, así que no hace falta un estado vacío
+// propio aquí.
+export function PromoRail({ promos }: { promos: PromoBanner[] }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
