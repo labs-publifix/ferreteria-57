@@ -66,7 +66,7 @@ export function CategoriesTable({ categories }: { categories: CategoryRow[] }) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+      <div className="min-w-0 overflow-x-auto rounded-lg bg-white shadow-sm">
         <table className="w-full min-w-[640px] text-left font-sans text-sm">
           <thead>
             <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
@@ -75,9 +75,13 @@ export function CategoriesTable({ categories }: { categories: CategoryRow[] }) {
               <th className="px-4 py-3">Productos</th>
               <th className="px-4 py-3">Posición</th>
               <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3">
-                <span className="sr-only">Acciones</span>
-              </th>
+              {/* aria-label en el <th> en vez de un span sr-only anidado:
+                  ese span es position:absolute sin inset propio, y su
+                  posición estática cae en la columna real de esta tabla
+                  ancha — dentro de un contenedor con scroll horizontal eso
+                  extendía el scrollWidth del documento completo en móvil
+                  (ver el mismo ajuste en ProductsTable/ReviewsTable). */}
+              <th className="px-4 py-3" aria-label="Acciones" />
             </tr>
           </thead>
           <tbody>

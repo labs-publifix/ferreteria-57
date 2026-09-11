@@ -4,8 +4,10 @@ import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getActiveCategories } from "@/lib/navigation/categories";
 import { getProductBySlug, getRelatedProducts } from "@/lib/catalog/queries";
+import { getApprovedReviews } from "@/lib/reviews/queries";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductGrid } from "@/components/product/ProductGrid";
 
 interface ProductoPageProps {
@@ -32,6 +34,7 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
   const categories = await getActiveCategories();
   const category = categories.find((item) => item.slug === product.categoryId);
   const relatedProducts = await getRelatedProducts(product.categoryId, product.id);
+  const approvedReviews = await getApprovedReviews(product.id);
   const firstVariant = product.variants[0];
   const inStock = (firstVariant?.stock ?? 0) > 0;
 
@@ -132,6 +135,13 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
           </a>
         )}
       </section>
+
+      <ProductReviews
+        productSlug={product.slug}
+        rating={product.rating}
+        reviewCount={product.reviewCount}
+        reviews={approvedReviews}
+      />
 
       {relatedProducts.length > 0 && (
         <section className="mt-14 sm:mt-20" aria-labelledby="relacionados-heading">

@@ -86,7 +86,10 @@ export function Select({ value, onChange, options, label, className = "" }: Sele
         <div
           role="listbox"
           aria-labelledby={labelId}
-          className="absolute right-0 z-10 mt-1 min-w-full overflow-hidden whitespace-nowrap rounded-md border border-brand-slate/15 bg-brand-white py-1 shadow-lg"
+          // max-h + overflow-y-auto: sin esto, una lista larga (p. ej. el
+          // filtro "Producto" de /admin/resenas con decenas de productos)
+          // dibuja un menú más alto que la pantalla en vez de scrollear.
+          className="absolute right-0 z-10 mt-1 max-h-64 min-w-full overflow-y-auto overflow-x-hidden whitespace-nowrap rounded-md border border-brand-slate/15 bg-brand-white py-1 shadow-lg"
         >
           {options.map((option) => {
             const isSelected = option.value === value;

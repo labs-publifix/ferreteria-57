@@ -220,3 +220,52 @@ export async function updateProduct(
   revalidatePath("/admin/productos");
   redirect("/admin/productos");
 }
+
+export interface BulkActivateResult {
+  error?: string;
+  activated?: number;
+  skipped?: number;
+  deactivated?: number;
+}
+
+// Desactivar en lote no tiene condición: cualquier producto puede
+// ocultarse de la tienda sin importar si tiene imagen. Activar en lote
+// respeta la misma regla que ya aplica al activar uno por uno desde el
+// formulario manual (parseProductForm: "Agrega al menos una imagen para
+// poder activar el producto") — los que no tienen se omiten en vez de
+// fallar todo el lote, y el resumen final dice cuántos se omitieron y por
+// qué.
+export async function bulkSetProductsActive(
+  ids: string[],
+  active: boolean
+): Promise<BulkActivateResult> {
+  const supabase = await requireAdmin();
+  if (!supabase) return { error: "No autorizado." };
+  if (ids.length === 0) return { error: "No hay productos seleccionados." };
+
+  if (!active) {
+    const { error } = await supabase.from("products").update({ active: false }).in("id", ids);
+    if (error) return { error: describeDbError("No se pudieron desactivar los productos", error) };
+    revalidatePath("/admin/productos");
+    return { deactivated: ids.length };
+  }
+
+  const { data, error } = await supabase.from("products").select("id, images").in("id", ids);
+  if (error) return { error: describeDbError("No se pudieron validar los productos", error) };
+
+  const eligibleIds = (data ?? [])
+    .filter((product) => (product.images?.length ?? 0) > 0)
+    .map((product) => product.id);
+  const skipped = ids.length - eligibleIds.length;
+
+  if (eligibleIds.length > 0) {
+    const { error: updateError } = await supabase
+      .from("products")
+      .update({ active: true })
+      .in("id", eligibleIds);
+    if (updateError) return { error: describeDbError("No se pudieron activar los productos", updateError) };
+  }
+
+  revalidatePath("/admin/productos");
+  return { activated: eligibleIds.length, skipped };
+}

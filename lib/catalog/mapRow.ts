@@ -4,7 +4,13 @@ import type { Product, ProductVariant, TechnicalSpec } from "@/types/catalog";
 // el cliente de servidor) y ProductCatalogProvider (cliente, vía el
 // cliente de navegador) — misma forma de fila en ambos lados, así
 // mapRowToProduct sirve para los dos sin duplicar el shape.
-export const PRODUCT_SELECT = "*, categories(slug), product_variants(*)";
+//
+// reviews(rating) no necesita un .eq("reviews.status", "approved") a
+// mano: la política RLS de reviews ("select using status = 'approved' or
+// is_admin()") ya se aplica sola a esta relación embebida — quien consulta
+// sin ser admin solo puede ver aquí las reseñas aprobadas, sin importar
+// cuántas pendientes/rechazadas existan de verdad.
+export const PRODUCT_SELECT = "*, categories(slug), product_variants(*), reviews(rating)";
 
 interface ProductVariantRow {
   id: string;
@@ -27,6 +33,7 @@ interface ProductRow {
   spec_sheet_url: string | null;
   categories: { slug: string } | null;
   product_variants: ProductVariantRow[] | null;
+  reviews: { rating: number }[] | null;
 }
 
 // numeric de Postgres llega serializado como string vía PostgREST (evita
@@ -40,6 +47,16 @@ function mapVariant(row: ProductVariantRow): ProductVariant {
     compareAtPrice: row.compare_at_price != null ? Number(row.compare_at_price) : undefined,
     stock: row.stock,
   };
+}
+
+// undefined (no 0) cuando no hay reseñas aprobadas: ProductCard y
+// ProductPurchasePanel ya ocultan la sección de estrellas con
+// `typeof product.rating === "number"` — un producto sin reseñas nunca
+// debe verse como si tuviera una calificación de 0.
+function computeRating(reviews: { rating: number }[]): { rating?: number; reviewCount?: number } {
+  if (reviews.length === 0) return {};
+  const sum = reviews.reduce((total, review) => total + review.rating, 0);
+  return { rating: sum / reviews.length, reviewCount: reviews.length };
 }
 
 export function mapRowToProduct(row: ProductRow): Product {
@@ -61,5 +78,6 @@ export function mapRowToProduct(row: ProductRow): Product {
       .slice()
       .sort((a, b) => a.position - b.position)
       .map(mapVariant),
+    ...computeRating(row.reviews ?? []),
   };
 }
