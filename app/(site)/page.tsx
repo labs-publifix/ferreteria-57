@@ -9,6 +9,7 @@ import { Testimonials } from "@/components/home/Testimonials";
 import { TrustBar } from "@/components/home/TrustBar";
 import { VisitUs } from "@/components/home/VisitUs";
 import { StickyRevealHeader } from "@/components/layout/StickyRevealHeader";
+import { getVisiblePromoBanners } from "@/lib/marketing/queries";
 import { getActiveCategories } from "@/lib/navigation/categories";
 
 // Home real del e-commerce. Header y Footer no se repiten aquí: ya envuelven
@@ -18,6 +19,7 @@ export default async function HomePage() {
   // Una sola consulta para las dos secciones que necesitan categorías
   // (StickyRevealHeader y CategoryGrid) — evita pedirlas dos veces.
   const categories = await getActiveCategories();
+  const promoBanners = await getVisiblePromoBanners();
 
   return (
     <main className="pb-14 sm:pb-20">
@@ -32,10 +34,14 @@ export default async function HomePage() {
             única. A diferencia de aquel (una sola imagen a pantalla
             completa), esto es un grupo de tarjetas más pequeñas — encaja
             mejor dentro del contenedor con max-width, como el resto de
-            las secciones, que full-bleed. */}
-        <section className="mt-6 sm:mt-8">
-          <PromoRail />
-        </section>
+            las secciones, que full-bleed. Sin ninguna tarjeta vigente, la
+            sección entera desaparece — nunca un hueco vacío donde antes
+            había contenido. */}
+        {promoBanners.length > 0 && (
+          <section className="mt-6 sm:mt-8">
+            <PromoRail promos={promoBanners} />
+          </section>
+        )}
 
         <section className="mt-10 sm:mt-14" aria-label="Por qué comprar con nosotros">
           <TrustBar />

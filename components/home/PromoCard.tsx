@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Promo, PromoColorTheme } from "@/lib/mock-data/promos";
+import type { PromoBanner, PromoColorTheme } from "@/types/marketing";
 
 // Contraste verificado por tema: naranja como fondo es el único de los 4
 // con poco margen (negro-suave sobre naranja da 5.93:1, justo arriba del
@@ -60,7 +60,7 @@ function DiagonalAccent({ className }: { className: string }) {
   );
 }
 
-export function PromoCard({ promo }: { promo: Promo }) {
+export function PromoCard({ promo }: { promo: PromoBanner }) {
   const theme = THEME_STYLES[promo.colorTheme];
 
   return (
@@ -70,7 +70,7 @@ export function PromoCard({ promo }: { promo: Promo }) {
     // print se posicionan absolute contra este mismo contenedor.
     <Link
       href={promo.href}
-      aria-label={`${promo.title} — ${promo.subtitle}`}
+      aria-label={promo.subtitle ? `${promo.title} — ${promo.subtitle}` : promo.title}
       className="group relative block aspect-[3/4] w-52 shrink-0 snap-start rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2 sm:w-56 lg:w-64"
     >
       {/* Fondo + texto: esta capa SÍ se recorta a las esquinas
@@ -88,9 +88,9 @@ export function PromoCard({ promo }: { promo: Promo }) {
           <h3 className={`line-clamp-2 font-display text-lg uppercase leading-tight sm:text-xl ${theme.title}`}>
             {promo.title}
           </h3>
-          <p className={`line-clamp-1 font-sans text-sm ${theme.subtitle}`}>
-            {promo.subtitle}
-          </p>
+          {promo.subtitle && (
+            <p className={`line-clamp-1 font-sans text-sm ${theme.subtitle}`}>{promo.subtitle}</p>
+          )}
         </div>
 
         <div className="relative">
@@ -113,11 +113,13 @@ export function PromoCard({ promo }: { promo: Promo }) {
         </div>
       )}
 
-      <p
-        className={`absolute inset-x-5 bottom-3 line-clamp-1 font-sans text-[11px] drop-shadow-sm ${theme.fineprint}`}
-      >
-        {promo.fineprint}
-      </p>
+      {promo.fineprint && (
+        <p
+          className={`absolute inset-x-5 bottom-3 line-clamp-1 font-sans text-[11px] drop-shadow-sm ${theme.fineprint}`}
+        >
+          {promo.fineprint}
+        </p>
+      )}
     </Link>
   );
 }

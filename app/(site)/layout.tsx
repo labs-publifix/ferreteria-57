@@ -7,6 +7,7 @@ import { CartProvider } from "@/components/cart/CartProvider";
 import { ProductCatalogProvider } from "@/components/cart/ProductCatalogProvider";
 import { ToastProvider } from "@/components/ui";
 import { inter, russoOne } from "@/lib/fonts";
+import { getVisibleTopBanner } from "@/lib/marketing/queries";
 import { getActiveCategories } from "@/lib/navigation/categories";
 import "../globals.css";
 
@@ -51,6 +52,7 @@ export default async function RootLayout({
   // pasadas como prop a Header (Client Component: no puede hacer su
   // propio await) — mismo dato que necesita el mega-menú y el menú móvil.
   const categories = await getActiveCategories();
+  const topBanner = await getVisibleTopBanner();
 
   return (
     <html lang="es" className={`${inter.variable} ${russoOne.variable}`}>
@@ -67,7 +69,7 @@ export default async function RootLayout({
           <AuthProvider>
             <ProductCatalogProvider>
               <CartProvider>
-                <Header categories={categories} />
+                <Header categories={categories} topBanner={topBanner} />
                 {children}
                 <Footer />
                 <WhatsAppButton />

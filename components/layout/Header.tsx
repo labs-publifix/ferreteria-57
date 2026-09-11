@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import type { Category } from "@/lib/navigation/categories";
+import type { TopBannerConfig } from "@/types/marketing";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
+import { AnnouncementBar } from "./AnnouncementBar";
 import { CategoryNavRail } from "./CategoryNavRail";
 import {
   ICON_PROPS,
@@ -33,7 +35,13 @@ function CloseIcon() {
   );
 }
 
-export function Header({ categories }: { categories: Category[] }) {
+export function Header({
+  categories,
+  topBanner,
+}: {
+  categories: Category[];
+  topBanner: TopBannerConfig | null;
+}) {
   const router = useRouter();
   const { totalQuantity } = useCart();
   const { user } = useAuth();
@@ -66,13 +74,7 @@ export function Header({ categories }: { categories: Category[] }) {
 
   return (
     <header className="bg-brand-white">
-      {/* Announcement bar */}
-      <div className="bg-brand-slate px-4 py-1.5 text-center font-sans text-xs leading-snug text-white sm:text-sm">
-        Envío gratis en compras mayores a $950 MXN — Atención a clientes:{" "}
-        <a href="tel:+524427782708" className="underline underline-offset-2">
-          442 778 2708
-        </a>
-      </div>
+      <AnnouncementBar config={topBanner} />
 
       {/* Header principal */}
       <div className="border-b border-brand-slate/10 px-4 py-3 sm:px-6 lg:px-8">
