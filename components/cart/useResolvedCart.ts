@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { getProductById } from "@/lib/mock-data/products";
+import { useProductCatalog } from "@/components/cart/ProductCatalogProvider";
 import { useCart } from "./CartProvider";
 import type { Product, ProductVariant } from "@/types/catalog";
 
@@ -18,6 +18,7 @@ export interface ResolvedCartLine {
 // un producto real" (ver CartProvider).
 export function useResolvedCart() {
   const { lines, ...rest } = useCart();
+  const { getProductById } = useProductCatalog();
 
   const items = useMemo<ResolvedCartLine[]>(() => {
     return lines.reduce<ResolvedCartLine[]>((acc, line) => {
@@ -28,7 +29,10 @@ export function useResolvedCart() {
       }
       return acc;
     }, []);
-  }, [lines]);
+    // getProductById cambia de referencia cada vez que carga el catálogo
+    // (una sola vez); agregarlo aquí no aporta nada, solo repetiría el
+    // cálculo sin necesidad.
+  }, [lines]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const subtotal = useMemo(
     () => items.reduce((sum, { variant, quantity }) => sum + variant.price * quantity, 0),

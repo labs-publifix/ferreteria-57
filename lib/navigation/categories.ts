@@ -1,24 +1,36 @@
+import { createClient } from "@/lib/supabase/server";
+
 export interface Category {
+  id: string;
   /** Coincide con el segmento final de `href` y con `Product.categoryId`
-   *  en /lib/mock-data/products.ts — es la llave que usa /categoria/[slug]
-   *  y la búsqueda para resolver una categoría, en vez de parsear `href`. */
+   *  en el catálogo real — es la llave que usa /categoria/[slug] y la
+   *  búsqueda para resolver una categoría, en vez de parsear `href`. */
   slug: string;
   label: string;
   href: string;
+  /** Nombre del ícono de lucide-react (ver lib/category-icons.ts). */
+  icon: string;
 }
 
-// Orden exacto pedido por el cliente. Agregar una categoría nueva es
-// agregar un objeto aquí — el Header y el menú móvil solo iteran este
-// arreglo, nunca hay que tocarlos.
-export const categories: Category[] = [
-  { slug: "iluminacion", label: "Iluminación", href: "/categoria/iluminacion" },
-  { slug: "electrico", label: "Eléctrico", href: "/categoria/electrico" },
-  { slug: "herramienta", label: "Herramienta", href: "/categoria/herramienta" },
-  { slug: "jardineria", label: "Jardinería", href: "/categoria/jardineria" },
-  { slug: "seguridad", label: "Seguridad", href: "/categoria/seguridad" },
-  { slug: "mecanica", label: "Mecánica", href: "/categoria/mecanica" },
-  { slug: "pintura", label: "Pintura", href: "/categoria/pintura" },
-  { slug: "cerrajeria", label: "Cerrajería", href: "/categoria/cerrajeria" },
-  { slug: "herreria", label: "Herrería", href: "/categoria/herreria" },
-  { slug: "plomeria", label: "Plomería", href: "/categoria/plomeria" },
-];
+// Antes un arreglo estático; ahora lee la tabla real de Supabase — el
+// Header y el Home (que la consumen como prop, ver app/(site)/layout.tsx
+// y app/(site)/page.tsx) no cambiaron de forma, solo de dónde sale el
+// dato. Solo categorías activas y en el orden que definió el admin
+// (position); las inactivas no deben aparecer en el mega-menú ni en el
+// grid de categorías del Home.
+export async function getActiveCategories(): Promise<Category[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("categories")
+    .select("id, slug, name, icon")
+    .eq("active", true)
+    .order("position", { ascending: true });
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    label: row.name,
+    href: `/categoria/${row.slug}`,
+    icon: row.icon,
+  }));
+}

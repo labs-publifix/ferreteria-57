@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
-import { getProductById } from "@/lib/mock-data/products";
+import { useProductCatalog } from "@/components/cart/ProductCatalogProvider";
 import { useToast } from "@/components/ui";
 
 export interface CartLine {
@@ -95,33 +95,36 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-// Carrito 100% client-side por ahora (sin backend). Las líneas SOLO
-// guardan productId/variantId/cantidad — nunca precio/nombre/imagen
-// duplicados, esos se resuelven desde lib/mock-data/products.ts al
-// momento de mostrarse (ver CartView/CartLineItem/ProductCard). Es
-// exactamente la forma que necesitaría una tabla `cart_items` real
-// (user_id, product_id, variant_id, quantity): el día que conectemos
-// Supabase, lo único que cambia es CÓMO se persiste (estos dos useEffect
-// de localStorage se reemplazan por lecturas/escrituras a la API) y CÓMO
-// se resuelve un producto por id (getProductById pasaría de síncrono a
-// async) — el reducer, el Context y los componentes que llaman
-// useCart() no cambian.
+// Carrito 100% client-side (sin tabla propia): las líneas SOLO guardan
+// productId/variantId/cantidad — nunca precio/nombre/imagen duplicados,
+// esos se resuelven en el momento desde el catálogo real vía
+// ProductCatalogProvider (ver ese archivo) al mostrarse (CartView/
+// CartLineItem/ProductCard). Es exactamente la forma que necesitaría una
+// tabla `cart_items` real (user_id, product_id, variant_id, quantity): el
+// día que el carrito mismo se persista en Supabase, lo único que cambia
+// es CÓMO se guardan estas líneas (los dos useEffect de localStorage) —
+// el reducer, el Context y los componentes que llaman useCart() no
+// cambian.
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { lines: [] });
   const { showToast } = useToast();
+  const { isLoaded: catalogLoaded, getProductById } = useProductCatalog();
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Cargar de localStorage una sola vez, después del primer render (nunca
-  // durante SSR, que no tiene localStorage) — evita un error de
-  // hidratación por mostrar algo distinto entre servidor y cliente.
+  // Espera a que el catálogo real esté listo (no solo a que exista
+  // localStorage): podar líneas contra un catálogo vacío-porque-todavía-
+  // no-carga tiraría carritos válidos. Nunca durante SSR (no hay
+  // localStorage ahí) — evita un error de hidratación por mostrar algo
+  // distinto entre servidor y cliente.
   useEffect(() => {
+    if (!catalogLoaded) return;
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as { lines?: CartLine[] };
         // Descarta líneas que ya no resuelven a un producto/variante real
-        // (el mock cambió entre sesiones) en vez de romper la UI con un
-        // producto fantasma.
+        // (se borró, se desactivó, cambiaron sus variantes) en vez de
+        // romper la UI con un producto fantasma.
         const validLines = (parsed.lines ?? []).filter((line) =>
           getProductById(line.productId)?.variants.some((variant) => variant.id === line.variantId)
         );
@@ -133,7 +136,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsHydrated(true);
     }
-  }, []);
+    // getProductById solo cambia de referencia cuando el catálogo termina
+    // de cargar, que es justo lo que catalogLoaded ya representa; no hace
+    // falta que este efecto vuelva a correr por eso.
+  }, [catalogLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Persistir cada cambio, pero solo después de la carga inicial — si no,
   // el primer render (carrito vacío, antes de leer localStorage)

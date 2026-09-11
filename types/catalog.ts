@@ -23,26 +23,23 @@ export interface Product {
   slug: string;
   name: string;
   brand: string;
+  /** Slug de la categoría (no su uuid) — así /categoria/[slug] y el
+   *  breadcrumb de /producto/[slug] siguen resolviendo la categoría con
+   *  `categories.find(c => c.slug === product.categoryId)`, igual que
+   *  cuando esto era el arreglo estático de mock-data. */
   categoryId: string;
   shortDescription: string;
   technicalSpecs: TechnicalSpec[];
   /**
-   * Todavía no hay fotografía real de producto: un arreglo vacío es válido
-   * y esperado. ProductCard cae a un marcador de posición cuando está vacío,
-   * en vez de romper el layout o inventar una URL de imagen externa.
+   * Arreglo vacío es válido y esperado (todavía sin fotografía subida).
+   * ProductCard cae a un marcador de posición cuando está vacío, en vez de
+   * romper el layout o inventar una URL de imagen externa.
    */
   images: string[];
+  /** Ficha técnica completa del fabricante (Truper u otra marca hermana),
+   *  opcional — botón "Ver ficha técnica completa" en /producto/[slug]. */
+  specSheetUrl?: string;
   variants: ProductVariant[];
   rating?: number;
   reviewCount?: number;
-}
-
-// parentId permite jerarquía (subcategorías) sin cambiar la forma del tipo:
-// una categoría raíz tiene parentId null.
-export interface Category {
-  id: string;
-  slug: string;
-  name: string;
-  parentId: string | null;
-  imageUrl?: string;
 }

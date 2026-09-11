@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { categories } from "@/lib/navigation/categories";
+import { getActiveCategories } from "@/lib/navigation/categories";
 import { getCategoryProducts } from "@/lib/catalog/queries";
 import { CategoryProductBrowser } from "@/components/category/CategoryProductBrowser";
 
@@ -9,7 +9,10 @@ interface CategoriaPageProps {
   params: { slug: string };
 }
 
-export function generateMetadata({ params }: CategoriaPageProps): Metadata {
+// Async porque getActiveCategories ya consulta Supabase (antes leía el
+// arreglo estático de forma síncrona).
+export async function generateMetadata({ params }: CategoriaPageProps): Promise<Metadata> {
+  const categories = await getActiveCategories();
   const category = categories.find((item) => item.slug === params.slug);
   if (!category) return {};
   return {
@@ -19,10 +22,11 @@ export function generateMetadata({ params }: CategoriaPageProps): Metadata {
 }
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
-// app/layout.tsx. getCategoryProducts (lib/catalog/queries.ts) ya está
-// pensada como si fuera una consulta real (async, misma firma) para que
-// conectar Supabase más adelante solo cambie su cuerpo, no esta página.
+// app/layout.tsx. Una categoría inactiva ya no aparece en
+// getActiveCategories(), así que su página cae directo a notFound() —
+// mismo resultado que si nunca hubiera existido.
 export default async function CategoriaPage({ params }: CategoriaPageProps) {
+  const categories = await getActiveCategories();
   const category = categories.find((item) => item.slug === params.slug);
   if (!category) notFound();
 

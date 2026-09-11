@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { categories } from "@/lib/navigation/categories";
+import type { Category } from "@/lib/navigation/categories";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
+import { CategoryNavRail } from "./CategoryNavRail";
 import {
   ICON_PROPS,
   SearchIcon,
@@ -32,7 +33,7 @@ function CloseIcon() {
   );
 }
 
-export function Header() {
+export function Header({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const { totalQuantity } = useCart();
   const { user } = useAuth();
@@ -177,39 +178,31 @@ export function Header() {
         )}
       </div>
 
-      {/* Mega-menú: fila horizontal desde md, oculto en móvil */}
+      {/* Mega-menú: riel horizontal desde md, oculto en móvil. El riel se
+          encarga de las categorías; el Programa de Lealtad queda fuera de la
+          zona con scroll (siempre visible, no depende de hasta dónde se haya
+          desplazado el riel). */}
       <nav
         aria-label="Navegación principal"
         className="hidden border-b border-brand-slate/10 bg-brand-white md:block"
       >
-        <ul className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2.5 sm:px-6 lg:px-8">
-          {categories.map((category) => (
-            <li key={category.href}>
-              <Link
-                href={category.href}
-                className="font-sans text-sm font-medium text-brand-slate hover:text-brand-black hover:underline underline-offset-4"
-              >
-                {category.label}
-              </Link>
-            </li>
-          ))}
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2.5 sm:px-6 lg:px-8">
+          <CategoryNavRail categories={categories} />
           {/*
             Programa de Lealtad no es una categoría de producto: se separa
-            del resto con ml-auto (queda al otro extremo de la fila) y con
-            una píldora de fondo naranja (como Badge), no texto naranja sobre
-            blanco — ese combo da ~2.94:1 de contraste, por debajo del
-            mínimo, el mismo hallazgo que ya vimos con el botón primario.
+            del resto con una píldora de fondo naranja (como Badge), no
+            texto naranja sobre blanco — ese combo da ~2.94:1 de contraste,
+            por debajo del mínimo, el mismo hallazgo que ya vimos con el
+            botón primario.
           */}
-          <li className="ml-auto">
-            <Link
-              href="/cuenta"
-              className="flex items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 font-sans text-sm font-semibold text-brand-black transition-colors hover:bg-[#E65C00]"
-            >
-              <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
-              Programa de Lealtad
-            </Link>
-          </li>
-        </ul>
+          <Link
+            href="/cuenta"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 font-sans text-sm font-semibold text-brand-black transition-colors hover:bg-[#E65C00]"
+          >
+            <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            Programa de Lealtad
+          </Link>
+        </div>
       </nav>
 
       {/* Menú móvil: overlay fijo, categorías apiladas — no depende de que
