@@ -15,16 +15,39 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "precio-desc", label: "Precio: mayor a menor" },
 ];
 
-// Recibe los productos YA filtrados por categoría (desde el Server
-// Component de la página): este componente solo aplica precio/stock/orden
-// en memoria sobre ese arreglo, sin volver a tocar la fuente de datos.
+// Recibe los productos YA filtrados por categoría o por término de búsqueda
+// (desde el Server Component de /categoria/[slug] o /buscar): este
+// componente solo aplica precio/stock/marca/orden en memoria sobre ese
+// arreglo, sin volver a tocar la fuente de datos.
 export function CategoryProductBrowser({ products }: { products: Product[] }) {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [sort, setSort] = useState<SortOption>("relevancia");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const drawerId = useId();
+
+  // Del set COMPLETO de productos de este contexto (categoría o búsqueda),
+  // no del ya acotado por otros filtros — así la lista de casillas no se va
+  // vaciando a medida que el visitante acota por precio/stock, mismo
+  // criterio que un filtro de marca de e-commerce estándar. Orden alfabético
+  // con locale es-MX (no el de inserción ni el fijo de detectBrandFromName)
+  // porque acá pueden aparecer marcas no reconocidas si algún producto
+  // quedó con texto libre en Marca.
+  const availableBrands = useMemo(() => {
+    const brands = new Set<string>();
+    for (const product of products) {
+      if (product.brand.trim()) brands.add(product.brand);
+    }
+    return [...brands].sort((a, b) => a.localeCompare(b, "es"));
+  }, [products]);
+
+  function toggleBrand(brand: string) {
+    setSelectedBrands((current) =>
+      current.includes(brand) ? current.filter((b) => b !== brand) : [...current, brand]
+    );
+  }
 
   // Mismo mecanismo de cierre con Escape que el menú móvil del Header.
   useEffect(() => {
@@ -40,6 +63,7 @@ export function CategoryProductBrowser({ products }: { products: Product[] }) {
     setMinPrice("");
     setMaxPrice("");
     setInStockOnly(false);
+    setSelectedBrands([]);
   }
 
   const visibleProducts = useMemo(() => {
@@ -53,6 +77,7 @@ export function CategoryProductBrowser({ products }: { products: Product[] }) {
       if (min !== null && !Number.isNaN(min) && price < min) return false;
       if (max !== null && !Number.isNaN(max) && price > max) return false;
       if (inStockOnly && stock <= 0) return false;
+      if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) return false;
       return true;
     });
 
@@ -67,9 +92,10 @@ export function CategoryProductBrowser({ products }: { products: Product[] }) {
       );
     }
     return filtered;
-  }, [products, minPrice, maxPrice, inStockOnly, sort]);
+  }, [products, minPrice, maxPrice, inStockOnly, selectedBrands, sort]);
 
-  const filtersActive = minPrice !== "" || maxPrice !== "" || inStockOnly;
+  const filtersActive =
+    minPrice !== "" || maxPrice !== "" || inStockOnly || selectedBrands.length > 0;
 
   const filtersProps = {
     minPrice,
@@ -78,6 +104,9 @@ export function CategoryProductBrowser({ products }: { products: Product[] }) {
     onMaxPriceChange: setMaxPrice,
     inStockOnly,
     onInStockOnlyChange: setInStockOnly,
+    availableBrands,
+    selectedBrands,
+    onToggleBrand: toggleBrand,
     onReset: resetFilters,
   };
 

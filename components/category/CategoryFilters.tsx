@@ -10,6 +10,9 @@ export interface CategoryFiltersProps {
   onMaxPriceChange: (value: string) => void;
   inStockOnly: boolean;
   onInStockOnlyChange: (value: boolean) => void;
+  availableBrands: string[];
+  selectedBrands: string[];
+  onToggleBrand: (brand: string) => void;
   onReset: () => void;
 }
 
@@ -17,10 +20,10 @@ export interface CategoryFiltersProps {
 // de móvil (ver CategoryProductBrowser) — el mismo componente, sin chrome
 // de overlay propio, así que solo vive una vez la lógica de cada control.
 //
-// Hoy son 2 secciones (precio y disponibilidad). El filtro de subcategoría
-// que se agregará más adelante, una vez definida la taxonomía completa de
-// Truper, es una tercera <FilterSection> aquí mismo — no requiere tocar el
-// sidebar/drawer que lo envuelve.
+// Hoy son 3 secciones (precio, disponibilidad y marca). El filtro de
+// subcategoría que se agregará más adelante, una vez definida la taxonomía
+// completa de Truper, es una cuarta <FilterSection> aquí mismo — no
+// requiere tocar el sidebar/drawer que lo envuelve.
 export function CategoryFilters({
   minPrice,
   maxPrice,
@@ -28,6 +31,9 @@ export function CategoryFilters({
   onMaxPriceChange,
   inStockOnly,
   onInStockOnlyChange,
+  availableBrands,
+  selectedBrands,
+  onToggleBrand,
   onReset,
 }: CategoryFiltersProps) {
   const stockCheckboxId = useId();
@@ -81,6 +87,31 @@ export function CategoryFilters({
           Solo en stock
         </label>
       </FilterSection>
+
+      {/* Solo se listan las marcas que de verdad tienen algún producto
+          activo en este contexto (categoría o búsqueda) — nunca las 7 de
+          detectBrandFromName a ciegas, que llenaría esto de casillas sin
+          nada que filtrar. */}
+      {availableBrands.length > 0 && (
+        <FilterSection title="Marca">
+          <div role="group" aria-label="Marca" className="flex flex-col gap-1">
+            {availableBrands.map((brand) => (
+              <label
+                key={brand}
+                className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedBrands.includes(brand)}
+                  onChange={() => onToggleBrand(brand)}
+                  className="size-5 rounded border-brand-slate/40 accent-brand-orange focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+                />
+                {brand}
+              </label>
+            ))}
+          </div>
+        </FilterSection>
+      )}
 
       <button
         type="button"

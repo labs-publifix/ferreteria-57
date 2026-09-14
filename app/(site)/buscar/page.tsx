@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { searchProducts } from "@/lib/catalog/queries";
-import { ProductGrid } from "@/components/product/ProductGrid";
+import { CategoryProductBrowser } from "@/components/category/CategoryProductBrowser";
 
 interface BuscarPageProps {
   searchParams: { q?: string | string[] };
@@ -59,7 +59,7 @@ export default async function BuscarPage({ searchParams }: BuscarPageProps) {
           </Link>
         </div>
       ) : (
-        <ProductGrid products={results} />
+        <CategoryProductBrowser products={results} />
       )}
     </main>
   );
