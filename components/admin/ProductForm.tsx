@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui";
 import { ProductImageUploader } from "@/components/admin/ProductImageUploader";
-import { detectBrandFromName } from "@/lib/catalog/detectBrandFromName";
+import { detectBrandFromName, KNOWN_BRANDS } from "@/lib/catalog/detectBrandFromName";
 import { slugify } from "@/lib/slugify";
 import {
   createProduct,
@@ -265,9 +265,9 @@ export function ProductForm({
               className={inputClass}
             />
             <datalist id={brandListId}>
-              <option value="Truper" />
-              <option value="Pretul" />
-              <option value="Expert" />
+              {KNOWN_BRANDS.map((brand) => (
+                <option key={brand} value={brand} />
+              ))}
             </datalist>
             <p className="mt-1 font-sans text-xs text-brand-slate/70">
               Se sugiere sola a partir del nombre — edítala si hace falta.

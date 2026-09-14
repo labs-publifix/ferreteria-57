@@ -4,6 +4,7 @@ import { Plus, Upload } from "lucide-react";
 import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { ProductsTable, type ProductRow } from "@/components/admin/ProductsTable";
 import { buttonClassName } from "@/components/ui";
+import { hasLowStock, LOW_STOCK_THRESHOLD } from "@/lib/catalog/stockThresholds";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Productos — Panel de administración" };
@@ -14,7 +15,14 @@ export const metadata: Metadata = { title: "Productos — Panel de administraci�
 // interpolado (PostgREST lo soporta, pero es un patrón frágil de escapar
 // bien) y el catálogo de una ferretería no es tan grande como para que
 // esto pese.
-async function getAdminProducts(filters: { q: string; categoria: string; estado: string; sinImagen: boolean }) {
+async function getAdminProducts(filters: {
+  q: string;
+  categoria: string;
+  estado: string;
+  marca: string;
+  sinImagen: boolean;
+  stockBajo: boolean;
+}) {
   const supabase = await createClient();
 
   let query = supabase
@@ -25,6 +33,7 @@ async function getAdminProducts(filters: { q: string; categoria: string; estado:
   if (filters.categoria) query = query.eq("category_id", filters.categoria);
   if (filters.estado === "activo") query = query.eq("active", true);
   if (filters.estado === "inactivo") query = query.eq("active", false);
+  if (filters.marca) query = query.eq("brand", filters.marca);
 
   const { data, error } = await query;
   // Supabase nunca lanza una excepción por un error de la base — devuelve
@@ -48,20 +57,37 @@ async function getAdminProducts(filters: { q: string; categoria: string; estado:
     rows = rows.filter((row) => row.images.length === 0);
   }
 
+  // Stock bajo: cualquier presentación en 0 o por debajo del umbral cuenta
+  // (un producto con una sola variante agotada ya necesita atención,
+  // aunque tenga otra con stock de sobra) — mismo criterio y mismo umbral
+  // que la tarjeta del dashboard de Inicio (ver lib/catalog/stockThresholds).
+  if (filters.stockBajo) {
+    rows = rows.filter((row) => hasLowStock(row.product_variants));
+  }
+
   return rows;
 }
 
 export default async function AdminProductosPage({
   searchParams,
 }: {
-  searchParams: { q?: string; categoria?: string; estado?: string; sinImagen?: string };
+  searchParams: {
+    q?: string;
+    categoria?: string;
+    estado?: string;
+    marca?: string;
+    sinImagen?: string;
+    stockBajo?: string;
+  };
 }) {
   const supabase = await createClient();
   const filters = {
     q: searchParams.q ?? "",
     categoria: searchParams.categoria ?? "",
     estado: searchParams.estado ?? "",
+    marca: searchParams.marca ?? "",
     sinImagen: searchParams.sinImagen === "1",
+    stockBajo: searchParams.stockBajo === "1",
   };
 
   let products: ProductRow[] = [];
@@ -70,6 +96,17 @@ export default async function AdminProductosPage({
     .from("categories")
     .select("id, name")
     .order("position");
+
+  // Marcas de las opciones del filtro: de TODOS los productos, no del
+  // resultado ya acotado por categoría/estado/búsqueda — igual que en la
+  // tienda pública, para que no vaya desapareciendo opciones a medida que
+  // se combinan otros filtros. Texto libre en la práctica (no un enum de
+  // Postgres), así que se deduplica en memoria en vez de un .distinct()
+  // que Supabase no expone para columnas de texto simple.
+  const { data: brandRows } = await supabase.from("products").select("brand");
+  const availableBrands = [...new Set((brandRows ?? []).map((row) => row.brand).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b, "es")
+  );
 
   try {
     products = await getAdminProducts(filters);
@@ -143,6 +180,19 @@ export default async function AdminProductosPage({
           />
         </div>
 
+        <div>
+          <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Marca</span>
+          <FilterSelectField
+            name="marca"
+            defaultValue={filters.marca}
+            label="Marca"
+            options={[
+              { value: "", label: "Todas" },
+              ...availableBrands.map((brand) => ({ value: brand, label: brand })),
+            ]}
+          />
+        </div>
+
         <label className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black">
           <input
             type="checkbox"
@@ -152,6 +202,17 @@ export default async function AdminProductosPage({
             className="size-5 rounded border-brand-slate/40 accent-brand-orange"
           />
           Sin imagen
+        </label>
+
+        <label className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black">
+          <input
+            type="checkbox"
+            name="stockBajo"
+            value="1"
+            defaultChecked={filters.stockBajo}
+            className="size-5 rounded border-brand-slate/40 accent-brand-orange"
+          />
+          Stock bajo (≤{LOW_STOCK_THRESHOLD})
         </label>
 
         <button type="submit" className={buttonClassName("secondary")}>
