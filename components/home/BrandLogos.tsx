@@ -46,6 +46,20 @@ const BRAND_LOGOS: BrandLogo[] = [
 // role="img" + aria-label: un div con mask-image no tiene ningún texto
 // alternativo propio (a diferencia de <img alt="...">) — sin esto, un
 // lector de pantalla no anunciaría nada para cada logo.
+//
+// Móvil/tablet (<lg): carrusel de scroll-snap horizontal, altura cómoda
+// para el dedo (h-12) — mismo patrón que Productos Destacados. Desktop
+// (lg: 1024px+): los 7 SÍ caben en una sola línea, sin excepción — para
+// lograrlo la altura baja a h-5 (20px). Es un cálculo, no un número al
+// azar: la suma de aspect-ratio de los 7 logos es ~39.35, y en el ancho
+// útil más angosto que puede dar "escritorio" (viewport de 1024px, menos
+// el padding del contenedor del sitio) sobran ~960px — con el padding e
+// líneas divisorias de cada logo, el máximo que cabe sin envolver es
+// ~22px de alto; h-5 deja margen. Son wordmarks (no cajas de color como
+// los logos SVG anteriores), bastante más anchos en proporción — por eso
+// la altura tiene que ser chica para que las 7 quepan; a esa altura
+// siguen siendo legibles porque son trazos gruesos (mismo criterio visual
+// que cualquier franja de "distribuidor autorizado de" con varios logos).
 export function BrandLogos() {
   return (
     <div>
@@ -53,7 +67,7 @@ export function BrandLogos() {
         Distribuidores autorizados de las 7 marcas de Grupo Truper
       </p>
 
-      <div className="scrollbar-hide -mx-4 mt-4 flex snap-x items-center overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:justify-center sm:gap-y-3 sm:overflow-visible sm:px-0 sm:pb-0">
+      <div className="scrollbar-hide -mx-4 mt-4 flex snap-x items-center overflow-x-auto px-4 pb-2 lg:mx-0 lg:snap-none lg:flex-nowrap lg:justify-center lg:overflow-visible lg:px-0 lg:pb-0">
         {BRAND_LOGOS.map((brand) => (
           <div
             key={brand.slug}
@@ -64,8 +78,11 @@ export function BrandLogos() {
             // a su izquierda que no correspondía a nada. Un borde a la
             // DERECHA de todos menos el último cae siempre al final de
             // cada fila, nunca como marca suelta al inicio de la
-            // siguiente.
-            className="flex shrink-0 snap-start items-center border-r border-brand-slate/15 px-4 last:border-r-0 sm:shrink sm:px-6"
+            // siguiente. Ya no aplica en desktop (lg:) porque ahí ya no
+            // hay wrap — los 7 caben en una sola línea — pero se deja el
+            // mismo mecanismo por si el viewport es MUY angosto en un
+            // punto intermedio raro.
+            className="flex shrink-0 snap-start items-center border-r border-brand-slate/15 px-4 last:border-r-0 lg:shrink lg:px-1.5"
           >
             <div
               role="img"
@@ -81,7 +98,7 @@ export function BrandLogos() {
                 WebkitMaskSize: "contain",
                 maskSize: "contain",
               }}
-              className="h-12 shrink-0 bg-brand-slate transition-colors duration-300 ease-out hover:bg-brand-black active:bg-brand-black sm:h-14"
+              className="h-12 shrink-0 bg-brand-slate transition-colors duration-300 ease-out hover:bg-brand-black active:bg-brand-black lg:h-5"
             />
           </div>
         ))}
