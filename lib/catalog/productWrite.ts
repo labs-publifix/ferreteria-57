@@ -58,6 +58,7 @@ export async function createProductRecord(
       technical_specs: input.technicalSpecs,
       images: input.images,
       active: input.active,
+      activated_at: input.active ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
@@ -103,6 +104,18 @@ export async function updateProductRecord(
   productId: string,
   input: ProductWriteInput
 ): Promise<{ error?: string }> {
+  // Solo se toca activated_at cuando esta edición es la que de verdad pasa
+  // el producto de inactivo a activo — guardar un producto que YA estaba
+  // activo (solo se editó su descripción, por ejemplo) no debe "reactivar"
+  // la fecha, o la métrica de "activados en los últimos 7 días" contaría
+  // cualquier edición como si fuera una activación nueva.
+  const { data: current } = await supabase
+    .from("products")
+    .select("active")
+    .eq("id", productId)
+    .single();
+  const justActivated = input.active && !(current?.active ?? false);
+
   const { error: productError } = await supabase
     .from("products")
     .update({
@@ -116,6 +129,7 @@ export async function updateProductRecord(
       images: input.images,
       active: input.active,
       updated_at: new Date().toISOString(),
+      ...(justActivated ? { activated_at: new Date().toISOString() } : {}),
     })
     .eq("id", productId);
 

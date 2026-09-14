@@ -1,0 +1,85 @@
+import { hasLowStock } from "@/lib/catalog/stockThresholds";
+import { createClient } from "@/lib/supabase/server";
+
+export interface DashboardMetrics {
+  products: {
+    active: number;
+    total: number;
+    withoutImage: number;
+    lowStock: number;
+    recentlyActivated: number;
+  };
+  categories: {
+    active: number;
+    total: number;
+  };
+  customers: number;
+  pendingReviews: number;
+}
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+interface ProductMetricsRow {
+  active: boolean;
+  images: string[] | null;
+  activated_at: string | null;
+  product_variants: { stock: number }[];
+}
+
+// Separado de getDashboardMetrics (que sí depende de Supabase) para poder
+// verificarlo con datos de prueba sin necesitar una base real — mismo
+// motivo por el que lib/marketing/visibility.ts separa el cálculo puro de
+// isWithinSchedule de las consultas que lo usan.
+export function computeProductMetrics(products: ProductMetricsRow[], now: number = Date.now()) {
+  const sevenDaysAgo = now - SEVEN_DAYS_MS;
+  return {
+    total: products.length,
+    active: products.filter((product) => product.active).length,
+    withoutImage: products.filter((product) => (product.images?.length ?? 0) === 0).length,
+    lowStock: products.filter((product) => hasLowStock(product.product_variants)).length,
+    recentlyActivated: products.filter(
+      (product) => product.activated_at && new Date(product.activated_at).getTime() >= sevenDaysAgo
+    ).length,
+  };
+}
+
+export function computeCategoryMetrics(categories: { active: boolean }[]) {
+  return {
+    total: categories.length,
+    active: categories.filter((category) => category.active).length,
+  };
+}
+
+// Todas las lecturas necesarias para /admin (Inicio), en un solo lugar:
+// esta página es la única que las usa, y agruparlas aquí (en vez de
+// repartir cada .from(...).select(...) directo en el Server Component)
+// deja la página enfocada en presentar, no en consultar.
+//
+// products/categories se traen completos (solo las columnas que hacen
+// falta) y se cuentan en memoria en vez de varias consultas count-only por
+// separado — mismo criterio ya usado en /admin/productos ("el catálogo de
+// una ferretería no es tan grande como para que esto pese"), y así una
+// sola ida a la base cubre activos/total/sin-imagen/stock-bajo/recientes
+// a la vez.
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+  const supabase = await createClient();
+
+  const [productsResult, categoriesResult, customersResult, pendingReviewsResult] = await Promise.all([
+    supabase.from("products").select("active, images, activated_at, product_variants(stock)"),
+    supabase.from("categories").select("active"),
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("reviews").select("*", { count: "exact", head: true }).eq("status", "pending"),
+  ]);
+
+  if (productsResult.error) throw new Error(productsResult.error.message);
+  if (categoriesResult.error) throw new Error(categoriesResult.error.message);
+  if (customersResult.error) throw new Error(customersResult.error.message);
+  if (pendingReviewsResult.error) throw new Error(pendingReviewsResult.error.message);
+
+  return {
+    products: computeProductMetrics(productsResult.data),
+    categories: computeCategoryMetrics(categoriesResult.data),
+    customers: customersResult.count ?? 0,
+    pendingReviews: pendingReviewsResult.count ?? 0,
+  };
+}

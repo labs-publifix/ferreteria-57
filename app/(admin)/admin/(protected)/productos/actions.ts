@@ -250,19 +250,24 @@ export async function bulkSetProductsActive(
     return { deactivated: ids.length };
   }
 
-  const { data, error } = await supabase.from("products").select("id, images").in("id", ids);
+  const { data, error } = await supabase.from("products").select("id, images, active").in("id", ids);
   if (error) return { error: describeDbError("No se pudieron validar los productos", error) };
 
-  const eligibleIds = (data ?? [])
-    .filter((product) => (product.images?.length ?? 0) > 0)
-    .map((product) => product.id);
+  const eligible = (data ?? []).filter((product) => (product.images?.length ?? 0) > 0);
+  const eligibleIds = eligible.map((product) => product.id);
   const skipped = ids.length - eligibleIds.length;
 
-  if (eligibleIds.length > 0) {
+  // Solo los que de verdad pasan de inactivo a activo reciben un
+  // activated_at nuevo (misma razón que en updateProductRecord) — los que
+  // ya estaban activos en el lote seleccionado no necesitan ni siquiera un
+  // update, ya están en el estado pedido.
+  const newlyActivatedIds = eligible.filter((product) => !product.active).map((product) => product.id);
+
+  if (newlyActivatedIds.length > 0) {
     const { error: updateError } = await supabase
       .from("products")
-      .update({ active: true })
-      .in("id", eligibleIds);
+      .update({ active: true, activated_at: new Date().toISOString() })
+      .in("id", newlyActivatedIds);
     if (updateError) return { error: describeDbError("No se pudieron activar los productos", updateError) };
   }
 

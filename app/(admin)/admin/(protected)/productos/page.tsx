@@ -4,6 +4,7 @@ import { Plus, Upload } from "lucide-react";
 import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { ProductsTable, type ProductRow } from "@/components/admin/ProductsTable";
 import { buttonClassName } from "@/components/ui";
+import { hasLowStock, LOW_STOCK_THRESHOLD } from "@/lib/catalog/stockThresholds";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Productos — Panel de administración" };
@@ -20,6 +21,7 @@ async function getAdminProducts(filters: {
   estado: string;
   marca: string;
   sinImagen: boolean;
+  stockBajo: boolean;
 }) {
   const supabase = await createClient();
 
@@ -55,13 +57,28 @@ async function getAdminProducts(filters: {
     rows = rows.filter((row) => row.images.length === 0);
   }
 
+  // Stock bajo: cualquier presentación en 0 o por debajo del umbral cuenta
+  // (un producto con una sola variante agotada ya necesita atención,
+  // aunque tenga otra con stock de sobra) — mismo criterio y mismo umbral
+  // que la tarjeta del dashboard de Inicio (ver lib/catalog/stockThresholds).
+  if (filters.stockBajo) {
+    rows = rows.filter((row) => hasLowStock(row.product_variants));
+  }
+
   return rows;
 }
 
 export default async function AdminProductosPage({
   searchParams,
 }: {
-  searchParams: { q?: string; categoria?: string; estado?: string; marca?: string; sinImagen?: string };
+  searchParams: {
+    q?: string;
+    categoria?: string;
+    estado?: string;
+    marca?: string;
+    sinImagen?: string;
+    stockBajo?: string;
+  };
 }) {
   const supabase = await createClient();
   const filters = {
@@ -70,6 +87,7 @@ export default async function AdminProductosPage({
     estado: searchParams.estado ?? "",
     marca: searchParams.marca ?? "",
     sinImagen: searchParams.sinImagen === "1",
+    stockBajo: searchParams.stockBajo === "1",
   };
 
   let products: ProductRow[] = [];
@@ -184,6 +202,17 @@ export default async function AdminProductosPage({
             className="size-5 rounded border-brand-slate/40 accent-brand-orange"
           />
           Sin imagen
+        </label>
+
+        <label className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black">
+          <input
+            type="checkbox"
+            name="stockBajo"
+            value="1"
+            defaultChecked={filters.stockBajo}
+            className="size-5 rounded border-brand-slate/40 accent-brand-orange"
+          />
+          Stock bajo (≤{LOW_STOCK_THRESHOLD})
         </label>
 
         <button type="submit" className={buttonClassName("secondary")}>
