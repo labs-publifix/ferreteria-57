@@ -6,7 +6,7 @@ interface Stat {
 const stats: Stat[] = [
   { value: "+2,000", label: "Productos en piso" },
   { value: "+15,000", label: "Referencias del catálogo completo Truper" },
-  { value: "Casi 2 años", label: "Atendiendo a Querétaro" },
+  { value: "2 años", label: "Atendiendo a Querétaro" },
 ];
 
 // Cifras de autoridad: mismo espíritu que TrustBar (reforzar confianza en
