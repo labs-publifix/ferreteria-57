@@ -1,12 +1,12 @@
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { BrandLogos } from "@/components/home/BrandLogos";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { LoyaltySection } from "@/components/home/LoyaltySection";
 import { PromoRail } from "@/components/home/PromoRail";
 import { StatsSection } from "@/components/home/StatsSection";
 import { Testimonials } from "@/components/home/Testimonials";
-import { TrustBar } from "@/components/home/TrustBar";
 import { VisitUs } from "@/components/home/VisitUs";
 import { StickyRevealHeader } from "@/components/layout/StickyRevealHeader";
 import { getVisiblePromoBanners } from "@/lib/marketing/queries";
@@ -43,8 +43,8 @@ export default async function HomePage() {
           </section>
         )}
 
-        <section className="mt-10 sm:mt-14" aria-label="Por qué comprar con nosotros">
-          <TrustBar />
+        <section className="mt-10 sm:mt-14" aria-label="Distribuidor autorizado de las submarcas de Grupo Truper">
+          <BrandLogos />
         </section>
 
         <section className="mt-14 sm:mt-20" aria-labelledby="categorias-heading">

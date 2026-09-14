@@ -19,6 +19,15 @@ const nextConfig = {
           },
         ]
       : [],
+    // Sin esto, next/image rechaza servir los SVG de public/marcas (logos
+    // de las submarcas de Grupo Truper) con un 400 — Next.js bloquea SVG
+    // por default porque uno subido por un usuario podría traer <script>
+    // adentro. Estos son archivos estáticos del propio repo, no contenido
+    // de terceros, así que el riesgo no aplica; el CSP de abajo es de
+    // cualquier forma una segunda capa que impide que un SVG ejecute
+    // script o cargue un frame si algún día se coló uno malicioso.
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 };
 
