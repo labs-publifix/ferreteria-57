@@ -47,19 +47,23 @@ const BRAND_LOGOS: BrandLogo[] = [
 // alternativo propio (a diferencia de <img alt="...">) — sin esto, un
 // lector de pantalla no anunciaría nada para cada logo.
 //
-// Móvil/tablet (<lg): carrusel de scroll-snap horizontal, altura cómoda
-// para el dedo (h-12) — mismo patrón que Productos Destacados. Desktop
-// (lg: 1024px+): los 7 SÍ caben en una sola línea, sin excepción — para
-// lograrlo la altura baja a h-5 (20px). Es un cálculo, no un número al
-// azar: la suma de aspect-ratio de los 7 logos es ~39.35, y en el ancho
-// útil más angosto que puede dar "escritorio" (viewport de 1024px, menos
-// el padding del contenedor del sitio) sobran ~960px — con el padding e
-// líneas divisorias de cada logo, el máximo que cabe sin envolver es
-// ~22px de alto; h-5 deja margen. Son wordmarks (no cajas de color como
-// los logos SVG anteriores), bastante más anchos en proporción — por eso
-// la altura tiene que ser chica para que las 7 quepan; a esa altura
-// siguen siendo legibles porque son trazos gruesos (mismo criterio visual
-// que cualquier franja de "distribuidor autorizado de" con varios logos).
+// Móvil/tablet (<lg): carrusel de scroll-snap horizontal — mismo patrón
+// que Productos Destacados. Altura h-7 (28px): a h-12 (48px, el tamaño
+// original) el cintillo quedaba MÁS grande que el propio logo de
+// Ferretería 57 en el Header móvil (h-11 = 44px, ver Header.tsx), así que
+// las submarcas competían por protagonismo con la marca de la tienda en
+// vez de quedar claramente subordinadas. 28px sigue siendo legible (son
+// trazos gruesos) pero ya lee como un dato secundario, no como el
+// protagonista de la pantalla. Desktop (lg: 1024px+): los 7 SÍ caben en
+// una sola línea, sin excepción — para lograrlo la altura baja a h-5
+// (20px). Es un cálculo, no un número al azar: la suma de aspect-ratio de
+// los 7 logos es ~39.35, y en el ancho útil más angosto que puede dar
+// "escritorio" (viewport de 1024px, menos el padding del contenedor del
+// sitio) sobran ~960px — con el padding e líneas divisorias de cada
+// logo, el máximo que cabe sin envolver es ~22px de alto; h-5 deja
+// margen. Son wordmarks (no cajas de color como los logos SVG
+// anteriores), bastante más anchos en proporción — por eso la altura
+// tiene que ser chica para que las 7 quepan.
 export function BrandLogos() {
   return (
     <div>
@@ -82,7 +86,7 @@ export function BrandLogos() {
             // hay wrap — los 7 caben en una sola línea — pero se deja el
             // mismo mecanismo por si el viewport es MUY angosto en un
             // punto intermedio raro.
-            className="flex shrink-0 snap-start items-center border-r border-brand-slate/15 px-4 last:border-r-0 lg:shrink lg:px-1.5"
+            className="flex shrink-0 snap-start items-center border-r border-brand-slate/15 px-3 last:border-r-0 lg:shrink lg:px-1.5"
           >
             <div
               role="img"
@@ -98,7 +102,7 @@ export function BrandLogos() {
                 WebkitMaskSize: "contain",
                 maskSize: "contain",
               }}
-              className="h-12 shrink-0 bg-brand-slate transition-colors duration-300 ease-out hover:bg-brand-black active:bg-brand-black lg:h-5"
+              className="h-7 shrink-0 bg-brand-slate transition-colors duration-300 ease-out hover:bg-brand-black active:bg-brand-black lg:h-5"
             />
           </div>
         ))}
