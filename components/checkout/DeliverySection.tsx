@@ -167,6 +167,13 @@ export function DeliverySection({
   foraneoOverLimit: boolean;
   whatsappUrl: string;
 }) {
+  // "Tocado" para el Select de Estado, igual que el resto de los campos:
+  // ver el bug reportado en Select.tsx — antes de ese fix, el botón
+  // mostraba "Aguascalientes" (options[0]) sin que la persona hubiera
+  // elegido nada, así que ni el asterisco ni un error visible eran
+  // suficientes para explicar por qué el checkout seguía bloqueado.
+  const [stateTouched, setStateTouched] = useState(false);
+
   function updateLocalField(field: keyof LocalAddressForm, value: string) {
     onLocalAddressChange({ ...localAddress, [field]: value });
   }
@@ -356,7 +363,12 @@ export function DeliverySection({
                     label: state,
                   }))}
                   label="Estado"
+                  placeholder="Selecciona tu estado"
+                  onBlur={() => setStateTouched(true)}
                 />
+                {stateTouched && foraneoAddress.state.trim() === "" && (
+                  <p className="mt-1 font-sans text-xs text-red-600">Selecciona tu estado.</p>
+                )}
               </div>
               <Field
                 label="Ciudad"

@@ -15,6 +15,13 @@ export interface SelectProps {
   /** Nombre accesible del control (se anuncia a lectores de pantalla). */
   label: string;
   className?: string;
+  /**
+   * Texto a mostrar cuando `value` todavía no corresponde a ninguna
+   * opción — para un campo que arranca sin selección real (a diferencia
+   * de un filtro, que siempre se inicializa en un valor válido).
+   */
+  placeholder?: string;
+  onBlur?: () => void;
 }
 
 // Listbox propio (patrón WAI-ARIA "Listbox Button") en vez de un <select>
@@ -24,13 +31,27 @@ export interface SelectProps {
 // de "Ordenar por" salía con estilo nativo oscuro de Windows/Chrome, no
 // con el de la marca). Este componente sí queda consistente en cualquier
 // plataforma.
-export function Select({ value, onChange, options, label, className = "" }: SelectProps) {
+export function Select({
+  value,
+  onChange,
+  options,
+  label,
+  className = "",
+  placeholder,
+  onBlur,
+}: SelectProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const buttonId = useId();
   const labelId = useId();
-  const selected = options.find((option) => option.value === value) ?? options[0];
+  // Ojo: NUNCA caer en "options[0]" cuando `value` no matchea ninguna
+  // opción — eso mostraría, por ejemplo, "Aguascalientes" en el botón de
+  // Estado sin que la persona haya elegido nada, dejando el `value` real
+  // en "" y el formulario deshabilitado sin ninguna pista visible de por
+  // qué (bug reportado: el botón de confirmar nunca se activaba). Un
+  // valor sin match real muestra el placeholder, no una opción cualquiera.
+  const selected = options.find((option) => option.value === value);
 
   useEffect(() => {
     if (!open) return;
@@ -72,9 +93,12 @@ export function Select({ value, onChange, options, label, className = "" }: Sele
         aria-expanded={open}
         aria-labelledby={`${labelId} ${buttonId}`}
         onClick={() => setOpen((isOpen) => !isOpen)}
+        onBlur={onBlur}
         className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-brand-slate/30 bg-brand-white px-3 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
       >
-        <span className="truncate">{selected?.label}</span>
+        <span className={`truncate ${selected ? "" : "text-brand-slate/50"}`}>
+          {selected?.label ?? placeholder}
+        </span>
         <ChevronDown
           className={`size-4 shrink-0 text-brand-slate transition-transform ${open ? "rotate-180" : ""}`}
           aria-hidden="true"
