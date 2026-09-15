@@ -1,58 +1,118 @@
 "use client";
 
 import { useId } from "react";
+import { MessageCircle } from "lucide-react";
+import { Combobox, Select } from "@/components/ui";
 import { STORE_ADDRESS, STORE_HORARIO } from "@/lib/store-info";
+import { MEXICAN_STATES_EXCLUDING_QUERETARO } from "@/lib/checkout/mexicanStates";
+import { FORANEO_COST, NO_LISTADA_KEY } from "@/lib/checkout/constants";
+import { amountRemainingForFreeShipping } from "@/lib/checkout/shippingCalculator";
+import type { ZonaEnvio } from "@/lib/checkout/useZonasEnvio";
 
-export type DeliveryMethod = "envio" | "retiro";
+export type DeliveryMethod = "retiro" | "envio_local" | "envio_foraneo";
 
-export interface AddressForm {
-  firstName: string;
-  lastName: string;
+export interface LocalAddressForm {
+  colonia: string;
   street: string;
-  neighborhood: string;
+  exteriorNumber: string;
+  interiorNumber: string;
   postalCode: string;
-  city: string;
-  state: string;
+  references: string;
 }
 
-export const emptyAddress: AddressForm = {
-  firstName: "",
-  lastName: "",
+export const emptyLocalAddress: LocalAddressForm = {
+  colonia: "",
   street: "",
-  neighborhood: "",
+  exteriorNumber: "",
+  interiorNumber: "",
   postalCode: "",
-  city: "",
-  state: "",
+  references: "",
 };
 
-function AddressField({
+export interface ForaneoAddressForm {
+  state: string;
+  city: string;
+  colonia: string;
+  street: string;
+  exteriorNumber: string;
+  interiorNumber: string;
+  postalCode: string;
+  references: string;
+}
+
+export const emptyForaneoAddress: ForaneoAddressForm = {
+  state: "",
+  city: "",
+  colonia: "",
+  street: "",
+  exteriorNumber: "",
+  interiorNumber: "",
+  postalCode: "",
+  references: "",
+};
+
+const currencyFormatter = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  maximumFractionDigits: 0,
+});
+
+const DELIVERY_OPTIONS: { value: DeliveryMethod; label: string }[] = [
+  { value: "retiro", label: "Retiro en tienda" },
+  { value: "envio_local", label: "Envío local (Querétaro)" },
+  { value: "envio_foraneo", label: "Envío foráneo" },
+];
+
+function Field({
   label,
   value,
   onChange,
   className = "",
   inputMode,
+  required = true,
+  readOnly = false,
+  as = "input",
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   className?: string;
   inputMode?: "text" | "numeric";
+  required?: boolean;
+  readOnly?: boolean;
+  as?: "input" | "textarea";
 }) {
   const id = useId();
+  const sharedClassName =
+    "w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate read-only:bg-brand-gray read-only:text-brand-slate";
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
         {label}
+        {!required && <span className="font-normal text-brand-slate/60"> (opcional)</span>}
       </label>
-      <input
-        id={id}
-        type="text"
-        required
-        inputMode={inputMode}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-      />
+      {as === "textarea" ? (
+        <textarea
+          id={id}
+          required={required}
+          readOnly={readOnly}
+          rows={2}
+          value={value}
+          onChange={(event) => onChange?.(event.target.value)}
+          className={sharedClassName}
+        />
+      ) : (
+        <input
+          id={id}
+          type="text"
+          required={required}
+          readOnly={readOnly}
+          inputMode={inputMode}
+          value={value}
+          onChange={(event) => onChange?.(event.target.value)}
+          className={sharedClassName}
+        />
+      )}
     </div>
   );
 }
@@ -60,40 +120,55 @@ function AddressField({
 export function DeliverySection({
   deliveryMethod,
   onDeliveryMethodChange,
-  address,
-  onAddressChange,
+  localAddress,
+  onLocalAddressChange,
+  foraneoAddress,
+  onForaneoAddressChange,
+  zonas,
+  subtotal,
+  foraneoOverLimit,
+  whatsappUrl,
 }: {
   deliveryMethod: DeliveryMethod;
   onDeliveryMethodChange: (method: DeliveryMethod) => void;
-  address: AddressForm;
-  onAddressChange: (address: AddressForm) => void;
+  localAddress: LocalAddressForm;
+  onLocalAddressChange: (address: LocalAddressForm) => void;
+  foraneoAddress: ForaneoAddressForm;
+  onForaneoAddressChange: (address: ForaneoAddressForm) => void;
+  zonas: ZonaEnvio[];
+  subtotal: number;
+  foraneoOverLimit: boolean;
+  whatsappUrl: string;
 }) {
-  function updateField(field: keyof AddressForm, value: string) {
-    onAddressChange({ ...address, [field]: value });
+  function updateLocalField(field: keyof LocalAddressForm, value: string) {
+    onLocalAddressChange({ ...localAddress, [field]: value });
   }
+  function updateForaneoField(field: keyof ForaneoAddressForm, value: string) {
+    onForaneoAddressChange({ ...foraneoAddress, [field]: value });
+  }
+
+  const coloniaOptions = zonas.map((zona) => ({
+    value: zona.colonia,
+    label: `${zona.colonia} — ${currencyFormatter.format(zona.costoEnvioMxn)}`,
+  }));
+
+  const remainingForFreeShipping = amountRemainingForFreeShipping(subtotal);
 
   return (
     <section aria-labelledby="entrega-heading">
-      <h2
-        id="entrega-heading"
-        className="mb-4 font-display text-lg uppercase text-brand-slate"
-      >
+      <h2 id="entrega-heading" className="mb-4 font-display text-lg uppercase text-brand-slate">
         Entrega
       </h2>
 
-      {/* Pills/tabs: mismo patrón visual de selección binaria que ya usa
-          el selector de variante en la ficha de producto. */}
+      {/* 3 modalidades, "Retiro en tienda" preseleccionada por default y
+          siempre primera — cada una despliega un bloque de campos propio,
+          sin lógica compartida entre ellas. */}
       <div
         role="radiogroup"
         aria-label="Método de entrega"
-        className="mb-4 grid grid-cols-2 gap-2"
+        className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3"
       >
-        {(
-          [
-            { value: "envio" as const, label: "Envío" },
-            { value: "retiro" as const, label: "Retiro en tienda" },
-          ]
-        ).map((option) => {
+        {DELIVERY_OPTIONS.map((option) => {
           const isSelected = deliveryMethod === option.value;
           return (
             <button
@@ -102,7 +177,7 @@ export function DeliverySection({
               role="radio"
               aria-checked={isSelected}
               onClick={() => onDeliveryMethodChange(option.value)}
-              className={`flex min-h-11 items-center justify-center rounded-md border-2 px-4 font-sans text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2 ${
+              className={`flex min-h-11 items-center justify-center rounded-md border-2 px-3 py-2 text-center font-sans text-sm font-semibold leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2 ${
                 isSelected
                   ? "border-brand-orange bg-brand-orange/10 text-brand-black"
                   : "border-brand-slate/30 text-brand-slate hover:border-brand-slate"
@@ -114,59 +189,168 @@ export function DeliverySection({
         })}
       </div>
 
-      {deliveryMethod === "envio" ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <AddressField
-            label="Nombre"
-            value={address.firstName}
-            onChange={(value) => updateField("firstName", value)}
-          />
-          <AddressField
-            label="Apellidos"
-            value={address.lastName}
-            onChange={(value) => updateField("lastName", value)}
-          />
-          <AddressField
-            label="Calle y número"
-            value={address.street}
-            onChange={(value) => updateField("street", value)}
-            className="sm:col-span-2"
-          />
-          <AddressField
-            label="Colonia"
-            value={address.neighborhood}
-            onChange={(value) => updateField("neighborhood", value)}
-          />
-          <AddressField
-            label="Código postal"
-            value={address.postalCode}
-            onChange={(value) => updateField("postalCode", value)}
-            inputMode="numeric"
-          />
-          <AddressField
-            label="Ciudad"
-            value={address.city}
-            onChange={(value) => updateField("city", value)}
-          />
-          <AddressField
-            label="Estado"
-            value={address.state}
-            onChange={(value) => updateField("state", value)}
-          />
-        </div>
-      ) : (
+      {deliveryMethod === "retiro" && (
         <div className="rounded-lg bg-brand-gray p-4">
-          <p className="font-sans text-sm font-semibold text-brand-black">
-            Ferretería 57
-          </p>
-          <p className="mt-1 font-sans text-sm text-brand-slate">
-            {STORE_ADDRESS}
-          </p>
+          <p className="font-sans text-sm font-semibold text-brand-black">Ferretería 57</p>
+          <p className="mt-1 font-sans text-sm text-brand-slate">{STORE_ADDRESS}</p>
           <ul className="mt-3 flex flex-col gap-0.5 font-sans text-sm text-brand-slate">
             {STORE_HORARIO.map((linea) => (
               <li key={linea}>{linea}</li>
             ))}
           </ul>
+          <p className="mt-3 font-sans text-sm font-semibold text-brand-black">
+            Retiro en tienda: gratis.
+          </p>
+        </div>
+      )}
+
+      {deliveryMethod === "envio_local" && (
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Ciudad" value="Querétaro" readOnly onChange={() => {}} />
+            <div>
+              <label className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
+                Colonia
+              </label>
+              <Combobox
+                value={localAddress.colonia}
+                onChange={(value) => updateLocalField("colonia", value)}
+                options={coloniaOptions}
+                label="Colonia"
+                placeholder="Busca tu colonia"
+                emptyMessage="No encontramos esa colonia"
+                pinnedOption={{ value: NO_LISTADA_KEY, label: "Mi colonia no aparece en la lista" }}
+                required
+              />
+            </div>
+            <Field
+              label="Calle"
+              value={localAddress.street}
+              onChange={(value) => updateLocalField("street", value)}
+            />
+            <Field
+              label="No. Exterior"
+              value={localAddress.exteriorNumber}
+              onChange={(value) => updateLocalField("exteriorNumber", value)}
+              inputMode="numeric"
+            />
+            <Field
+              label="No. Interior"
+              value={localAddress.interiorNumber}
+              onChange={(value) => updateLocalField("interiorNumber", value)}
+              inputMode="numeric"
+              required={false}
+            />
+            <Field
+              label="Código postal"
+              value={localAddress.postalCode}
+              onChange={(value) => updateLocalField("postalCode", value)}
+              inputMode="numeric"
+            />
+            <Field
+              as="textarea"
+              label="Referencias de entrega"
+              value={localAddress.references}
+              onChange={(value) => updateLocalField("references", value)}
+              className="sm:col-span-2"
+            />
+          </div>
+
+          <p
+            className={`rounded-md px-4 py-2.5 font-sans text-sm font-semibold ${
+              remainingForFreeShipping > 0
+                ? "bg-brand-gray text-brand-slate"
+                : "bg-brand-orange/10 text-brand-black"
+            }`}
+          >
+            {remainingForFreeShipping > 0
+              ? `Te faltan ${currencyFormatter.format(remainingForFreeShipping)} para obtener envío gratis`
+              : "¡Tu pedido calificó para envío gratis!"}
+          </p>
+        </div>
+      )}
+
+      {deliveryMethod === "envio_foraneo" && (
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
+                Estado
+              </label>
+              <Select
+                value={foraneoAddress.state}
+                onChange={(value) => updateForaneoField("state", value)}
+                options={MEXICAN_STATES_EXCLUDING_QUERETARO.map((state) => ({
+                  value: state,
+                  label: state,
+                }))}
+                label="Estado"
+              />
+            </div>
+            <Field
+              label="Ciudad"
+              value={foraneoAddress.city}
+              onChange={(value) => updateForaneoField("city", value)}
+            />
+            <Field
+              label="Colonia"
+              value={foraneoAddress.colonia}
+              onChange={(value) => updateForaneoField("colonia", value)}
+            />
+            <Field
+              label="Calle"
+              value={foraneoAddress.street}
+              onChange={(value) => updateForaneoField("street", value)}
+            />
+            <Field
+              label="No. Exterior"
+              value={foraneoAddress.exteriorNumber}
+              onChange={(value) => updateForaneoField("exteriorNumber", value)}
+              inputMode="numeric"
+            />
+            <Field
+              label="No. Interior"
+              value={foraneoAddress.interiorNumber}
+              onChange={(value) => updateForaneoField("interiorNumber", value)}
+              inputMode="numeric"
+              required={false}
+            />
+            <Field
+              label="Código postal"
+              value={foraneoAddress.postalCode}
+              onChange={(value) => updateForaneoField("postalCode", value)}
+              inputMode="numeric"
+            />
+            <Field
+              as="textarea"
+              label="Referencias de entrega"
+              value={foraneoAddress.references}
+              onChange={(value) => updateForaneoField("references", value)}
+              className="sm:col-span-2"
+            />
+          </div>
+
+          {foraneoOverLimit ? (
+            <div className="flex flex-col gap-3 rounded-lg border-2 border-brand-orange/50 bg-brand-orange/10 p-4">
+              <p className="font-sans text-sm font-semibold text-brand-black">
+                Tu pedido supera el monto máximo para envío foráneo estándar — contáctanos para
+                cotizar tu envío.
+              </p>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-11 w-fit items-center gap-2 rounded-md bg-brand-orange px-4 font-sans text-sm font-semibold text-brand-black transition-transform hover:scale-[1.02]"
+              >
+                <MessageCircle className="size-4" aria-hidden="true" strokeWidth={1.75} />
+                Cotizar por WhatsApp
+              </a>
+            </div>
+          ) : (
+            <p className="rounded-md bg-brand-gray px-4 py-2.5 font-sans text-sm font-semibold text-brand-black">
+              Costo de envío foráneo: {currencyFormatter.format(FORANEO_COST)}
+            </p>
+          )}
         </div>
       )}
     </section>

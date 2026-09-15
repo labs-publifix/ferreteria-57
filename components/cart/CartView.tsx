@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { buttonClassName } from "@/components/ui";
+import { LoyaltyCta } from "@/components/loyalty/LoyaltyCta";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/checkout/constants";
 import { useResolvedCart } from "./useResolvedCart";
 import { CartLineItem } from "./CartLineItem";
 
@@ -61,12 +63,20 @@ export function CartView() {
             {currencyFormatter.format(subtotal)}
           </span>
         </div>
-        <p className="font-sans text-xs text-brand-slate/70">
-          Envío y descuentos se calculan en el siguiente paso.
-        </p>
+        <div className="flex flex-col gap-1">
+          <p className="font-sans text-xs font-semibold text-brand-black">
+            Retiro en tienda: siempre gratis.
+          </p>
+          <p className="font-sans text-xs text-brand-slate/70">
+            Envío local gratis en compras desde{" "}
+            {currencyFormatter.format(FREE_SHIPPING_THRESHOLD)} MXN.
+          </p>
+        </div>
         <Link href="/checkout" className={buttonClassName("primary", "w-full")}>
           Continuar a pago
         </Link>
+
+        <LoyaltyCta />
       </div>
     </div>
   );

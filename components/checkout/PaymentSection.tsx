@@ -1,14 +1,15 @@
 "use client";
 
-import { Banknote, Calendar, Check, CreditCard, type LucideIcon } from "lucide-react";
+import { Calendar, Check, CreditCard, type LucideIcon } from "lucide-react";
 
-export type PaymentMethod = "tarjeta" | "msi" | "oxxo";
+export type PaymentMethod = "tarjeta" | "msi";
 
 const PAYMENT_OPTIONS: {
   value: PaymentMethod;
   label: string;
   description: string;
   icon: LucideIcon;
+  disabled?: boolean;
 }[] = [
   {
     value: "tarjeta",
@@ -19,21 +20,17 @@ const PAYMENT_OPTIONS: {
   {
     value: "msi",
     label: "Meses sin intereses",
-    description: "Disponible con tarjetas participantes",
+    description: "Próximamente",
     icon: Calendar,
-  },
-  {
-    value: "oxxo",
-    label: "Pago en efectivo (OXXO)",
-    description: "Genera un código para pagar en tienda",
-    icon: Banknote,
+    disabled: true,
   },
 ];
 
 // Solo visual por ahora: la integración real con Mercado Pago (cargos,
-// validación de tarjeta, generación del código OXXO) es una fase
-// posterior — aquí únicamente se guarda cuál tarjeta quedó seleccionada,
-// sin procesar nada.
+// validación de tarjeta) es una fase posterior — aquí únicamente se guarda
+// cuál método quedó seleccionado, sin procesar nada. OXXO se eliminó por
+// completo (solo tarjeta queda habilitada); MSI se deja visible pero
+// deshabilitado como adelanto de lo que viene.
 export function PaymentSection({
   paymentMethod,
   onPaymentMethodChange,
@@ -43,10 +40,7 @@ export function PaymentSection({
 }) {
   return (
     <section aria-labelledby="pago-heading">
-      <h2
-        id="pago-heading"
-        className="mb-4 font-display text-lg uppercase text-brand-slate"
-      >
+      <h2 id="pago-heading" className="mb-4 font-display text-lg uppercase text-brand-slate">
         Método de pago
       </h2>
 
@@ -60,11 +54,15 @@ export function PaymentSection({
               type="button"
               role="radio"
               aria-checked={isSelected}
-              onClick={() => onPaymentMethodChange(option.value)}
+              aria-disabled={option.disabled}
+              disabled={option.disabled}
+              onClick={() => !option.disabled && onPaymentMethodChange(option.value)}
               className={`flex items-center gap-3 rounded-lg border-2 p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate focus-visible:ring-offset-2 ${
-                isSelected
-                  ? "border-brand-orange bg-brand-orange/10"
-                  : "border-brand-slate/30 hover:border-brand-slate"
+                option.disabled
+                  ? "cursor-not-allowed border-brand-slate/15 opacity-60"
+                  : isSelected
+                    ? "border-brand-orange bg-brand-orange/10"
+                    : "border-brand-slate/30 hover:border-brand-slate"
               }`}
             >
               <Icon className="size-5 shrink-0 text-brand-slate" aria-hidden="true" strokeWidth={1.75} />
@@ -76,22 +74,23 @@ export function PaymentSection({
                   {option.description}
                 </span>
               </span>
-              <span
-                aria-hidden="true"
-                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                  isSelected ? "border-brand-orange bg-brand-orange" : "border-brand-slate/40"
-                }`}
-              >
-                {isSelected && <Check className="size-3.5 text-brand-black" strokeWidth={3} />}
-              </span>
+              {!option.disabled && (
+                <span
+                  aria-hidden="true"
+                  className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                    isSelected ? "border-brand-orange bg-brand-orange" : "border-brand-slate/40"
+                  }`}
+                >
+                  {isSelected && <Check className="size-3.5 text-brand-black" strokeWidth={3} />}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
       <p className="mt-3 font-sans text-xs text-brand-slate/60">
-        Pago simulado — la integración con Mercado Pago se conecta en una
-        fase posterior.
+        Pago simulado — la integración con Mercado Pago se conecta en una fase posterior.
       </p>
     </section>
   );

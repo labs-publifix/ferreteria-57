@@ -54,10 +54,20 @@ export function ConfirmationView() {
 
       <div className="w-full rounded-lg bg-brand-gray p-4 text-left sm:p-6">
         <p className="mb-3 font-sans text-sm text-brand-black">
-          {order.deliveryMethod === "envio"
-            ? "Se enviará a la dirección que registraste."
-            : "Podrás recogerlo en tienda, en el horario de atención habitual."}
+          {order.deliveryMethod === "retiro"
+            ? "Podrás recogerlo en tienda, en el horario de atención habitual."
+            : order.deliveryMethod === "envio_local"
+              ? "Se enviará a tu domicilio en Querétaro."
+              : "Se enviará a la dirección foránea que registraste."}
         </p>
+        {order.address && (
+          <p className="mb-3 font-sans text-xs text-brand-slate">
+            {order.address.street} {order.address.exteriorNumber}
+            {order.address.interiorNumber ? ` Int. ${order.address.interiorNumber}` : ""}, {order.address.colonia}
+            {order.address.city ? `, ${order.address.city}` : ""}
+            {order.address.state ? `, ${order.address.state}` : ""}, C.P. {order.address.postalCode}
+          </p>
+        )}
         <div className="flex flex-col gap-2 border-t border-brand-slate/15 pt-3">
           {order.items.map((item, index) => (
             <div key={index} className="flex justify-between gap-3 font-sans text-sm text-brand-black">
