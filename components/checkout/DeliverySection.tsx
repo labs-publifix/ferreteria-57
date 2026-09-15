@@ -84,7 +84,14 @@ function Field({
     <div className={className}>
       <label htmlFor={id} className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
         {label}
-        {!required && <span className="font-normal text-brand-slate/60"> (opcional)</span>}
+        {required ? (
+          <span className="text-brand-orange" aria-hidden="true">
+            {" "}
+            *
+          </span>
+        ) : (
+          <span className="font-normal text-brand-slate/60"> (opcional)</span>
+        )}
       </label>
       {as === "textarea" ? (
         <textarea
@@ -206,6 +213,10 @@ export function DeliverySection({
             <div>
               <label className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
                 Colonia
+                <span className="text-brand-orange" aria-hidden="true">
+                  {" "}
+                  *
+                </span>
               </label>
               <Combobox
                 value={localAddress.colonia}
@@ -271,6 +282,10 @@ export function DeliverySection({
             <div>
               <label className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
                 Estado
+                <span className="text-brand-orange" aria-hidden="true">
+                  {" "}
+                  *
+                </span>
               </label>
               <Select
                 value={foraneoAddress.state}

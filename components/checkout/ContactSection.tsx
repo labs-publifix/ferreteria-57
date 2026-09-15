@@ -39,6 +39,10 @@ function ContactField({
     <div className={className}>
       <label htmlFor={id} className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
         {label}
+        <span className="text-brand-orange" aria-hidden="true">
+          {" "}
+          *
+        </span>
       </label>
       <input
         id={id}

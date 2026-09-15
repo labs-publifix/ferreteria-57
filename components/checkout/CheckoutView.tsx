@@ -188,6 +188,11 @@ export function CheckoutView() {
             <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit}>
               Confirmar pedido
             </Button>
+            {!canSubmit && (
+              <p className="mt-2 text-center font-sans text-xs text-brand-slate">
+                Completa los campos marcados con * para continuar.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -212,6 +217,11 @@ export function CheckoutView() {
             <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit}>
               Confirmar pedido
             </Button>
+            {!canSubmit && (
+              <p className="mt-2 text-center font-sans text-xs text-brand-slate">
+                Completa los campos marcados con * para continuar.
+              </p>
+            )}
           </div>
         )}
       </div>
