@@ -1,0 +1,234 @@
+colonia,municipio,zona,costo_envio_mxn,confianza
+__PICKUP_TIENDA__,Querétaro,0,0,pickup_no_es_envio
+2 de Abril,Querétaro,3,89,estimado
+8 de Diciembre,Querétaro,3,89,estimado
+Alameda,Querétaro,3,89,estimado
+Álamos 1a Sección,Querétaro,4,109,estimado
+Álamos 2a Sección,Querétaro,4,109,estimado
+Álamos 3a Sección,Querétaro,4,109,estimado
+Altavista Juriquilla,Querétaro,6,149,estimado
+Altos de San Pablo,Querétaro,5,129,estimado
+Altos del Cimatario,Querétaro,1,49,estimado
+Altos del Salitre,Querétaro,5,129,estimado
+Altos Juriquilla,Querétaro,6,149,estimado
+Altozano,Querétaro,5,129,estimado
+Ampliación El Refugio,Querétaro,5,129,estimado
+Ampliación Satélite,Querétaro,4,109,estimado
+Andalucía,Querétaro,3,89,estimado
+Aragón,Querétaro,3,89,estimado
+Arboledas (76140),Querétaro,4,109,estimado
+Arboledas del Parque,Querétaro,4,109,estimado
+Arte Mexicano,Querétaro,1,49,estimado
+Atenas,Querétaro,6,149,estimado
+Aura Juriquilla,Querétaro,6,149,estimado
+Azteca,Querétaro,1,49,estimado
+Balaustradas,Querétaro,3,89,estimado
+Balcones Coloniales,Querétaro,4,109,estimado
+Balcones de Juriquilla,Querétaro,6,149,estimado
+Balcones de San Pablo,Querétaro,5,129,estimado
+Balvanera,Corregidora,5,129,verificado
+Barrio La Cruz,Querétaro,3,89,estimado
+Bellavista,Querétaro,1,49,estimado
+Bosques de las Lomas,Querétaro,1,49,estimado
+Bosques de Querétaro,Querétaro,1,49,estimado
+Bosques del Acueducto,Querétaro,2,69,estimado
+Bosques del Cimatario,Querétaro,1,49,estimado
+Bosques del Cimatario 2a Sección,Querétaro,1,49,estimado
+Bugambilias,Querétaro,3,89,estimado
+Calesa,Querétaro,2,69,estimado
+Calesa 2a Sección,Querétaro,2,69,estimado
+Campestre Huertas la Joya,Querétaro,6,149,estimado
+Campestre Italiana,Querétaro,1,49,estimado
+Candiles,Corregidora,5,129,ajustado_conservador
+Carretas,Querétaro,3,89,estimado
+Casa Blanca,Querétaro,1,49,verificado
+Centro,Querétaro,1,49,verificado
+Centro Histórico,Querétaro,1,49,verificado
+Centro Sur,Querétaro,1,49,estimado
+Cerrito Colorado,Querétaro,4,109,estimado
+Cerrito Colorado II,Querétaro,4,109,estimado
+Cerrito Colorado III,Querétaro,4,109,estimado
+Cerrito Colorado IV,Querétaro,4,109,estimado
+Cerrito Colorado V,Querétaro,4,109,estimado
+Cerrito Colorado VI,Querétaro,4,109,estimado
+Cerrito Colorado VII,Querétaro,4,109,estimado
+Cerro Colorado,Querétaro,4,109,estimado
+Che Guevara (Axayácatl),Querétaro,4,109,estimado
+Cimatario,Querétaro,1,49,verificado
+Cipreses,Querétaro,5,129,estimado
+Claustro del Marqués,Querétaro,3,89,estimado
+Claustros de la Catedral,Querétaro,3,89,estimado
+Claustros de la Corregidora 2,Querétaro,3,89,estimado
+Claustros de la Corregidora I,Querétaro,3,89,estimado
+Claustros de las Misiones,Querétaro,3,89,estimado
+Claustros de Santiago,Querétaro,3,89,estimado
+Claustros del Campestre,Querétaro,3,89,estimado
+Claustros del Sur,Querétaro,3,89,estimado
+Club Campestre,Querétaro,3,89,estimado
+Colinas de Juriquilla,Querétaro,6,149,estimado
+Colinas de Menchaca,Querétaro,4,109,estimado
+Colinas de Menchaca 2a Sección,Querétaro,4,109,estimado
+Colinas de San Pablo,Querétaro,5,129,estimado
+Colinas del Cimatario,Querétaro,1,49,estimado
+Colinas del Sur,Querétaro,1,49,estimado
+Comerciantes,Querétaro,1,49,estimado
+Comevi,Querétaro,4,109,estimado
+Conquistadores,Querétaro,5,129,estimado
+Constelación,Querétaro,1,49,estimado
+Constituyentes,Querétaro,4,109,estimado
+Constituyentes de 1824,Querétaro,4,109,estimado
+Constituyentes FOVISSSTE,Querétaro,4,109,estimado
+Cuadrante Centro Sur I,Querétaro,1,49,estimado
+Cuitláhuac (Cimatario),Querétaro,1,49,estimado
+Cumbres de Juriquilla,Querétaro,6,149,estimado
+Cumbres del Bosque,Querétaro,5,129,estimado
+Cumbres del Lago,Querétaro,6,149,estimado
+Del Valle,Querétaro,3,89,estimado
+Desarrollo San Pablo,Querétaro,5,129,estimado
+Diligencias,Querétaro,3,89,estimado
+El Campanario,Querétaro,5,129,estimado
+El Carrizal,Querétaro,1,49,estimado
+El Cortijo,Querétaro,4,109,estimado
+El Garambullo,Querétaro,4,109,estimado
+El Jacal,Querétaro,2,69,estimado
+El Mirador,El Marqués,5,129,estimado
+El Oasis,Querétaro,4,109,estimado
+El Prado,Querétaro,1,49,estimado
+El Pueblito,Corregidora,5,129,verificado
+El Refugio,Querétaro,5,129,estimado
+El Retablo,Querétaro,3,89,estimado
+El Rocío,Querétaro,4,109,estimado
+El Salitre,Querétaro,5,129,estimado
+El Tintero,Querétaro,4,109,estimado
+Ensueño,Querétaro,3,89,estimado
+Epigmenio González,Querétaro,4,109,estimado
+España,Querétaro,3,89,estimado
+Estrella,Querétaro,1,49,estimado
+Ex Hacienda Santana,Querétaro,4,109,estimado
+Felipe Carrillo Puerto,Querétaro,3,89,estimado
+Fraternidad de Santiago,Querétaro,3,89,estimado
+Fray Junípero Serra,Querétaro,5,129,estimado
+Galindas,Querétaro,4,109,estimado
+Hércules,Querétaro,5,129,estimado
+Huertas La Joya,Querétaro,5,129,estimado
+Independencia,Querétaro,3,89,estimado
+Jardines de la Hacienda,Querétaro,4,109,estimado
+Jardines de Querétaro,Querétaro,4,109,estimado
+Jardines del Sur,Querétaro,2,69,estimado
+Josefa Ortiz de Domínguez,Querétaro,3,89,estimado
+Jurica,Querétaro,6,149,estimado
+Jurica Acueducto,Querétaro,6,149,estimado
+Juriquilla,Querétaro,6,149,estimado
+Juriquilla Santa Fe,Querétaro,6,149,estimado
+Karina,Querétaro,4,109,estimado
+La Cañada,El Marqués,6,149,estimado
+La Capilla,Querétaro,4,109,estimado
+La Estancia,Querétaro,5,129,estimado
+La Joya,Querétaro,4,109,estimado
+La Pradera,El Marqués,5,129,estimado
+La Purísima,Querétaro,5,129,estimado
+La Sierrita,Querétaro,4,109,estimado
+Las Campanas,Querétaro,2,69,estimado
+Las Fuentes,Querétaro,1,49,estimado
+Las Hadas,Querétaro,4,109,estimado
+Las Misiones,Querétaro,1,49,estimado
+Las Rosas,Querétaro,4,109,estimado
+Loma Dorada,Querétaro,2,69,estimado
+Lomas de Carretas,Querétaro,3,89,estimado
+Lomas de Casa Blanca,Querétaro,1,49,estimado
+Los Héroes,El Marqués,5,129,estimado
+Los Olvera,Corregidora,3,89,verificado
+Menchaca,Querétaro,5,129,estimado
+Milenio III,Querétaro,4,109,estimado
+Moderna,Querétaro,1,49,estimado
+Monte Blanco,Querétaro,4,109,estimado
+Niños Héroes,Querétaro,3,89,estimado
+Obrera,Querétaro,3,89,estimado
+Paseos del Bosque,Corregidora,5,129,ajustado_conservador
+Paseos del Pedregal,Querétaro,5,129,estimado
+Pathé,Querétaro,4,109,estimado
+Plaza del Parque,Querétaro,4,109,estimado
+Prados de la Capilla,Querétaro,1,49,estimado
+Puerta de San Rafael,Corregidora,5,129,ajustado_conservador
+Puerta Real,Corregidora,5,129,ajustado_conservador
+Quintas del Bosque,Corregidora,5,129,ajustado_conservador
+Quintas del Marqués,Querétaro,2,69,estimado
+Real del Bosque,Corregidora,5,129,ajustado_conservador
+Real Solare,El Marqués,6,149,estimado
+Rincón Colonial,Corregidora,5,129,ajustado_conservador
+Rincón de Guadalupe,Corregidora,5,129,ajustado_conservador
+Rincón de San Andrés,Querétaro,2,69,estimado
+Rinconada Campestre,Corregidora,5,129,ajustado_conservador
+Rinconada Morelos,Querétaro,2,69,estimado
+Rubén Jaramillo,Querétaro,4,109,estimado
+San Andrés,Querétaro,1,49,estimado
+San Ángel (Casa Blanca),Querétaro,1,49,estimado
+San Antonio de la Punta,Querétaro,5,129,estimado
+San Francisco Juriquilla,Querétaro,6,149,estimado
+San Francisquito,Querétaro,3,89,estimado
+San Javier,Querétaro,2,69,estimado
+San José de los Perales,Querétaro,3,89,estimado
+San Marcos,Querétaro,4,109,estimado
+San Marcos I,Querétaro,4,109,estimado
+San Pablo,Querétaro,5,129,estimado
+San Pablo I (INFONAVIT),Querétaro,5,129,estimado
+San Pablo II (INFONAVIT),Querétaro,5,129,estimado
+San Pablo III (INFONAVIT),Querétaro,5,129,estimado
+San Pablo IV (INFONAVIT),Querétaro,5,129,estimado
+San Pablo Tecnológico,Querétaro,5,129,estimado
+San Pedrito Ecológico,Querétaro,5,129,estimado
+San Pedrito Los Arcos,Querétaro,5,129,estimado
+San Pedrito Peñuelas I,Querétaro,5,129,estimado
+San Pedrito Peñuelas II,Querétaro,5,129,estimado
+San Pedrito Peñuelas III,Querétaro,5,129,estimado
+San Pedrito Peñuelas IV,Querétaro,5,129,estimado
+San Pedro Mártir,Querétaro,4,109,estimado
+San Sebastián,Querétaro,5,129,estimado
+Santa Bárbara,Corregidora,5,129,ajustado_conservador
+Santa Fe Juriquilla,Querétaro,6,149,estimado
+Santa Mónica,Querétaro,5,129,estimado
+Santa Mónica 1a Sección,Querétaro,5,129,estimado
+Santa Mónica 2a Sección,Querétaro,5,129,estimado
+Santo Niño,Querétaro,5,129,estimado
+Satélite,Querétaro,4,109,estimado
+Satélite Sección Andadores,Querétaro,4,109,estimado
+Satélite Sección Condominios,Querétaro,4,109,estimado
+Seminario,Querétaro,2,69,estimado
+Solidaridad 90,Querétaro,5,129,estimado
+Sonterra,Querétaro,6,149,estimado
+Tejas,Querétaro,3,89,estimado
+Tejeda,Corregidora,5,129,ajustado_conservador
+Tenochtitlán,Querétaro,4,109,estimado
+Tenochtitlán II,Querétaro,4,109,estimado
+Teotihuacán,Querétaro,4,109,estimado
+Terrazas de San Pablo,Querétaro,5,129,estimado
+Tierra Verde Juriquilla,Querétaro,6,149,estimado
+Tres Cantos Residencial,Querétaro,6,149,estimado
+Universidad,Querétaro,4,109,estimado
+Universo 2000,Querétaro,1,49,estimado
+Valle Alameda,Querétaro,3,89,estimado
+Valle de Juriquilla,Querétaro,6,149,estimado
+Valle de Juriquilla II,Querétaro,6,149,estimado
+Valle de los Olivos,Corregidora,5,129,ajustado_conservador
+Valle de San Pablo,Querétaro,5,129,estimado
+Valle Encantado,Querétaro,4,109,estimado
+Venceremos,Corregidora,5,129,ajustado_conservador
+Villa Cayetano Rubio,Querétaro,3,89,estimado
+Villa Los Arcos,Querétaro,2,69,estimado
+Villas del Cimatario,Querétaro,1,49,estimado
+Villas del Mesón,Querétaro,6,149,estimado
+Villas del Rincón,Querétaro,1,49,estimado
+Villas del Sur,Querétaro,3,89,estimado
+Villas del Tule,Querétaro,5,129,estimado
+Vista Alegre,Querétaro,2,69,estimado
+Vista Alegre 2a Sección,Querétaro,2,69,estimado
+Vista Alegre 3a Sección,Querétaro,2,69,estimado
+Vista Azul,Querétaro,1,49,estimado
+Vistas de San Pablo,Querétaro,5,129,estimado
+Vistas del Cimatario,Querétaro,1,49,estimado
+Vive,Querétaro,6,149,estimado
+Zakía,El Marqués,6,149,estimado
+Zapata Vive,Querétaro,1,49,estimado
+Zibatá,El Marqués,6,149,estimado
+__NO_LISTADA__,,,169,fallback_no_listada
+__FORANEO__,,,250,fallback_foraneo
