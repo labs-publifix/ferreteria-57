@@ -6,6 +6,28 @@ import { CheckCircle2 } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
 import { getLastOrder, type ConfirmedOrder } from "@/lib/checkout/lastOrder";
 import { formatPrice } from "@/lib/formatPrice";
+import { LOCAL_SHIPPING_BUSINESS_DAYS, FORANEO_SHIPPING_BUSINESS_DAYS } from "@/lib/checkout/constants";
+import { computePickupReadyTime, computeShippingEta, formatEtaDate, formatReadyAt } from "@/lib/checkout/fulfillmentTiming";
+
+// El mensaje de tiempo de entrega se arma aquí (no en fulfillmentTiming.ts):
+// esa utilidad solo calcula fechas/horas, la redacción exacta por
+// modalidad es texto de interfaz, no lógica de negocio. `order.createdAt`
+// (capturado en CheckoutView al confirmar) es el punto de partida del
+// cálculo — nunca la hora en que se ve esta pantalla, que podría ser
+// unos segundos o minutos después.
+function getFulfillmentMessage(order: ConfirmedOrder): string {
+  const orderTime = new Date(order.createdAt);
+  if (order.deliveryMethod === "retiro") {
+    const readyAt = computePickupReadyTime(orderTime);
+    return `Tu pedido estará listo para recoger a partir del ${formatReadyAt(readyAt)}.`;
+  }
+  if (order.deliveryMethod === "envio_local") {
+    const eta = computeShippingEta(orderTime, LOCAL_SHIPPING_BUSINESS_DAYS);
+    return `Recibe tu pedido en un plazo no mayor a ${LOCAL_SHIPPING_BUSINESS_DAYS} días hábiles — llega a más tardar el ${formatEtaDate(eta)}.`;
+  }
+  const eta = computeShippingEta(orderTime, FORANEO_SHIPPING_BUSINESS_DAYS);
+  return `Tu pedido llegará a más tardar el ${formatEtaDate(eta)}.`;
+}
 
 export function ConfirmationView() {
   // undefined = todavía no leímos sessionStorage; null = no había nada;
@@ -49,12 +71,8 @@ export function ConfirmationView() {
       </div>
 
       <div className="w-full rounded-lg bg-brand-gray p-4 text-left sm:p-6">
-        <p className="mb-3 font-sans text-sm text-brand-black">
-          {order.deliveryMethod === "retiro"
-            ? "Podrás recogerlo en tienda, en el horario de atención habitual."
-            : order.deliveryMethod === "envio_local"
-              ? "Se enviará a tu domicilio en Querétaro."
-              : "Se enviará a la dirección foránea que registraste."}
+        <p className="mb-3 font-sans text-sm font-semibold text-brand-black">
+          {getFulfillmentMessage(order)}
         </p>
         {order.address && (
           <p className="mb-3 font-sans text-xs text-brand-slate">

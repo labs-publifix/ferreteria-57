@@ -26,3 +26,12 @@ export const FORANEO_MAX_STANDARD = 4000;
 // A partir de este subtotal, el envío local (colonia real o "no listada")
 // se vuelve gratis.
 export const FREE_SHIPPING_THRESHOLD = 599;
+
+// Minutos mínimos de preparación para retiro en tienda antes de que el
+// pedido esté listo para recoger (ver lib/checkout/fulfillmentTiming.ts).
+export const PICKUP_PREP_MINUTES = 120;
+
+// Plazo máximo de entrega, en días hábiles (sábado cuenta, domingo no) —
+// ver lib/checkout/fulfillmentTiming.ts y lib/business-hours.ts.
+export const LOCAL_SHIPPING_BUSINESS_DAYS = 2;
+export const FORANEO_SHIPPING_BUSINESS_DAYS = 5;
