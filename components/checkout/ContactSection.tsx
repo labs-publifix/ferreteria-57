@@ -1,7 +1,8 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { LoyaltyCta } from "@/components/loyalty/LoyaltyCta";
+import { isValidEmail, isValidPhone } from "@/lib/checkout/validation";
 
 export interface ContactForm {
   firstName: string;
@@ -25,6 +26,7 @@ function ContactField({
   autoComplete,
   placeholder,
   className = "",
+  error,
 }: {
   label: string;
   type: "text" | "email" | "tel";
@@ -33,8 +35,17 @@ function ContactField({
   autoComplete?: string;
   placeholder?: string;
   className?: string;
+  /** Mensaje a mostrar cuando el campo, ya visitado, no es válido. */
+  error?: string;
 }) {
   const id = useId();
+  const errorId = useId();
+  // "Tocado" recién al salir del campo (blur), no en cada tecla — mostrar
+  // el error desde la primera letra escrita sería ruidoso y sentiría el
+  // formulario regañando antes de que la persona termine de escribir.
+  const [touched, setTouched] = useState(false);
+  const showError = touched && Boolean(error);
+
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
@@ -52,8 +63,18 @@ function ContactField({
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black placeholder:text-brand-slate/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+        onBlur={() => setTouched(true)}
+        aria-invalid={showError}
+        aria-describedby={showError ? errorId : undefined}
+        className={`w-full rounded-md border px-4 py-2.5 font-sans text-sm text-brand-black placeholder:text-brand-slate/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate ${
+          showError ? "border-red-500" : "border-brand-slate/30"
+        }`}
       />
+      {showError && (
+        <p id={errorId} className="mt-1 font-sans text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -87,6 +108,7 @@ export function ContactSection({
             autoComplete="given-name"
             value={contact.firstName}
             onChange={(value) => updateField("firstName", value)}
+            error={contact.firstName.trim() === "" ? "Ingresa tu nombre." : undefined}
           />
           <ContactField
             label="Apellido"
@@ -94,6 +116,7 @@ export function ContactSection({
             autoComplete="family-name"
             value={contact.lastName}
             onChange={(value) => updateField("lastName", value)}
+            error={contact.lastName.trim() === "" ? "Ingresa tu apellido." : undefined}
           />
           <ContactField
             label="Correo electrónico"
@@ -102,6 +125,7 @@ export function ContactSection({
             placeholder="tu@correo.com"
             value={contact.email}
             onChange={(value) => updateField("email", value)}
+            error={!isValidEmail(contact.email) ? "Ingresa un correo electrónico válido." : undefined}
           />
           <ContactField
             label="Teléfono móvil"
@@ -110,6 +134,7 @@ export function ContactSection({
             placeholder="442 000 0000"
             value={contact.phone}
             onChange={(value) => updateField("phone", value)}
+            error={!isValidPhone(contact.phone) ? "Ingresa un teléfono a 10 dígitos." : undefined}
           />
         </div>
       </div>

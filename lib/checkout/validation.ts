@@ -12,18 +12,24 @@ export interface ContactForm {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function isValidEmail(email: string): boolean {
+// Exportadas (no solo usadas internamente) para que los campos de
+// Contacto/Entrega puedan mostrar un error específico por campo en vez
+// de solo el aviso genérico de "faltan campos" — un valor con formato
+// inválido (p. ej. un teléfono a 8 dígitos) no es un campo vacío, así que
+// el asterisco de obligatorio no basta para explicar por qué el botón
+// sigue deshabilitado.
+export function isValidEmail(email: string): boolean {
   return EMAIL_PATTERN.test(email.trim());
 }
 
 // Se acepta cualquier formato de captura (espacios, guiones, paréntesis) y
 // solo se exige que, al quitar todo lo que no sea dígito, queden al menos
 // 10 — un celular mexicano sin lada de país.
-function isValidPhone(phone: string): boolean {
+export function isValidPhone(phone: string): boolean {
   return phone.replace(/\D/g, "").length >= 10;
 }
 
-function isValidPostalCode(postalCode: string): boolean {
+export function isValidPostalCode(postalCode: string): boolean {
   return /^\d{5}$/.test(postalCode.trim());
 }
 

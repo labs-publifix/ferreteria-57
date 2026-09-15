@@ -1,12 +1,13 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Combobox, Select } from "@/components/ui";
 import { STORE_ADDRESS, STORE_HORARIO } from "@/lib/store-info";
 import { MEXICAN_STATES_EXCLUDING_QUERETARO } from "@/lib/checkout/mexicanStates";
 import { FORANEO_COST, NO_LISTADA_KEY } from "@/lib/checkout/constants";
 import { amountRemainingForFreeShipping } from "@/lib/checkout/shippingCalculator";
+import { isValidPostalCode } from "@/lib/checkout/validation";
 import { formatPrice } from "@/lib/formatPrice";
 import type { ZonaEnvio } from "@/lib/checkout/useZonasEnvio";
 
@@ -67,6 +68,7 @@ function Field({
   required = true,
   readOnly = false,
   as = "input",
+  error,
 }: {
   label: string;
   value: string;
@@ -76,10 +78,22 @@ function Field({
   required?: boolean;
   readOnly?: boolean;
   as?: "input" | "textarea";
+  /** Mensaje a mostrar cuando el campo, ya visitado, no es válido. */
+  error?: string;
 }) {
   const id = useId();
-  const sharedClassName =
-    "w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate read-only:bg-brand-gray read-only:text-brand-slate";
+  const errorId = useId();
+  // "Tocado" recién al salir del campo (blur), no en cada tecla — mostrar
+  // el error desde la primera letra escrita sería ruidoso. Un campo con
+  // formato inválido (p. ej. un C.P. a 4 dígitos) no se ve distinto de uno
+  // válido a simple vista, a diferencia de uno vacío — de ahí que no baste
+  // con el asterisco de obligatorio para explicar por qué el botón de
+  // avanzar sigue deshabilitado.
+  const [touched, setTouched] = useState(false);
+  const showError = touched && Boolean(error);
+  const sharedClassName = `w-full rounded-md border px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate read-only:bg-brand-gray read-only:text-brand-slate ${
+    showError ? "border-red-500" : "border-brand-slate/30"
+  }`;
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
@@ -101,6 +115,9 @@ function Field({
           rows={2}
           value={value}
           onChange={(event) => onChange?.(event.target.value)}
+          onBlur={() => setTouched(true)}
+          aria-invalid={showError}
+          aria-describedby={showError ? errorId : undefined}
           className={sharedClassName}
         />
       ) : (
@@ -112,8 +129,16 @@ function Field({
           inputMode={inputMode}
           value={value}
           onChange={(event) => onChange?.(event.target.value)}
+          onBlur={() => setTouched(true)}
+          aria-invalid={showError}
+          aria-describedby={showError ? errorId : undefined}
           className={sharedClassName}
         />
+      )}
+      {showError && (
+        <p id={errorId} className="mt-1 font-sans text-xs text-red-600">
+          {error}
+        </p>
       )}
     </div>
   );
@@ -233,12 +258,14 @@ export function DeliverySection({
               label="Calle"
               value={localAddress.street}
               onChange={(value) => updateLocalField("street", value)}
+              error={localAddress.street.trim() === "" ? "Ingresa tu calle." : undefined}
             />
             <Field
               label="No. Exterior"
               value={localAddress.exteriorNumber}
               onChange={(value) => updateLocalField("exteriorNumber", value)}
               inputMode="numeric"
+              error={localAddress.exteriorNumber.trim() === "" ? "Ingresa el número exterior." : undefined}
             />
             <Field
               label="No. Interior"
@@ -252,6 +279,13 @@ export function DeliverySection({
               value={localAddress.postalCode}
               onChange={(value) => updateLocalField("postalCode", value)}
               inputMode="numeric"
+              error={
+                localAddress.postalCode.trim() === ""
+                  ? "Ingresa el código postal."
+                  : !isValidPostalCode(localAddress.postalCode)
+                    ? "Ingresa un código postal a 5 dígitos."
+                    : undefined
+              }
             />
             <Field
               as="textarea"
@@ -259,6 +293,7 @@ export function DeliverySection({
               value={localAddress.references}
               onChange={(value) => updateLocalField("references", value)}
               className="sm:col-span-2"
+              error={localAddress.references.trim() === "" ? "Ingresa una referencia de entrega." : undefined}
             />
           </div>
 
@@ -327,22 +362,28 @@ export function DeliverySection({
                 label="Ciudad"
                 value={foraneoAddress.city}
                 onChange={(value) => updateForaneoField("city", value)}
+                error={foraneoAddress.city.trim() === "" ? "Ingresa tu ciudad." : undefined}
               />
               <Field
                 label="Colonia"
                 value={foraneoAddress.colonia}
                 onChange={(value) => updateForaneoField("colonia", value)}
+                error={foraneoAddress.colonia.trim() === "" ? "Ingresa tu colonia." : undefined}
               />
               <Field
                 label="Calle"
                 value={foraneoAddress.street}
                 onChange={(value) => updateForaneoField("street", value)}
+                error={foraneoAddress.street.trim() === "" ? "Ingresa tu calle." : undefined}
               />
               <Field
                 label="No. Exterior"
                 value={foraneoAddress.exteriorNumber}
                 onChange={(value) => updateForaneoField("exteriorNumber", value)}
                 inputMode="numeric"
+                error={
+                  foraneoAddress.exteriorNumber.trim() === "" ? "Ingresa el número exterior." : undefined
+                }
               />
               <Field
                 label="No. Interior"
@@ -356,6 +397,13 @@ export function DeliverySection({
                 value={foraneoAddress.postalCode}
                 onChange={(value) => updateForaneoField("postalCode", value)}
                 inputMode="numeric"
+                error={
+                  foraneoAddress.postalCode.trim() === ""
+                    ? "Ingresa el código postal."
+                    : !isValidPostalCode(foraneoAddress.postalCode)
+                      ? "Ingresa un código postal a 5 dígitos."
+                      : undefined
+                }
               />
               <Field
                 as="textarea"
@@ -363,6 +411,9 @@ export function DeliverySection({
                 value={foraneoAddress.references}
                 onChange={(value) => updateForaneoField("references", value)}
                 className="sm:col-span-2"
+                error={
+                  foraneoAddress.references.trim() === "" ? "Ingresa una referencia de entrega." : undefined
+                }
               />
             </div>
 
