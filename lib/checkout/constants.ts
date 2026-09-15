@@ -1,4 +1,37 @@
-// Valores de ejemplo del checkout simulado — fáciles de ajustar cuando el
-// cliente defina las reglas reales de envío.
-export const FREE_SHIPPING_THRESHOLD = 950;
-export const SHIPPING_COST = 99;
+// Constantes de negocio del checkout de 3 modalidades — un solo lugar
+// para los montos, así BLOQUE 2/3 del checkout y /carrito (teaser de envío
+// gratis) nunca queden con números distintos entre sí.
+
+// Filas especiales de la tabla zonas_envio (ver supabase/migrations/
+// 20260915010000_zonas_envio.sql): no son colonias reales, son casos de
+// negocio — se excluyen del combobox de colonias y se tratan aquí como
+// constantes, no como datos que vengan "sueltos" de la base.
+export const PICKUP_TIENDA_KEY = "__PICKUP_TIENDA__";
+export const NO_LISTADA_KEY = "__NO_LISTADA__";
+export const FORANEO_KEY = "__FORANEO__";
+
+// $169 fijo cuando el cliente no encuentra su colonia en el combobox
+// (envío local, flujo 2).
+export const NO_LISTADA_COST = 169;
+
+// $250 fijo para envío foráneo (flujo 3) — no depende de colonia ni se ve
+// afectado por la promoción de envío gratis (esa promoción es solo para
+// envío local, flujo 2).
+export const FORANEO_COST = 250;
+
+// A partir de este subtotal, envío foráneo YA NO se cotiza en automático
+// con el costo fijo — hay que escalar por WhatsApp para cotización manual.
+export const FORANEO_MAX_STANDARD = 4000;
+
+// A partir de este subtotal, el envío local (colonia real o "no listada")
+// se vuelve gratis.
+export const FREE_SHIPPING_THRESHOLD = 599;
+
+// Minutos mínimos de preparación para retiro en tienda antes de que el
+// pedido esté listo para recoger (ver lib/checkout/fulfillmentTiming.ts).
+export const PICKUP_PREP_MINUTES = 120;
+
+// Plazo máximo de entrega, en días hábiles (sábado cuenta, domingo no) —
+// ver lib/checkout/fulfillmentTiming.ts y lib/business-hours.ts.
+export const LOCAL_SHIPPING_BUSINESS_DAYS = 2;
+export const FORANEO_SHIPPING_BUSINESS_DAYS = 5;

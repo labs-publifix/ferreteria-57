@@ -5,11 +5,27 @@ export interface ConfirmedOrderItem {
   price: number;
 }
 
+export interface ConfirmedOrderAddress {
+  city: string;
+  state: string;
+  colonia: string;
+  street: string;
+  exteriorNumber: string;
+  interiorNumber: string;
+  postalCode: string;
+  references: string;
+}
+
 export interface ConfirmedOrder {
   orderNumber: string;
   createdAt: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  deliveryMethod: "envio" | "retiro";
+  phone: string;
+  deliveryMethod: "retiro" | "envio_local" | "envio_foraneo";
+  // Ausente para "retiro" — ese flujo no pide dirección (ver Flujo 1).
+  address?: ConfirmedOrderAddress;
   items: ConfirmedOrderItem[];
   subtotal: number;
   shipping: number;

@@ -7,6 +7,11 @@ export const STORE_ADDRESS =
 export const STORE_PHONE_DISPLAY = "442 778 2708";
 export const STORE_PHONE_TEL = "+524427782708";
 
+// Mismo teléfono que "Atención a clientes", en formato wa.me (sin "+" ni
+// espacios) — usado por el botón flotante de WhatsApp y por la
+// cotización manual de envío foráneo (ver lib/checkout/whatsapp.ts).
+export const STORE_WHATSAPP_PHONE = "524427782708";
+
 export const STORE_HORARIO = [
   "Lunes a viernes: 8:00 am – 7:00 pm",
   "Sábados: 8:00 am – 3:00 pm",

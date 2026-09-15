@@ -1,6 +1,4 @@
-// Mismo teléfono que "Atención a clientes" (Header/Footer). Si el número de
-// WhatsApp de ventas termina siendo distinto, cambiar solo esta constante.
-const WHATSAPP_PHONE = "524427782708";
+import { STORE_WHATSAPP_PHONE } from "@/lib/store-info";
 
 // Glifo real de WhatsApp como SVG inline (path de Simple Icons, MIT) en vez
 // de un ícono de chat genérico: lucide-react es un set de íconos de línea
@@ -22,7 +20,7 @@ function WhatsAppIcon() {
 export function WhatsAppButton() {
   return (
     <a
-      href={`https://wa.me/${WHATSAPP_PHONE}`}
+      href={`https://wa.me/${STORE_WHATSAPP_PHONE}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escríbenos por WhatsApp"

@@ -1,11 +1,24 @@
 import { ProductThumbnail } from "@/components/product/ProductThumbnail";
+import { formatPrice } from "@/lib/formatPrice";
 import type { ResolvedCartLine } from "@/components/cart/useResolvedCart";
 import type { DeliveryMethod } from "./DeliverySection";
 
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
+function shippingNote(
+  deliveryMethod: DeliveryMethod,
+  shipping: number | null,
+  foraneoOverLimit: boolean
+) {
+  if (deliveryMethod === "retiro") return "Retiro en tienda: gratis.";
+  if (deliveryMethod === "envio_foraneo") {
+    return foraneoOverLimit
+      ? "Tu pedido requiere cotización manual — el envío no se cobra en este paso."
+      : "Costo fijo de envío foráneo, no aplica ninguna promoción.";
+  }
+  if (shipping === null) return "Elige tu colonia para conocer el costo de envío.";
+  return shipping === 0
+    ? "¡Tu pedido calificó para envío gratis!"
+    : "Envío local a Querétaro.";
+}
 
 export function OrderSummary({
   items,
@@ -13,12 +26,14 @@ export function OrderSummary({
   shipping,
   total,
   deliveryMethod,
+  foraneoOverLimit = false,
 }: {
   items: ResolvedCartLine[];
   subtotal: number;
-  shipping: number;
+  shipping: number | null;
   total: number;
   deliveryMethod: DeliveryMethod;
+  foraneoOverLimit?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-4 rounded-lg bg-brand-gray p-4 sm:p-6">
@@ -40,7 +55,7 @@ export function OrderSummary({
               <p className="font-sans text-xs text-brand-slate">Cantidad: {quantity}</p>
             </div>
             <p className="shrink-0 font-sans text-sm font-semibold text-brand-black">
-              {currencyFormatter.format(variant.price * quantity)}
+              {formatPrice(variant.price * quantity)}
             </p>
           </div>
         ))}
@@ -49,20 +64,30 @@ export function OrderSummary({
       <div className="flex flex-col gap-2 border-t border-brand-slate/15 pt-4 font-sans text-sm text-brand-black">
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span>{currencyFormatter.format(subtotal)}</span>
+          <span>{formatPrice(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Envío</span>
-          <span>{shipping === 0 ? "Gratis" : currencyFormatter.format(shipping)}</span>
+          <span>
+            {deliveryMethod === "envio_foraneo" && foraneoOverLimit
+              ? "Por cotizar"
+              : shipping === null
+                ? "Por calcular"
+                : shipping === 0
+                  ? "Gratis"
+                  : formatPrice(shipping)}
+          </span>
         </div>
-        {deliveryMethod === "envio" && shipping > 0 && (
-          <p className="font-sans text-xs text-brand-slate/60">
-            *Costo de envío de ejemplo; envíos gratis desde $950 MXN.
-          </p>
-        )}
+        <p className="font-sans text-xs text-brand-slate/60">
+          {shippingNote(deliveryMethod, shipping, foraneoOverLimit)}
+        </p>
         <div className="flex justify-between border-t border-brand-slate/15 pt-2 text-base font-bold">
           <span>Total</span>
-          <span>{currencyFormatter.format(total)}</span>
+          <span>
+            {deliveryMethod === "envio_foraneo" && foraneoOverLimit
+              ? formatPrice(subtotal)
+              : formatPrice(total)}
+          </span>
         </div>
       </div>
     </div>
