@@ -5,11 +5,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
 import { getLastOrder, type ConfirmedOrder } from "@/lib/checkout/lastOrder";
-
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
+import { formatPrice } from "@/lib/formatPrice";
 
 export function ConfirmationView() {
   // undefined = todavía no leímos sessionStorage; null = no había nada;
@@ -76,7 +72,7 @@ export function ConfirmationView() {
                 {item.variantLabel ? ` (${item.variantLabel})` : ""}
               </span>
               <span className="shrink-0">
-                {currencyFormatter.format(item.price * item.quantity)}
+                {formatPrice(item.price * item.quantity)}
               </span>
             </div>
           ))}
@@ -84,16 +80,16 @@ export function ConfirmationView() {
         <div className="mt-3 flex flex-col gap-1 border-t border-brand-slate/15 pt-3 font-sans text-sm text-brand-slate">
           <div className="flex justify-between">
             <span>Subtotal</span>
-            <span>{currencyFormatter.format(order.subtotal)}</span>
+            <span>{formatPrice(order.subtotal)}</span>
           </div>
           <div className="flex justify-between">
             <span>Envío</span>
-            <span>{order.shipping === 0 ? "Gratis" : currencyFormatter.format(order.shipping)}</span>
+            <span>{order.shipping === 0 ? "Gratis" : formatPrice(order.shipping)}</span>
           </div>
         </div>
         <div className="mt-2 flex justify-between border-t border-brand-slate/15 pt-3 font-sans text-base font-bold text-brand-black">
           <span>Total</span>
-          <span>{currencyFormatter.format(order.total)}</span>
+          <span>{formatPrice(order.total)}</span>
         </div>
       </div>
 

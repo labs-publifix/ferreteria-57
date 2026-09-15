@@ -1,11 +1,7 @@
 import { ProductThumbnail } from "@/components/product/ProductThumbnail";
+import { formatPrice } from "@/lib/formatPrice";
 import type { ResolvedCartLine } from "@/components/cart/useResolvedCart";
 import type { DeliveryMethod } from "./DeliverySection";
-
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
 
 function shippingNote(
   deliveryMethod: DeliveryMethod,
@@ -59,7 +55,7 @@ export function OrderSummary({
               <p className="font-sans text-xs text-brand-slate">Cantidad: {quantity}</p>
             </div>
             <p className="shrink-0 font-sans text-sm font-semibold text-brand-black">
-              {currencyFormatter.format(variant.price * quantity)}
+              {formatPrice(variant.price * quantity)}
             </p>
           </div>
         ))}
@@ -68,7 +64,7 @@ export function OrderSummary({
       <div className="flex flex-col gap-2 border-t border-brand-slate/15 pt-4 font-sans text-sm text-brand-black">
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span>{currencyFormatter.format(subtotal)}</span>
+          <span>{formatPrice(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span>Envío</span>
@@ -79,7 +75,7 @@ export function OrderSummary({
                 ? "Por calcular"
                 : shipping === 0
                   ? "Gratis"
-                  : currencyFormatter.format(shipping)}
+                  : formatPrice(shipping)}
           </span>
         </div>
         <p className="font-sans text-xs text-brand-slate/60">
@@ -89,8 +85,8 @@ export function OrderSummary({
           <span>Total</span>
           <span>
             {deliveryMethod === "envio_foraneo" && foraneoOverLimit
-              ? currencyFormatter.format(subtotal)
-              : currencyFormatter.format(total)}
+              ? formatPrice(subtotal)
+              : formatPrice(total)}
           </span>
         </div>
       </div>

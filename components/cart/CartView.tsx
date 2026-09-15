@@ -5,13 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { buttonClassName } from "@/components/ui";
 import { LoyaltyCta } from "@/components/loyalty/LoyaltyCta";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/checkout/constants";
+import { formatPrice } from "@/lib/formatPrice";
 import { useResolvedCart } from "./useResolvedCart";
 import { CartLineItem } from "./CartLineItem";
-
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
 
 export function CartView() {
   const { items, subtotal, isHydrated } = useResolvedCart();
@@ -60,7 +56,7 @@ export function CartView() {
         <div className="flex items-center justify-between font-sans text-sm text-brand-black">
           <span>Subtotal</span>
           <span className="text-xl font-bold">
-            {currencyFormatter.format(subtotal)}
+            {formatPrice(subtotal)}
           </span>
         </div>
         <div className="flex flex-col gap-1">
@@ -68,8 +64,7 @@ export function CartView() {
             Retiro en tienda: siempre gratis.
           </p>
           <p className="font-sans text-xs text-brand-slate/70">
-            Envío local gratis en compras desde{" "}
-            {currencyFormatter.format(FREE_SHIPPING_THRESHOLD)} MXN.
+            Envío local gratis en compras desde {formatPrice(FREE_SHIPPING_THRESHOLD)}.
           </p>
         </div>
         <Link href="/checkout" className={buttonClassName("primary", "w-full")}>

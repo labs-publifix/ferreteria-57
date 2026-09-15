@@ -2,17 +2,13 @@
 // (flujo 3, pedidos >= $4,000 MXN): el equipo necesita ver qué se pidió sin
 // tener que pedírselo de vuelta al cliente.
 import { STORE_WHATSAPP_PHONE } from "@/lib/store-info";
+import { formatPrice } from "@/lib/formatPrice";
 
 export interface ForaneoQuoteItem {
   name: string;
   variantLabel: string | null;
   quantity: number;
 }
-
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
 
 export function buildForaneoQuoteMessage(items: ForaneoQuoteItem[], subtotal: number): string {
   const lines = items.map(
@@ -21,7 +17,7 @@ export function buildForaneoQuoteMessage(items: ForaneoQuoteItem[], subtotal: nu
   return [
     "Hola, quiero cotizar el envío foráneo de mi pedido:",
     ...lines,
-    `Subtotal: ${currencyFormatter.format(subtotal)}`,
+    `Subtotal: ${formatPrice(subtotal)}`,
   ].join("\n");
 }
 

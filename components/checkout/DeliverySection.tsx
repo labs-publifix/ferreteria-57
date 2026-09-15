@@ -7,6 +7,7 @@ import { STORE_ADDRESS, STORE_HORARIO } from "@/lib/store-info";
 import { MEXICAN_STATES_EXCLUDING_QUERETARO } from "@/lib/checkout/mexicanStates";
 import { FORANEO_COST, NO_LISTADA_KEY } from "@/lib/checkout/constants";
 import { amountRemainingForFreeShipping } from "@/lib/checkout/shippingCalculator";
+import { formatPrice } from "@/lib/formatPrice";
 import type { ZonaEnvio } from "@/lib/checkout/useZonasEnvio";
 
 export type DeliveryMethod = "retiro" | "envio_local" | "envio_foraneo";
@@ -50,12 +51,6 @@ export const emptyForaneoAddress: ForaneoAddressForm = {
   postalCode: "",
   references: "",
 };
-
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-  maximumFractionDigits: 0,
-});
 
 const DELIVERY_OPTIONS: { value: DeliveryMethod; label: string }[] = [
   { value: "retiro", label: "Retiro en tienda" },
@@ -149,7 +144,7 @@ export function DeliverySection({
 
   const coloniaOptions = zonas.map((zona) => ({
     value: zona.colonia,
-    label: `${zona.colonia} — ${currencyFormatter.format(zona.costoEnvioMxn)}`,
+    label: `${zona.colonia} — ${formatPrice(zona.costoEnvioMxn)}`,
   }));
 
   const remainingForFreeShipping = amountRemainingForFreeShipping(subtotal);
@@ -264,7 +259,7 @@ export function DeliverySection({
             }`}
           >
             {remainingForFreeShipping > 0
-              ? `Te faltan ${currencyFormatter.format(remainingForFreeShipping)} para obtener envío gratis`
+              ? `Te faltan ${formatPrice(remainingForFreeShipping)} para obtener envío gratis`
               : "¡Tu pedido calificó para envío gratis!"}
           </p>
         </div>
@@ -348,7 +343,7 @@ export function DeliverySection({
             </div>
           ) : (
             <p className="rounded-md bg-brand-gray px-4 py-2.5 font-sans text-sm font-semibold text-brand-black">
-              Costo de envío foráneo: {currencyFormatter.format(FORANEO_COST)}
+              Costo de envío foráneo: {formatPrice(FORANEO_COST)}
             </p>
           )}
         </div>
