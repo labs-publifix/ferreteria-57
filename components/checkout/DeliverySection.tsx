@@ -276,93 +276,101 @@ export function DeliverySection({
         </div>
       )}
 
-      {deliveryMethod === "envio_foraneo" && (
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
-                Estado
-                <span className="text-brand-orange" aria-hidden="true">
-                  {" "}
-                  *
-                </span>
-              </label>
-              <Select
-                value={foraneoAddress.state}
-                onChange={(value) => updateForaneoField("state", value)}
-                options={MEXICAN_STATES_EXCLUDING_QUERETARO.map((state) => ({
-                  value: state,
-                  label: state,
-                }))}
-                label="Estado"
+      {deliveryMethod === "envio_foraneo" &&
+        (foraneoOverLimit ? (
+          // Por encima del monto máximo no hay checkout estándar que
+          // completar (ver CheckoutView: canSubmit ya es false y los
+          // botones de confirmar se ocultan) — pedir Estado/Ciudad/Calle/
+          // etc. en ese momento sería llenar un formulario para nada. En
+          // su lugar, todo el peso va al CTA de WhatsApp.
+          <div className="flex flex-col items-start gap-3 rounded-lg border-2 border-brand-orange/50 bg-brand-orange/10 p-5">
+            <p className="font-sans text-base font-semibold text-brand-black">
+              Tu pedido ({formatPrice(subtotal)}) supera el monto máximo para envío foráneo
+              estándar.
+            </p>
+            <p className="font-sans text-sm text-brand-slate">
+              Contáctanos por WhatsApp con los datos de tu pedido y te ayudamos a cotizar el
+              envío — no necesitas llenar tu dirección aquí todavía.
+            </p>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-11 w-fit items-center gap-2 rounded-md bg-brand-orange px-5 font-sans text-sm font-semibold text-brand-black transition-transform hover:scale-[1.02]"
+            >
+              <MessageCircle className="size-4" aria-hidden="true" strokeWidth={1.75} />
+              Cotizar por WhatsApp
+            </a>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
+                  Estado
+                  <span className="text-brand-orange" aria-hidden="true">
+                    {" "}
+                    *
+                  </span>
+                </label>
+                <Select
+                  value={foraneoAddress.state}
+                  onChange={(value) => updateForaneoField("state", value)}
+                  options={MEXICAN_STATES_EXCLUDING_QUERETARO.map((state) => ({
+                    value: state,
+                    label: state,
+                  }))}
+                  label="Estado"
+                />
+              </div>
+              <Field
+                label="Ciudad"
+                value={foraneoAddress.city}
+                onChange={(value) => updateForaneoField("city", value)}
+              />
+              <Field
+                label="Colonia"
+                value={foraneoAddress.colonia}
+                onChange={(value) => updateForaneoField("colonia", value)}
+              />
+              <Field
+                label="Calle"
+                value={foraneoAddress.street}
+                onChange={(value) => updateForaneoField("street", value)}
+              />
+              <Field
+                label="No. Exterior"
+                value={foraneoAddress.exteriorNumber}
+                onChange={(value) => updateForaneoField("exteriorNumber", value)}
+                inputMode="numeric"
+              />
+              <Field
+                label="No. Interior"
+                value={foraneoAddress.interiorNumber}
+                onChange={(value) => updateForaneoField("interiorNumber", value)}
+                inputMode="numeric"
+                required={false}
+              />
+              <Field
+                label="Código postal"
+                value={foraneoAddress.postalCode}
+                onChange={(value) => updateForaneoField("postalCode", value)}
+                inputMode="numeric"
+              />
+              <Field
+                as="textarea"
+                label="Referencias de entrega"
+                value={foraneoAddress.references}
+                onChange={(value) => updateForaneoField("references", value)}
+                className="sm:col-span-2"
               />
             </div>
-            <Field
-              label="Ciudad"
-              value={foraneoAddress.city}
-              onChange={(value) => updateForaneoField("city", value)}
-            />
-            <Field
-              label="Colonia"
-              value={foraneoAddress.colonia}
-              onChange={(value) => updateForaneoField("colonia", value)}
-            />
-            <Field
-              label="Calle"
-              value={foraneoAddress.street}
-              onChange={(value) => updateForaneoField("street", value)}
-            />
-            <Field
-              label="No. Exterior"
-              value={foraneoAddress.exteriorNumber}
-              onChange={(value) => updateForaneoField("exteriorNumber", value)}
-              inputMode="numeric"
-            />
-            <Field
-              label="No. Interior"
-              value={foraneoAddress.interiorNumber}
-              onChange={(value) => updateForaneoField("interiorNumber", value)}
-              inputMode="numeric"
-              required={false}
-            />
-            <Field
-              label="Código postal"
-              value={foraneoAddress.postalCode}
-              onChange={(value) => updateForaneoField("postalCode", value)}
-              inputMode="numeric"
-            />
-            <Field
-              as="textarea"
-              label="Referencias de entrega"
-              value={foraneoAddress.references}
-              onChange={(value) => updateForaneoField("references", value)}
-              className="sm:col-span-2"
-            />
-          </div>
 
-          {foraneoOverLimit ? (
-            <div className="flex flex-col gap-3 rounded-lg border-2 border-brand-orange/50 bg-brand-orange/10 p-4">
-              <p className="font-sans text-sm font-semibold text-brand-black">
-                Tu pedido supera el monto máximo para envío foráneo estándar — contáctanos para
-                cotizar tu envío.
-              </p>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-h-11 w-fit items-center gap-2 rounded-md bg-brand-orange px-4 font-sans text-sm font-semibold text-brand-black transition-transform hover:scale-[1.02]"
-              >
-                <MessageCircle className="size-4" aria-hidden="true" strokeWidth={1.75} />
-                Cotizar por WhatsApp
-              </a>
-            </div>
-          ) : (
             <p className="rounded-md bg-brand-gray px-4 py-2.5 font-sans text-sm font-semibold text-brand-black">
               Costo de envío foráneo: {formatPrice(FORANEO_COST)}
             </p>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
     </section>
   );
 }
