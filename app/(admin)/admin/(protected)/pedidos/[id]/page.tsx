@@ -3,7 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderStatusControl } from "@/components/admin/OrderStatusControl";
 import { formatPrice } from "@/lib/formatPrice";
-import { FULFILLMENT_TYPE_LABEL, ORDER_STATUS_LABEL, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
+import {
+  FULFILLMENT_TYPE_LABEL,
+  ORDER_STATUS_BADGE_CLASS,
+  ORDER_STATUS_LABEL,
+  type FulfillmentType,
+  type OrderStatus,
+} from "@/lib/orders/status";
+import { getOrderReadiness } from "@/lib/orders/readiness";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Panel de administración" };
@@ -103,12 +110,23 @@ export default async function AdminPedidoDetailPage({ params }: { params: { id: 
           <h1 className="font-display text-xl uppercase text-brand-slate sm:text-2xl">
             Pedido {orderDetail.order_number}
           </h1>
-          <span className="rounded-full bg-brand-gray px-3 py-1 font-sans text-xs font-semibold uppercase text-brand-slate">
+          <span
+            className={`rounded-full px-3 py-1 font-sans text-xs font-semibold uppercase ${ORDER_STATUS_BADGE_CLASS[orderDetail.status]}`}
+          >
             {ORDER_STATUS_LABEL[orderDetail.status]}
           </span>
         </div>
         <p className="mt-1 font-sans text-sm text-brand-slate/70">
           {dateFormatter.format(new Date(orderDetail.created_at))} · {FULFILLMENT_TYPE_LABEL[orderDetail.fulfillment_type]}
+        </p>
+      </div>
+
+      {/* Prominente y arriba de todo lo demás: es la pregunta operativa
+          que el equipo de la tienda necesita responder de un vistazo al
+          entrar al detalle — para cuándo debe estar listo este pedido. */}
+      <div className="rounded-lg border-2 border-brand-orange/40 bg-brand-orange/10 p-4">
+        <p className="font-sans text-sm font-semibold text-brand-black">
+          {getOrderReadiness(orderDetail.fulfillment_type, orderDetail.created_at).long}
         </p>
       </div>
 

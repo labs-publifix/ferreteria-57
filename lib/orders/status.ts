@@ -31,6 +31,20 @@ export const FULFILLMENT_TYPE_LABEL: Record<FulfillmentType, string> = {
   foraneo: "Envío foráneo",
 };
 
+// Un color distinto por estatus (no solo "en progreso" vs. "terminado")
+// para que la lista de /admin/pedidos se pueda escanear de un vistazo —
+// única fuente de verdad, usada tanto en la tabla como en el detalle, así
+// nunca queda un estatus con un color en una vista y otro en la otra.
+export const ORDER_STATUS_BADGE_CLASS: Record<OrderStatus, string> = {
+  pendiente_pago: "bg-amber-100 text-amber-800",
+  pagado: "bg-blue-100 text-blue-800",
+  preparando: "bg-indigo-100 text-indigo-800",
+  listo: "bg-violet-100 text-violet-800",
+  enviado: "bg-cyan-100 text-cyan-800",
+  entregado: "bg-green-100 text-green-800",
+  cancelado: "bg-red-100 text-red-800",
+};
+
 // Retiro en tienda nunca pasa por "enviado" — de "listo" avanza directo a
 // "entregado" (recogido). Envío local y foráneo sí reparten, así que su
 // secuencia es idéntica entre sí.

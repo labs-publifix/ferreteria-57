@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/formatPrice";
-import { FULFILLMENT_TYPE_LABEL, ORDER_STATUS_LABEL, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
+import {
+  FULFILLMENT_TYPE_LABEL,
+  ORDER_STATUS_BADGE_CLASS,
+  ORDER_STATUS_LABEL,
+  type FulfillmentType,
+  type OrderStatus,
+} from "@/lib/orders/status";
+import { getOrderReadiness } from "@/lib/orders/readiness";
 
 export interface OrderRow {
   id: string;
@@ -12,16 +19,6 @@ export interface OrderRow {
   total: number;
   created_at: string;
 }
-
-const STATUS_CLASS: Record<OrderStatus, string> = {
-  pendiente_pago: "bg-amber-100 text-amber-800",
-  pagado: "bg-blue-100 text-blue-800",
-  preparando: "bg-blue-100 text-blue-800",
-  listo: "bg-blue-100 text-blue-800",
-  enviado: "bg-blue-100 text-blue-800",
-  entregado: "bg-green-100 text-green-800",
-  cancelado: "bg-brand-gray text-brand-slate",
-};
 
 const dateFormatter = new Intl.DateTimeFormat("es-MX", {
   dateStyle: "medium",
@@ -49,6 +46,7 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
             <th className="px-4 py-3">Pedido</th>
             <th className="px-4 py-3">Cliente</th>
             <th className="px-4 py-3">Entrega</th>
+            <th className="px-4 py-3">Listo / entrega</th>
             <th className="px-4 py-3">Estatus</th>
             <th className="px-4 py-3">Total</th>
             <th className="px-4 py-3">Fecha</th>
@@ -70,8 +68,13 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                 <p className="truncate text-xs text-brand-slate/70">{order.customer_email}</p>
               </td>
               <td className="px-4 py-3 text-brand-slate">{FULFILLMENT_TYPE_LABEL[order.fulfillment_type]}</td>
+              <td className="max-w-[200px] px-4 py-3 text-brand-slate">
+                {getOrderReadiness(order.fulfillment_type, order.created_at).short}
+              </td>
               <td className="px-4 py-3">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLASS[order.status]}`}>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_BADGE_CLASS[order.status]}`}
+                >
                   {ORDER_STATUS_LABEL[order.status]}
                 </span>
               </td>

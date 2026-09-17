@@ -4,7 +4,13 @@ import type { Config } from "tailwindcss";
 // (brand/Manual de Marca Ferretería 57.pdf, sección 03 PALETA DE COLOR).
 // No inventar ni ajustar estos hex: son los valores oficiales del cliente.
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  // lib/ incluido a propósito: ORDER_STATUS_BADGE_CLASS (lib/orders/status.ts)
+  // arma clases de Tailwind fuera de app/ o components/ — sin este glob,
+  // cualquier color que no coincidiera por casualidad con una clase ya usada
+  // en otro archivo escaneado simplemente no se generaba (bg-blue-100,
+  // bg-indigo-100, etc. nunca aparecían, aunque el nombre de la clase
+  // estuviera bien escrito).
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
