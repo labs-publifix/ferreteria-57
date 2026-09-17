@@ -40,12 +40,18 @@ export async function updateOrderStatus(
     return { error: "Ese cambio de estatus no es válido para este pedido." };
   }
 
-  const { error } = await supabase
-    .from("orders")
-    .update({ status: nextStatus })
-    .eq("id", orderId)
-    .eq("status", currentStatus);
-  if (error) return { error: `No se pudo actualizar el pedido: ${error.message}` };
+  // update_order_status() hace la transición y, si aplica, restaura el
+  // stock en una sola transacción — reemplaza el UPDATE directo que había
+  // antes, que no restauraba nada al cancelar. El .eq("status", ...) que
+  // usaba ese UPDATE ya no hace falta aquí: la función bloquea la fila del
+  // pedido y compara el estatus esperado ella misma (ver la migración),
+  // así que un doble clic en "Cancelar" nunca vuelve a sumar el stock.
+  const { error } = await supabase.rpc("update_order_status", {
+    p_order_id: orderId,
+    p_expected_status: currentStatus,
+    p_new_status: nextStatus,
+  });
+  if (error) return { error: error.message };
 
   revalidatePath("/admin/pedidos");
   revalidatePath(`/admin/pedidos/${orderId}`);

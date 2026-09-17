@@ -9,11 +9,22 @@ import { computeShipping, getLocalZoneCost, isForaneoOverLimit } from "@/lib/che
 import { getZonasEnvioServer } from "@/lib/checkout/getZonasEnvioServer";
 import { isContactValid, isForaneoAddressValid, isLocalAddressValid } from "@/lib/checkout/validation";
 import type { ContactForm, ForaneoAddressForm, LocalAddressForm } from "@/lib/checkout/validation";
+import { sendEmail } from "@/lib/email/sendEmail";
+import {
+  buildCustomerConfirmationEmail,
+  buildInternalNotificationEmail,
+  type OrderEmailAddress,
+} from "@/lib/email/orderEmails";
+
+const INTERNAL_NOTIFICATION_EMAIL = "ferreteria57@proton.me";
 
 export interface CreateOrderItemInput {
   productName: string;
   variantLabel: string | null;
   sku: string;
+  /** Id real de product_variants — usado por create_order() para
+   *  descontar stock, nunca se guarda en el snapshot de order_items. */
+  variantId: string;
   unitPrice: number;
   quantity: number;
 }
@@ -130,12 +141,20 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       product_name: item.productName,
       variant_label: item.variantLabel,
       sku: item.sku,
+      variant_id: item.variantId,
       unit_price: item.unitPrice,
       quantity: item.quantity,
     })),
   });
 
   if (error) {
+    // F57NS: errcode propio que create_order() usa solo para "no hay
+    // stock suficiente" — ese mensaje ya está redactado para mostrarse
+    // tal cual al cliente. Cualquier otro error de base de datos se
+    // esconde detrás de un mensaje genérico, igual que antes.
+    if (error.code === "F57NS") {
+      return { error: error.message };
+    }
     console.error("[createOrder]", error.message);
     return { error: "No se pudo registrar tu pedido. Intenta de nuevo." };
   }
@@ -143,6 +162,38 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   if (!row) {
     return { error: "No se pudo registrar tu pedido. Intenta de nuevo." };
   }
+
+  // El pedido ya está creado en este punto — un correo que falle nunca
+  // debe deshacer ni bloquear la respuesta de éxito. Los dos se mandan en
+  // paralelo y cada uno registra su propio error por separado.
+  const emailData = {
+    orderNumber: row.order_number,
+    customerName: `${input.contact.firstName} ${input.contact.lastName}`.trim(),
+    customerPhone: input.contact.phone,
+    customerEmail: input.contact.email,
+    fulfillmentType: input.fulfillmentType,
+    colonia,
+    shippingAddress: shippingAddress as OrderEmailAddress | null,
+    items: input.items.map((item) => ({
+      productName: item.productName,
+      variantLabel: item.variantLabel,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+    })),
+    subtotal: input.subtotal,
+    shippingCost,
+    total,
+  };
+
+  const internalEmail = buildInternalNotificationEmail(emailData);
+  const customerEmailContent = buildCustomerConfirmationEmail(emailData);
+
+  const [internalResult, customerResult] = await Promise.all([
+    sendEmail({ to: INTERNAL_NOTIFICATION_EMAIL, subject: internalEmail.subject, html: internalEmail.html }),
+    sendEmail({ to: emailData.customerEmail, subject: customerEmailContent.subject, html: customerEmailContent.html }),
+  ]);
+  if (internalResult.error) console.error("[createOrder] correo interno:", internalResult.error);
+  if (customerResult.error) console.error("[createOrder] correo de confirmación:", customerResult.error);
 
   return {
     orderNumber: row.order_number,

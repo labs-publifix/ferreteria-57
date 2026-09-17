@@ -116,6 +116,7 @@ export function CheckoutView() {
       productName: product.name,
       variantLabel: product.variants.length > 1 ? variant.label : null,
       sku: variant.sku,
+      variantId: variant.id,
       unitPrice: variant.price,
       quantity,
     }));
