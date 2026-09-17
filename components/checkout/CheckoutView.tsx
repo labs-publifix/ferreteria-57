@@ -15,6 +15,7 @@ import {
 import { isContactValid, isForaneoAddressValid, isLocalAddressValid } from "@/lib/checkout/validation";
 import { useZonasEnvio } from "@/lib/checkout/useZonasEnvio";
 import { buildForaneoWhatsAppUrl } from "@/lib/checkout/whatsapp";
+import { createOrder, type CreateOrderInput } from "@/app/(site)/checkout/actions";
 import { ContactSection, emptyContact, type ContactForm } from "./ContactSection";
 import {
   DeliverySection,
@@ -40,6 +41,12 @@ export function CheckoutView() {
   const [localAddress, setLocalAddress] = useState<LocalAddressForm>(emptyLocalAddress);
   const [foraneoAddress, setForaneoAddress] = useState<ForaneoAddressForm>(emptyForaneoAddress);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("tarjeta");
+  // El pedido ahora se persiste de verdad en Supabase (create_order, ver
+  // app/(site)/checkout/actions.ts) — a diferencia de antes, confirmar ya
+  // no es instantáneo, así que necesita su propio estado de carga/error en
+  // vez de guardar y navegar en la misma función síncrona.
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   // Al confirmar el pedido, clearCart() deja `items` en 0 mientras esta
   // vista sigue montada (la navegación a /checkout/confirmacion no es
   // instantánea) — sin esta bandera, el efecto de abajo vería "carrito
@@ -99,14 +106,56 @@ export function CheckoutView() {
     subtotal
   );
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || isSubmitting) return;
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    const orderItems = items.map(({ product, variant, quantity }) => ({
+      productName: product.name,
+      variantLabel: product.variants.length > 1 ? variant.label : null,
+      sku: variant.sku,
+      unitPrice: variant.price,
+      quantity,
+    }));
+
+    const input: CreateOrderInput =
+      deliveryMethod === "retiro"
+        ? { fulfillmentType: "pickup", contact, items: orderItems, subtotal }
+        : deliveryMethod === "envio_local"
+          ? {
+              fulfillmentType: "local_delivery",
+              contact,
+              items: orderItems,
+              subtotal,
+              colonia: localAddress.colonia,
+              address: localAddress,
+            }
+          : {
+              fulfillmentType: "foraneo",
+              contact,
+              items: orderItems,
+              subtotal,
+              address: foraneoAddress,
+            };
+
+    const result = await createOrder(input);
+
+    if (result.error || !result.orderNumber) {
+      setSubmitError(result.error ?? "No se pudo registrar tu pedido. Intenta de nuevo.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // canSubmit ya exigió una colonia elegida en envío local, así que
+    // shippingCost siempre viene definido aquí en la práctica — el `?? 0`
+    // solo satisface el tipo (number | undefined) de la respuesta del
+    // Server Action.
     hasSubmittedRef.current = true;
-    const orderNumber = `F57-${Date.now().toString(36).toUpperCase()}`;
     saveLastOrder({
-      orderNumber,
-      createdAt: new Date().toISOString(),
+      orderNumber: result.orderNumber,
+      createdAt: result.createdAt ?? new Date().toISOString(),
       firstName: contact.firstName,
       lastName: contact.lastName,
       email: contact.email,
@@ -144,12 +193,8 @@ export function CheckoutView() {
         price: variant.price,
       })),
       subtotal,
-      // canSubmit ya exigió una colonia elegida en envío local, así que
-      // aquí `shipping` nunca es null en la práctica — el `?? 0` solo
-      // satisface el tipo (number | null) que existe para el estado "aún
-      // no se sabe" que se muestra ANTES de completar el formulario.
-      shipping: shipping ?? 0,
-      total,
+      shipping: result.shippingCost ?? 0,
+      total: result.total ?? subtotal,
     });
     clearCart();
     router.push("/checkout/confirmacion");
@@ -185,12 +230,17 @@ export function CheckoutView() {
         />
         {!foraneoOverLimit && (
           <div className="hidden lg:block">
-            <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit}>
-              Confirmar pedido
+            <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit || isSubmitting}>
+              {isSubmitting ? "Confirmando..." : "Confirmar pedido"}
             </Button>
-            {!canSubmit && (
+            {!canSubmit && !isSubmitting && (
               <p className="mt-2 text-center font-sans text-xs text-brand-slate">
                 Completa los campos marcados con * para continuar.
+              </p>
+            )}
+            {submitError && (
+              <p role="alert" className="mt-2 text-center font-sans text-xs text-red-600">
+                {submitError}
               </p>
             )}
           </div>
@@ -214,12 +264,17 @@ export function CheckoutView() {
         <PaymentSection paymentMethod={paymentMethod} onPaymentMethodChange={setPaymentMethod} />
         {!foraneoOverLimit && (
           <div className="lg:hidden">
-            <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit}>
-              Confirmar pedido
+            <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit || isSubmitting}>
+              {isSubmitting ? "Confirmando..." : "Confirmar pedido"}
             </Button>
-            {!canSubmit && (
+            {!canSubmit && !isSubmitting && (
               <p className="mt-2 text-center font-sans text-xs text-brand-slate">
                 Completa los campos marcados con * para continuar.
+              </p>
+            )}
+            {submitError && (
+              <p role="alert" className="mt-2 text-center font-sans text-xs text-red-600">
+                {submitError}
               </p>
             )}
           </div>
