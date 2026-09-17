@@ -89,8 +89,19 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
         )}
       </div>
 
-      <p className="font-sans text-xs uppercase tracking-wide text-brand-slate/70">
-        {product.brand}
+      {/* Marca y código (SKU de la variante única/primera) en el mismo
+          renglón — el código es un dato que el cliente pidió como
+          fundamental, así que no puede quedar relegado a otra línea. La
+          marca se trunca primero si el espacio aprieta (shrink-0 en el
+          código, truncate en la marca): en una tarjeta angosta, el código
+          es el dato que debe seguir siendo legible completo. */}
+      <p className="flex items-baseline gap-1 overflow-hidden font-sans text-xs uppercase tracking-wide text-brand-slate/70">
+        <span className="truncate">{product.brand}</span>
+        {variant?.sku && (
+          <span className="shrink-0 whitespace-nowrap normal-case tracking-normal text-brand-slate/60">
+            · Cód. {variant.sku}
+          </span>
+        )}
       </p>
       <p
         className="line-clamp-2 font-sans text-sm text-brand-black sm:text-base"

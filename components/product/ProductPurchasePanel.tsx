@@ -40,8 +40,18 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="font-sans text-sm uppercase tracking-wide text-brand-slate/70">
-          {product.brand}
+        {/* Marca y código en el mismo renglón, mismo formato que
+            ProductCard — el código es el de la variante SELECCIONADA
+            (`variant`, ya reactivo a selectedVariantId más abajo), así que
+            cambia solo al elegir otra presentación, igual que precio y
+            stock. */}
+        <p className="flex items-baseline gap-1 overflow-hidden font-sans text-sm uppercase tracking-wide text-brand-slate/70">
+          <span className="truncate">{product.brand}</span>
+          {variant?.sku && (
+            <span className="shrink-0 whitespace-nowrap normal-case tracking-normal text-brand-slate/60">
+              · Cód. {variant.sku}
+            </span>
+          )}
         </p>
         {/* Sin line-clamp: a diferencia de ProductCard (tarjeta compacta),
             esta es la página dedicada del producto — el nombre completo
