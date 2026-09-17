@@ -62,9 +62,9 @@ begin
     v_variant_id := (v_item ->> 'variant_id')::uuid;
     v_quantity := (v_item ->> 'quantity')::integer;
 
-    update public.product_variants
-    set stock = stock - v_quantity
-    where id = v_variant_id and stock >= v_quantity;
+    update public.product_variants pv
+    set stock = pv.stock - v_quantity
+    where pv.id = v_variant_id and pv.stock >= v_quantity;
 
     get diagnostics v_updated_rows = row_count;
 
