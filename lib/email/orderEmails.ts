@@ -5,6 +5,17 @@
 import { formatPrice } from "@/lib/formatPrice";
 import { FULFILLMENT_TYPE_LABEL, type FulfillmentType } from "@/lib/orders/status";
 import { STORE_ADDRESS, STORE_HORARIO, STORE_PHONE_DISPLAY } from "@/lib/store-info";
+import { LOGO_NARANJA_BASE64 } from "./logoBase64";
+
+// Paleta oficial del manual de marca (brand/Manual de Marca Ferretería
+// 57.pdf, sección 03) — mismos valores que tailwind.config.ts, repetidos
+// aquí como hex literal porque un correo no puede depender de clases de
+// Tailwind ni de CSS externo, solo de estilos inline.
+const COLOR_ORANGE = "#FF6600";
+const COLOR_SLATE = "#3F515A";
+const COLOR_BLACK = "#1A1A1A";
+const COLOR_GRAY = "#F2F1EF";
+const COLOR_WHITE = "#FFFFFF";
 
 export interface OrderEmailItem {
   productName: string;
@@ -61,23 +72,36 @@ function formatAddress(address: OrderEmailAddress): string {
   ].join("<br>");
 }
 
-// Envoltura visual compartida por los dos correos — encabezado con la
-// marca, cuerpo libre, pie con los datos de contacto de la tienda. HTML de
-// correo real (tablas + estilos inline): los clientes de correo no
+// Envoltura visual compartida por los dos correos — logo real + paleta del
+// manual de marca. Encabezado en blanco con el logo naranja (mismo
+// tratamiento que el header del sitio, ver components/layout/Header.tsx:
+// fondo blanco, logo naranja) y una barra de acento naranja delgada
+// debajo — el naranja es acento, nunca fondo extenso (regla del manual de
+// marca, ya documentada en tailwind.config.ts). El pie usa el mismo
+// gris-pizarra que el footer del sitio (components/layout/Footer.tsx).
+// HTML de correo real (tablas + estilos inline): los clientes de correo no
 // respetan hojas de estilo externas ni la mayoría de CSS moderno.
 function renderEmailLayout(bodyHtml: string): string {
   return `
 <!DOCTYPE html>
 <html lang="es">
-  <body style="margin:0; padding:0; background-color:#F2F1EF; font-family:Arial, Helvetica, sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F2F1EF; padding:24px 0;">
+  <body style="margin:0; padding:0; background-color:${COLOR_GRAY}; font-family:Arial, Helvetica, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${COLOR_GRAY}; padding:24px 0;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" style="max-width:560px; background-color:#FFFFFF; border-radius:8px; overflow:hidden;">
+          <table role="presentation" width="100%" style="max-width:560px; background-color:${COLOR_WHITE}; border-radius:8px; overflow:hidden;">
             <tr>
-              <td style="background-color:#3F515A; padding:20px 28px;">
-                <span style="color:#FFFFFF; font-size:20px; font-weight:bold; letter-spacing:0.5px;">FERRETERÍA 57</span>
+              <td style="background-color:${COLOR_WHITE}; padding:24px 28px 20px; text-align:center;">
+                <img
+                  src="data:image/png;base64,${LOGO_NARANJA_BASE64}"
+                  width="164"
+                  alt="Ferretería 57"
+                  style="display:inline-block; width:164px; height:auto; border:0;"
+                />
               </td>
+            </tr>
+            <tr>
+              <td style="background-color:${COLOR_ORANGE}; height:4px; line-height:4px; font-size:0;">&nbsp;</td>
             </tr>
             <tr>
               <td style="padding:28px;">
@@ -85,9 +109,9 @@ function renderEmailLayout(bodyHtml: string): string {
               </td>
             </tr>
             <tr>
-              <td style="background-color:#F2F1EF; padding:18px 28px; font-size:12px; color:#3F515A;">
-                Ferretería 57 — ${escapeHtml(STORE_ADDRESS)}<br>
-                Tel. ${escapeHtml(STORE_PHONE_DISPLAY)}
+              <td style="background-color:${COLOR_SLATE}; padding:18px 28px; font-size:12px; color:${COLOR_WHITE};">
+                <span style="opacity:0.85;">Ferretería 57 — ${escapeHtml(STORE_ADDRESS)}<br>
+                Tel. ${escapeHtml(STORE_PHONE_DISPLAY)}</span>
               </td>
             </tr>
           </table>
@@ -103,10 +127,10 @@ function renderItemsTable(items: OrderEmailItem[]): string {
     .map(
       (item) => `
         <tr>
-          <td style="padding:8px 0; border-bottom:1px solid #F2F1EF; font-size:14px; color:#1A1A1A;">
+          <td style="padding:8px 0; border-bottom:1px solid ${COLOR_GRAY}; font-size:14px; color:${COLOR_BLACK};">
             ${item.quantity}× ${escapeHtml(item.productName)}${item.variantLabel ? ` (${escapeHtml(item.variantLabel)})` : ""}
           </td>
-          <td style="padding:8px 0; border-bottom:1px solid #F2F1EF; font-size:14px; color:#1A1A1A; text-align:right; white-space:nowrap;">
+          <td style="padding:8px 0; border-bottom:1px solid ${COLOR_GRAY}; font-size:14px; color:${COLOR_BLACK}; text-align:right; white-space:nowrap;">
             ${formatPrice(item.unitPrice * item.quantity)}
           </td>
         </tr>`
@@ -122,22 +146,22 @@ function renderItemsTable(items: OrderEmailItem[]): string {
 function renderFulfillmentDetail(data: OrderEmailData): string {
   if (data.fulfillmentType === "pickup") {
     return `
-      <p style="margin:4px 0 0; font-size:14px; color:#1A1A1A;">
+      <p style="margin:4px 0 0; font-size:14px; color:${COLOR_BLACK};">
         Retiro en tienda — ${escapeHtml(STORE_ADDRESS)}
       </p>
-      <p style="margin:4px 0 0; font-size:13px; color:#3F515A;">
+      <p style="margin:4px 0 0; font-size:13px; color:${COLOR_SLATE};">
         ${STORE_HORARIO.map(escapeHtml).join("<br>")}
       </p>`;
   }
 
   const coloniaLine =
     data.fulfillmentType === "local_delivery" && data.colonia
-      ? `<p style="margin:4px 0 0; font-size:14px; color:#1A1A1A; font-weight:bold;">Colonia: ${escapeHtml(data.colonia)}</p>`
+      ? `<p style="margin:4px 0 0; font-size:14px; color:${COLOR_BLACK}; font-weight:bold;">Colonia: ${escapeHtml(data.colonia)}</p>`
       : "";
 
   return `
     ${coloniaLine}
-    ${data.shippingAddress ? `<p style="margin:4px 0 0; font-size:14px; color:#1A1A1A;">${formatAddress(data.shippingAddress)}</p>` : ""}`;
+    ${data.shippingAddress ? `<p style="margin:4px 0 0; font-size:14px; color:${COLOR_BLACK};">${formatAddress(data.shippingAddress)}</p>` : ""}`;
 }
 
 // Correo interno — a ferreteria57@proton.me (o a EMAIL_OVERRIDE mientras
@@ -145,32 +169,32 @@ function renderFulfillmentDetail(data: OrderEmailData): string {
 // sepa qué preparar y a quién entregárselo, sin adornos.
 export function buildInternalNotificationEmail(data: OrderEmailData): { subject: string; html: string } {
   const body = `
-    <h1 style="margin:0 0 16px; font-size:18px; color:#1A1A1A;">Nuevo pedido ${escapeHtml(data.orderNumber)}</h1>
+    <h1 style="margin:0 0 16px; font-size:18px; color:${COLOR_BLACK};">Nuevo pedido ${escapeHtml(data.orderNumber)}</h1>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
       <tr>
-        <td style="padding:2px 0; font-size:14px; color:#3F515A;">Cliente</td>
-        <td style="padding:2px 0; font-size:14px; color:#1A1A1A; text-align:right; font-weight:bold;">${escapeHtml(data.customerName)}</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_SLATE};">Cliente</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_BLACK}; text-align:right; font-weight:bold;">${escapeHtml(data.customerName)}</td>
       </tr>
       <tr>
-        <td style="padding:2px 0; font-size:14px; color:#3F515A;">Teléfono</td>
-        <td style="padding:2px 0; font-size:14px; color:#1A1A1A; text-align:right;">${escapeHtml(data.customerPhone)}</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_SLATE};">Teléfono</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_BLACK}; text-align:right;">${escapeHtml(data.customerPhone)}</td>
       </tr>
       <tr>
-        <td style="padding:2px 0; font-size:14px; color:#3F515A;">Entrega</td>
-        <td style="padding:2px 0; font-size:14px; color:#1A1A1A; text-align:right;">${escapeHtml(FULFILLMENT_TYPE_LABEL[data.fulfillmentType])}</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_SLATE};">Entrega</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_BLACK}; text-align:right;">${escapeHtml(FULFILLMENT_TYPE_LABEL[data.fulfillmentType])}</td>
       </tr>
     </table>
 
     <div style="margin-bottom:16px;">${renderFulfillmentDetail(data)}</div>
 
-    <h2 style="margin:0 0 8px; font-size:15px; color:#1A1A1A;">Productos</h2>
+    <h2 style="margin:0 0 8px; font-size:15px; color:${COLOR_BLACK};">Productos</h2>
     ${renderItemsTable(data.items)}
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px; border-top:2px solid #1A1A1A;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px; border-top:2px solid ${COLOR_SLATE};">
       <tr>
-        <td style="padding:8px 0 0; font-size:15px; color:#1A1A1A; font-weight:bold;">Total</td>
-        <td style="padding:8px 0 0; font-size:15px; color:#1A1A1A; font-weight:bold; text-align:right;">${formatPrice(data.total)}</td>
+        <td style="padding:8px 0 0; font-size:15px; color:${COLOR_BLACK}; font-weight:bold;">Total</td>
+        <td style="padding:8px 0 0; font-size:15px; color:${COLOR_BLACK}; font-weight:bold; text-align:right;">${formatPrice(data.total)}</td>
       </tr>
     </table>
   `;
@@ -183,35 +207,35 @@ export function buildCustomerConfirmationEmail(data: OrderEmailData): { subject:
   const firstName = data.customerName.split(" ")[0] || data.customerName;
 
   const body = `
-    <h1 style="margin:0 0 4px; font-size:18px; color:#1A1A1A;">¡Gracias por tu compra, ${escapeHtml(firstName)}!</h1>
-    <p style="margin:0 0 20px; font-size:14px; color:#3F515A;">
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">¡Gracias por tu compra, ${escapeHtml(firstName)}!</h1>
+    <p style="margin:0 0 20px; font-size:14px; color:${COLOR_SLATE};">
       Tu pedido <strong>${escapeHtml(data.orderNumber)}</strong> ya quedó registrado.
     </p>
 
-    <h2 style="margin:0 0 8px; font-size:15px; color:#1A1A1A;">Tu pedido</h2>
+    <h2 style="margin:0 0 8px; font-size:15px; color:${COLOR_BLACK};">Tu pedido</h2>
     ${renderItemsTable(data.items)}
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">
       <tr>
-        <td style="padding:4px 0; font-size:14px; color:#3F515A;">Subtotal</td>
-        <td style="padding:4px 0; font-size:14px; color:#1A1A1A; text-align:right;">${formatPrice(data.subtotal)}</td>
+        <td style="padding:4px 0; font-size:14px; color:${COLOR_SLATE};">Subtotal</td>
+        <td style="padding:4px 0; font-size:14px; color:${COLOR_BLACK}; text-align:right;">${formatPrice(data.subtotal)}</td>
       </tr>
       <tr>
-        <td style="padding:4px 0; font-size:14px; color:#3F515A;">Envío</td>
-        <td style="padding:4px 0; font-size:14px; color:#1A1A1A; text-align:right;">${
+        <td style="padding:4px 0; font-size:14px; color:${COLOR_SLATE};">Envío</td>
+        <td style="padding:4px 0; font-size:14px; color:${COLOR_BLACK}; text-align:right;">${
           data.shippingCost === 0 ? "Gratis" : formatPrice(data.shippingCost)
         }</td>
       </tr>
       <tr>
-        <td style="padding:8px 0 0; font-size:16px; color:#1A1A1A; font-weight:bold; border-top:2px solid #1A1A1A;">Total pagado</td>
-        <td style="padding:8px 0 0; font-size:16px; color:#1A1A1A; font-weight:bold; text-align:right; border-top:2px solid #1A1A1A;">${formatPrice(data.total)}</td>
+        <td style="padding:8px 0 0; font-size:16px; color:${COLOR_BLACK}; font-weight:bold; border-top:2px solid ${COLOR_SLATE};">Total pagado</td>
+        <td style="padding:8px 0 0; font-size:16px; color:${COLOR_BLACK}; font-weight:bold; text-align:right; border-top:2px solid ${COLOR_SLATE};">${formatPrice(data.total)}</td>
       </tr>
     </table>
 
-    <h2 style="margin:24px 0 8px; font-size:15px; color:#1A1A1A;">${escapeHtml(FULFILLMENT_TYPE_LABEL[data.fulfillmentType])}</h2>
+    <h2 style="margin:24px 0 8px; font-size:15px; color:${COLOR_BLACK};">${escapeHtml(FULFILLMENT_TYPE_LABEL[data.fulfillmentType])}</h2>
     ${renderFulfillmentDetail(data)}
 
-    <p style="margin:24px 0 0; font-size:14px; color:#1A1A1A;">
+    <p style="margin:24px 0 0; font-size:14px; color:${COLOR_BLACK};">
       Nuestro equipo se pondrá en contacto contigo para los siguientes pasos. Cualquier duda, respóndenos
       directo a este correo o escríbenos por WhatsApp.
     </p>
