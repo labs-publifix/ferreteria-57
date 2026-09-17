@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Boxes, CheckCircle2, FolderTree, ImageOff, PackageX, Star, Users } from "lucide-react";
 import { MetricCard } from "@/components/admin/dashboard/MetricCard";
+import { OrdersDashboardSection } from "@/components/admin/dashboard/OrdersDashboardSection";
 import { QuickActions } from "@/components/admin/dashboard/QuickActions";
-import { SalesReservedSection } from "@/components/admin/dashboard/SalesReservedSection";
 import { LOW_STOCK_THRESHOLD } from "@/lib/catalog/stockThresholds";
 import { getDashboardMetrics, type DashboardMetrics } from "@/lib/admin/dashboardMetrics";
 import { getAdminProfile } from "@/lib/supabase/adminProfile";
@@ -28,8 +28,7 @@ export default async function AdminHomePage() {
           Bienvenido{displayName ? `, ${displayName}` : ""}
         </h1>
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-slate/70">
-          Resumen del catálogo y la actividad de la tienda. Las ventas y pedidos se activan más
-          abajo en cuanto ese módulo esté conectado.
+          Resumen del catálogo, los pedidos y la actividad de la tienda.
         </p>
       </div>
 
@@ -95,11 +94,11 @@ export default async function AdminHomePage() {
               <h2 className="font-display text-lg uppercase text-brand-slate">Accesos rápidos</h2>
               <QuickActions />
             </section>
+
+            <OrdersDashboardSection orders={metrics.orders} />
           </>
         )
       )}
-
-      <SalesReservedSection />
     </div>
   );
 }

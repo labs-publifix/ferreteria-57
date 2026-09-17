@@ -15,6 +15,20 @@ export type OrderStatus =
   | "entregado"
   | "cancelado";
 
+// Único lugar que enumera los 7 estatus posibles como arreglo — usado
+// donde se necesita iterarlos todos (p. ej. inicializar un conteo por
+// estatus en el dashboard), en vez de repetir la lista a mano en cada
+// lugar que la necesite.
+export const ALL_ORDER_STATUSES: OrderStatus[] = [
+  "pendiente_pago",
+  "pagado",
+  "preparando",
+  "listo",
+  "enviado",
+  "entregado",
+  "cancelado",
+];
+
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pendiente_pago: "Pendiente de pago",
   pagado: "Pagado",

@@ -1,4 +1,5 @@
 import { hasLowStock } from "@/lib/catalog/stockThresholds";
+import { ALL_ORDER_STATUSES, type OrderStatus } from "@/lib/orders/status";
 import { createClient } from "@/lib/supabase/server";
 
 export interface DashboardMetrics {
@@ -15,6 +16,7 @@ export interface DashboardMetrics {
   };
   customers: number;
   pendingReviews: number;
+  orders: OrderMetrics;
 }
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -50,6 +52,44 @@ export function computeCategoryMetrics(categories: { active: boolean }[]) {
   };
 }
 
+export interface OrderMetrics {
+  /** "pagado": ya se cobró pero nadie empezó a prepararlo todavía. */
+  needsAttention: number;
+  /** preparando + listo + enviado: ya se está trabajando, aún no se entrega. */
+  inProgress: number;
+  /** Suma de `total` de todo pedido que no esté cancelado — venta reservada
+   *  en firme, no solo la ya entregada. */
+  totalRevenue: number;
+  byStatus: Record<OrderStatus, number>;
+}
+
+const IN_PROGRESS_STATUSES: OrderStatus[] = ["preparando", "listo", "enviado"];
+
+interface OrderMetricsRow {
+  status: OrderStatus;
+  total: number;
+}
+
+export function computeOrderMetrics(orders: OrderMetricsRow[]): OrderMetrics {
+  const byStatus = ALL_ORDER_STATUSES.reduce(
+    (acc, status) => ({ ...acc, [status]: 0 }),
+    {} as Record<OrderStatus, number>
+  );
+  let totalRevenue = 0;
+
+  for (const order of orders) {
+    byStatus[order.status] += 1;
+    if (order.status !== "cancelado") totalRevenue += order.total;
+  }
+
+  return {
+    needsAttention: byStatus.pagado,
+    inProgress: IN_PROGRESS_STATUSES.reduce((sum, status) => sum + byStatus[status], 0),
+    totalRevenue,
+    byStatus,
+  };
+}
+
 // Todas las lecturas necesarias para /admin (Inicio), en un solo lugar:
 // esta página es la única que las usa, y agruparlas aquí (en vez de
 // repartir cada .from(...).select(...) directo en el Server Component)
@@ -64,22 +104,25 @@ export function computeCategoryMetrics(categories: { active: boolean }[]) {
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const supabase = await createClient();
 
-  const [productsResult, categoriesResult, customersResult, pendingReviewsResult] = await Promise.all([
+  const [productsResult, categoriesResult, customersResult, pendingReviewsResult, ordersResult] = await Promise.all([
     supabase.from("products").select("active, images, activated_at, product_variants(stock)"),
     supabase.from("categories").select("active"),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("reviews").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("orders").select("status, total"),
   ]);
 
   if (productsResult.error) throw new Error(productsResult.error.message);
   if (categoriesResult.error) throw new Error(categoriesResult.error.message);
   if (customersResult.error) throw new Error(customersResult.error.message);
   if (pendingReviewsResult.error) throw new Error(pendingReviewsResult.error.message);
+  if (ordersResult.error) throw new Error(ordersResult.error.message);
 
   return {
     products: computeProductMetrics(productsResult.data),
     categories: computeCategoryMetrics(categoriesResult.data),
     customers: customersResult.count ?? 0,
     pendingReviews: pendingReviewsResult.count ?? 0,
+    orders: computeOrderMetrics(ordersResult.data),
   };
 }
