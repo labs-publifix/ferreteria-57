@@ -16,6 +16,7 @@ export interface ProductWriteInput {
   name: string;
   slug: string;
   brand: string;
+  clave: string | null;
   shortDescription: string;
   specSheetUrl: string | null;
   technicalSpecs: TechnicalSpec[];
@@ -53,6 +54,7 @@ export async function createProductRecord(
       name: input.name,
       slug: input.slug,
       brand: input.brand,
+      clave: input.clave,
       short_description: input.shortDescription,
       spec_sheet_url: input.specSheetUrl,
       technical_specs: input.technicalSpecs,
@@ -123,6 +125,7 @@ export async function updateProductRecord(
       name: input.name,
       slug: input.slug,
       brand: input.brand,
+      clave: input.clave,
       short_description: input.shortDescription,
       spec_sheet_url: input.specSheetUrl,
       technical_specs: input.technicalSpecs,

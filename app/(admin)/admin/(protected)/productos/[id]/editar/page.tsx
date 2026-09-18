@@ -17,7 +17,7 @@ export default async function AdminEditarProductoPage({
     supabase
       .from("products")
       .select(
-        "id, category_id, name, slug, brand, short_description, spec_sheet_url, technical_specs, images, active, product_variants(id, sku, label, price, compare_at_price, stock, position)"
+        "id, category_id, name, slug, brand, clave, short_description, spec_sheet_url, technical_specs, images, active, product_variants(id, sku, label, price, compare_at_price, stock, position)"
       )
       .eq("id", params.id)
       .maybeSingle(),
@@ -51,6 +51,7 @@ export default async function AdminEditarProductoPage({
           name: product.name,
           slug: product.slug,
           brand: product.brand,
+          clave: product.clave ?? "",
           shortDescription: product.short_description ?? "",
           specSheetUrl: product.spec_sheet_url ?? "",
           active: product.active,

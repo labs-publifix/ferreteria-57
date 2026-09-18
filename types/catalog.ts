@@ -35,6 +35,9 @@ export interface Product {
   slug: string;
   name: string;
   brand: string;
+  /** Código corto alfanumérico interno del cliente (ej. "MSK-1-1/2"),
+   *  distinto del SKU de cada variante — no cambia por presentación. */
+  clave?: string;
   /** Slug de la categoría (no su uuid) — así /categoria/[slug] y el
    *  breadcrumb de /producto/[slug] siguen resolviendo la categoría con
    *  `categories.find(c => c.slug === product.categoryId)`, igual que

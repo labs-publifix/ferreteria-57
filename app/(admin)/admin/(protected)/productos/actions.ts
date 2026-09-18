@@ -51,6 +51,7 @@ function parseProductForm(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
   const brand = String(formData.get("brand") ?? "").trim();
+  const clave = String(formData.get("clave") ?? "").trim();
   const shortDescription = String(formData.get("shortDescription") ?? "").trim();
   const specSheetUrl = String(formData.get("specSheetUrl") ?? "").trim();
   const active = formData.get("active") === "on";
@@ -113,6 +114,7 @@ function parseProductForm(formData: FormData) {
     name,
     slug,
     brand,
+    clave: clave || null,
     shortDescription,
     specSheetUrl: specSheetUrl || null,
     active,
@@ -149,6 +151,7 @@ export async function createProduct(formData: FormData): Promise<ProductActionRe
     name: parsed.name,
     slug: parsed.slug,
     brand: parsed.brand,
+    clave: parsed.clave,
     shortDescription: parsed.shortDescription,
     specSheetUrl: parsed.specSheetUrl,
     technicalSpecs: parsed.technicalSpecs,
@@ -200,6 +203,7 @@ export async function updateProduct(
     name: parsed.name,
     slug: parsed.slug,
     brand: parsed.brand,
+    clave: parsed.clave,
     shortDescription: parsed.shortDescription,
     specSheetUrl: parsed.specSheetUrl,
     technicalSpecs: parsed.technicalSpecs,

@@ -40,16 +40,24 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        {/* Marca y código en el mismo renglón, mismo formato que
+        {/* Marca, código y clave en el mismo renglón, mismo formato que
             ProductCard — el código es el de la variante SELECCIONADA
             (`variant`, ya reactivo a selectedVariantId más abajo), así que
             cambia solo al elegir otra presentación, igual que precio y
-            stock. */}
-        <p className="flex items-baseline gap-1 overflow-hidden font-sans text-sm uppercase tracking-wide text-brand-slate/70">
+            stock. La clave es a nivel producto, no cambia con la variante.
+            flex-wrap por la misma razón que en ProductCard: en pantallas
+            angostas, código y clave pueden bajar a un segundo renglón en
+            vez de desbordar. */}
+        <p className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 font-sans text-sm uppercase tracking-wide text-brand-slate/70">
           <span className="truncate">{product.brand}</span>
           {variant?.sku && (
             <span className="shrink-0 whitespace-nowrap normal-case tracking-normal text-brand-slate/60">
               · Cód. {variant.sku}
+            </span>
+          )}
+          {product.clave && (
+            <span className="shrink-0 whitespace-nowrap normal-case tracking-normal text-brand-slate/60">
+              · Clave {product.clave}
             </span>
           )}
         </p>

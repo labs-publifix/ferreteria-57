@@ -6,6 +6,7 @@ import { detectBrandFromName } from "@/lib/catalog/detectBrandFromName";
 import { resolveCategory, type CategoryOption } from "@/lib/catalog/resolveCategory";
 import {
   createProductRecord,
+  describeDbError,
   updateProductFromImportRow,
   type ProductWriteInput,
 } from "@/lib/catalog/productWrite";
@@ -332,6 +333,10 @@ export async function commitImportRows(rows: ImportCommitRow[]): Promise<CommitI
       name: row.nombre,
       slug,
       brand: marca,
+      // Este importador (modo creación) no trae columna Clave — ver
+      // parseAndValidateUpdateFile/commitUpdateRows más abajo para el modo
+      // que sí la puebla, por Código, sobre productos ya existentes.
+      clave: null,
       shortDescription: "",
       specSheetUrl: row.url || null,
       technicalSpecs: [],
@@ -346,6 +351,232 @@ export async function commitImportRows(rows: ImportCommitRow[]): Promise<CommitI
     } else {
       summary.created += 1;
     }
+  }
+
+  return { summary };
+}
+
+// ---------------------------------------------------------------------------
+// Modo actualización: un segundo Excel (Categoria, Clave, Codigo, Nombre,
+// Precio, URL) donde solo importan Codigo (para encontrar el producto) y
+// Clave (el único campo que se escribe). Categoria/Nombre/Precio/URL del
+// archivo se ignoran por completo — ni siquiera se leen — a propósito: este
+// modo nunca debe poder tocar nada más que `clave`, sin importar qué diga
+// el resto de esas columnas.
+// ---------------------------------------------------------------------------
+
+const UPDATE_COLUMNS = ["codigo", "clave"] as const;
+type UpdateColumnKey = (typeof UPDATE_COLUMNS)[number];
+
+export type UpdateRowStatus = "ready" | "unchanged" | "error";
+
+export interface ImportUpdatePreviewRow {
+  rowNumber: number;
+  codigo: string;
+  claveRaw: string;
+  productId: string | null;
+  // Nombre real ya guardado en la base para el producto que hizo match —
+  // no el de ninguna columna del Excel — así el admin verifica a simple
+  // vista que el Código encontró el producto correcto antes de confirmar.
+  productName: string | null;
+  claveActual: string | null;
+  status: UpdateRowStatus;
+  reason?: string;
+}
+
+export interface ParseUpdateImportResult {
+  error?: string;
+  rows?: ImportUpdatePreviewRow[];
+}
+
+export async function parseAndValidateUpdateFile(formData: FormData): Promise<ParseUpdateImportResult> {
+  const supabase = await requireAdmin();
+  if (!supabase) return { error: "No autorizado." };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Elige un archivo .xlsx o .csv para continuar." };
+  }
+  const lowerName = file.name.toLowerCase();
+  if (!lowerName.endsWith(".xlsx") && !lowerName.endsWith(".csv")) {
+    return { error: "El archivo debe ser .xlsx o .csv." };
+  }
+
+  let sheet: ExcelJS.Worksheet | undefined;
+  try {
+    const workbook = await loadWorkbook(file);
+    sheet = workbook.worksheets[0];
+  } catch {
+    return { error: "No se pudo leer el archivo. Verifica que no esté dañado." };
+  }
+  if (!sheet || sheet.rowCount < 2) {
+    return { error: "El archivo no tiene filas de datos." };
+  }
+
+  const columnIndex = new Map<UpdateColumnKey, number>();
+  const headerRow = sheet.getRow(1);
+  headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+    const normalized = normalizeText(cellToString(cell.value));
+    if ((UPDATE_COLUMNS as readonly string[]).includes(normalized)) {
+      columnIndex.set(normalized as UpdateColumnKey, colNumber);
+    }
+  });
+
+  const missingColumns = UPDATE_COLUMNS.filter((key) => !columnIndex.has(key));
+  if (missingColumns.length > 0) {
+    return {
+      error: `El archivo no tiene las columnas esperadas: ${missingColumns.join(", ")}. Se requieren Codigo y Clave.`,
+    };
+  }
+
+  interface RawUpdateRow {
+    rowNumber: number;
+    codigo: string;
+    claveRaw: string;
+  }
+
+  const rawRows: RawUpdateRow[] = [];
+  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+    const row = sheet.getRow(rowNumber);
+    const codigo = cellToString(row.getCell(columnIndex.get("codigo")!).value).trim();
+    const claveRaw = cellToString(row.getCell(columnIndex.get("clave")!).value).trim();
+
+    // Fila completamente vacía (rastro de filas en blanco al final del
+    // archivo): se ignora del todo, igual que en el modo de creación.
+    if (!codigo && !claveRaw) continue;
+
+    rawRows.push({ rowNumber, codigo, claveRaw });
+  }
+
+  if (rawRows.length === 0) {
+    return { error: "El archivo no tiene filas de datos." };
+  }
+
+  const codigos = rawRows.map((row) => row.codigo).filter(Boolean);
+  const takenSkus = await findTakenSkus(supabase, codigos);
+
+  const productIds = [...new Set([...takenSkus.values()])];
+  const productInfo = new Map<string, { name: string; clave: string | null }>();
+  if (productIds.length > 0) {
+    const { data, error } = await supabase.from("products").select("id, name, clave").in("id", productIds);
+    if (error) return { error: `No se pudieron cargar los productos: ${error.message}` };
+    for (const product of data ?? []) {
+      productInfo.set(product.id, { name: product.name, clave: product.clave });
+    }
+  }
+
+  const rows: ImportUpdatePreviewRow[] = rawRows.map((raw) => {
+    if (!raw.codigo) {
+      return {
+        rowNumber: raw.rowNumber,
+        codigo: raw.codigo,
+        claveRaw: raw.claveRaw,
+        productId: null,
+        productName: null,
+        claveActual: null,
+        status: "error",
+        reason: "Falta el código.",
+      };
+    }
+
+    const productId = takenSkus.get(raw.codigo) ?? null;
+    if (!productId) {
+      return {
+        rowNumber: raw.rowNumber,
+        codigo: raw.codigo,
+        claveRaw: raw.claveRaw,
+        productId: null,
+        productName: null,
+        claveActual: null,
+        status: "error",
+        reason: "Código no encontrado, no se actualizó.",
+      };
+    }
+
+    const info = productInfo.get(productId);
+    const claveActual = info?.clave ?? null;
+    const claveNueva = raw.claveRaw || null;
+    const unchanged = claveActual === claveNueva;
+
+    return {
+      rowNumber: raw.rowNumber,
+      codigo: raw.codigo,
+      claveRaw: raw.claveRaw,
+      productId,
+      productName: info?.name ?? null,
+      claveActual,
+      status: unchanged ? "unchanged" : "ready",
+      reason: unchanged ? "La clave ya tiene este valor." : undefined,
+    };
+  });
+
+  return { rows };
+}
+
+export interface ImportUpdateCommitRow {
+  rowNumber: number;
+  codigo: string;
+  claveRaw: string;
+  status: UpdateRowStatus;
+}
+
+export interface ImportUpdateCommitSummary {
+  updated: number;
+  unchanged: number;
+  failed: number;
+  failedDetails: { rowNumber: number; reason: string }[];
+}
+
+export interface CommitUpdateResult {
+  error?: string;
+  summary?: ImportUpdateCommitSummary;
+}
+
+// Igual criterio que commitImportRows: nunca se confía en el productId que
+// mandó la vista previa — Código se vuelve a resolver contra el estado real
+// de la base justo antes de escribir, y el único campo que este camino
+// puede tocar es `clave`.
+export async function commitUpdateRows(rows: ImportUpdateCommitRow[]): Promise<CommitUpdateResult> {
+  const supabase = await requireAdmin();
+  if (!supabase) return { error: "No autorizado." };
+  if (rows.length === 0) return { error: "No hay filas para actualizar." };
+
+  const codigos = rows.map((row) => row.codigo).filter(Boolean);
+  const takenSkus = await findTakenSkus(supabase, codigos);
+
+  const summary: ImportUpdateCommitSummary = { updated: 0, unchanged: 0, failed: 0, failedDetails: [] };
+
+  for (const row of rows) {
+    function fail(reason: string) {
+      summary.failed += 1;
+      summary.failedDetails.push({ rowNumber: row.rowNumber, reason });
+    }
+
+    if (!row.codigo) {
+      fail("Falta el código.");
+      continue;
+    }
+
+    const productId = takenSkus.get(row.codigo);
+    if (!productId) {
+      fail("Código no encontrado, no se actualizó.");
+      continue;
+    }
+
+    if (row.status === "unchanged") {
+      summary.unchanged += 1;
+      continue;
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .update({ clave: row.claveRaw || null, updated_at: new Date().toISOString() })
+      .eq("id", productId);
+    if (error) {
+      fail(describeDbError("No se pudo actualizar la clave", error));
+      continue;
+    }
+    summary.updated += 1;
   }
 
   return { summary };

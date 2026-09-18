@@ -27,6 +27,7 @@ interface ProductFormValues {
   name: string;
   slug: string;
   brand: string;
+  clave: string;
   shortDescription: string;
   specSheetUrl: string;
   active: boolean;
@@ -49,6 +50,7 @@ function emptyValues(defaultCategoryId: string): ProductFormValues {
     name: "",
     slug: "",
     brand: "",
+    clave: "",
     shortDescription: "",
     specSheetUrl: "",
     active: false,
@@ -80,6 +82,7 @@ export function ProductForm({
   const categoryId = useId();
   const brandId = useId();
   const brandListId = useId();
+  const claveId = useId();
   const shortDescriptionId = useId();
   const specSheetUrlId = useId();
   const activeId = useId();
@@ -178,6 +181,7 @@ export function ProductForm({
     formData.set("name", values.name);
     formData.set("slug", values.slug);
     formData.set("brand", values.brand);
+    formData.set("clave", values.clave);
     formData.set("shortDescription", values.shortDescription);
     formData.set("specSheetUrl", values.specSheetUrl);
     if (values.active) formData.set("active", "on");
@@ -273,6 +277,23 @@ export function ProductForm({
               Se sugiere sola a partir del nombre — edítala si hace falta.
             </p>
           </div>
+        </div>
+
+        <div>
+          <label htmlFor={claveId} className={labelClass}>
+            Clave
+          </label>
+          <input
+            id={claveId}
+            type="text"
+            placeholder='p. ej. "MSK-1-1/2"'
+            value={values.clave}
+            onChange={(event) => setValues((current) => ({ ...current, clave: event.target.value }))}
+            className={inputClass}
+          />
+          <p className="mt-1 font-sans text-xs text-brand-slate/70">
+            Código interno corto del cliente — opcional, distinto del Código (SKU) de cada presentación.
+          </p>
         </div>
 
         <div>

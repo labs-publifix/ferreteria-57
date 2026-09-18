@@ -89,17 +89,26 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
         )}
       </div>
 
-      {/* Marca y código (SKU de la variante única/primera) en el mismo
-          renglón — el código es un dato que el cliente pidió como
-          fundamental, así que no puede quedar relegado a otra línea. La
-          marca se trunca primero si el espacio aprieta (shrink-0 en el
-          código, truncate en la marca): en una tarjeta angosta, el código
-          es el dato que debe seguir siendo legible completo. */}
-      <p className="flex items-baseline gap-1 overflow-hidden font-sans text-xs uppercase tracking-wide text-brand-slate/70">
+      {/* Marca, código (SKU de la variante única/primera) y clave interna
+          en el mismo renglón — el código y la clave son datos que el
+          cliente pidió como fundamentales, así que no pueden quedar
+          relegados a otra línea. La marca se trunca primero si el espacio
+          aprieta (shrink-0 en código/clave, truncate en la marca): en una
+          tarjeta angosta, código y clave son los datos que deben seguir
+          siendo legibles completos. flex-wrap permite que código/clave
+          bajen a un segundo renglón en pantallas angostas en vez de
+          desbordar — el nombre de abajo conserva su propio line-clamp-2 sin
+          verse afectado por esto. */}
+      <p className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 font-sans text-xs uppercase tracking-wide text-brand-slate/70">
         <span className="truncate">{product.brand}</span>
         {variant?.sku && (
           <span className="shrink-0 whitespace-nowrap normal-case tracking-normal text-brand-slate/60">
             · Cód. {variant.sku}
+          </span>
+        )}
+        {product.clave && (
+          <span className="shrink-0 whitespace-nowrap normal-case tracking-normal text-brand-slate/60">
+            · Clave {product.clave}
           </span>
         )}
       </p>

@@ -27,6 +27,7 @@ interface ProductRow {
   slug: string;
   name: string;
   brand: string;
+  clave: string | null;
   short_description: string | null;
   technical_specs: TechnicalSpec[] | null;
   images: string[] | null;
@@ -65,6 +66,7 @@ export function mapRowToProduct(row: ProductRow): Product {
     slug: row.slug,
     name: row.name,
     brand: row.brand,
+    clave: row.clave ?? undefined,
     // Slug de la categoría, no su uuid — ver el comentario en
     // types/catalog.ts sobre por qué Product.categoryId sigue siendo el
     // slug (así /categoria/[slug] y el breadcrumb de /producto/[slug]

@@ -18,9 +18,10 @@ export default function ImportarProductosPage() {
           Importar productos desde Excel
         </h1>
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-slate/70">
-          Alta masiva a partir de un archivo con Categoria, Codigo, Nombre, Precio y URL de ficha
-          técnica. Los productos se crean inactivos y sin imagen — súbelas después, uno por uno, desde
-          el formulario manual.
+          Elige un modo abajo: alta masiva a partir de un archivo con Categoria, Codigo, Nombre, Precio y
+          URL de ficha técnica (los productos se crean inactivos y sin imagen — súbelas después, uno por
+          uno, desde el formulario manual), o actualización de la Clave de productos ya existentes a
+          partir de un archivo con Codigo y Clave.
         </p>
       </div>
 
