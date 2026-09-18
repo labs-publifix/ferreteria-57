@@ -81,11 +81,14 @@ export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   return (data ?? []).map(mapRowToProduct);
 }
 
-// Busca por nombre de producto o por SKU de alguna de sus variantes —
-// PostgREST no deja filtrar el recurso principal por una columna de una
-// relación anidada (product_variants.sku) directo, así que la coincidencia
-// por SKU se resuelve con una segunda consulta y se combinan resultados
-// sin duplicar productos.
+// Busca por nombre de producto, por Clave (a nivel producto) o por SKU de
+// alguna de sus variantes — PostgREST no deja filtrar el recurso principal
+// por una columna de una relación anidada (product_variants.sku) directo,
+// así que la coincidencia por SKU se resuelve con una segunda consulta;
+// Clave sí vive en products, pero se deja como consulta separada (en vez de
+// un solo .or("name.ilike...,clave.ilike...")) para no tener que escapar
+// comas u otros caracteres especiales de PostgREST si el término de
+// búsqueda los trae. Los tres resultados se combinan sin duplicar productos.
 export async function searchProducts(query: string): Promise<Product[]> {
   const normalized = query.trim();
   if (!normalized) return [];
@@ -99,6 +102,13 @@ export async function searchProducts(query: string): Promise<Product[]> {
     .eq("active", true)
     .ilike("name", pattern);
   logCatalogError("searchProducts (byName)", byNameError);
+
+  const { data: byClave, error: byClaveError } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("active", true)
+    .ilike("clave", pattern);
+  logCatalogError("searchProducts (byClave)", byClaveError);
 
   const { data: variantMatches, error: variantError } = await supabase
     .from("product_variants")
@@ -120,7 +130,11 @@ export async function searchProducts(query: string): Promise<Product[]> {
   }
 
   const merged = new Map<string, Product>();
-  for (const product of [...(byName ?? []).map(mapRowToProduct), ...bySku]) {
+  for (const product of [
+    ...(byName ?? []).map(mapRowToProduct),
+    ...(byClave ?? []).map(mapRowToProduct),
+    ...bySku,
+  ]) {
     merged.set(product.id, product);
   }
   return Array.from(merged.values());
