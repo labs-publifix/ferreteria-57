@@ -18,6 +18,13 @@ export const STORE_HORARIO = [
   "Domingo: cerrado",
 ];
 
+// Mismas ligas que ya usa el Footer del sitio — únicas aquí para que los
+// correos transaccionales (lib/email/orderEmails.ts) no las repitan
+// sueltas por su cuenta. TikTok no tiene liga real todavía (ver TODO en
+// Footer.tsx), así que no se expone una constante para ese caso.
+export const STORE_FACEBOOK_URL = "https://www.facebook.com/p/Ferretería-57-Qro-61575239701906/";
+export const STORE_INSTAGRAM_URL = "https://www.instagram.com/ferreteria57qro/";
+
 // Búsqueda directa del negocio en Google Maps (reseñas, ficha pública).
 export const GOOGLE_MAPS_REVIEWS_URL =
   "https://www.google.com/maps/search/?api=1&query=Ferreteria+57+Santiago+de+Queretaro";

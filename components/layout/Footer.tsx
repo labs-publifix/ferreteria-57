@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   STORE_ADDRESS,
+  STORE_FACEBOOK_URL,
   STORE_HORARIO,
+  STORE_INSTAGRAM_URL,
   STORE_PHONE_DISPLAY,
   STORE_PHONE_TEL,
 } from "@/lib/store-info";
@@ -84,7 +86,7 @@ export function Footer() {
           </h2>
           <div className="mt-3 flex items-center gap-2">
             <a
-              href="https://www.facebook.com/p/Ferretería-57-Qro-61575239701906/"
+              href={STORE_FACEBOOK_URL}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Ferretería 57 en Facebook"
@@ -93,7 +95,7 @@ export function Footer() {
               <FacebookIcon />
             </a>
             <a
-              href="https://www.instagram.com/ferreteria57qro/"
+              href={STORE_INSTAGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Ferretería 57 en Instagram"

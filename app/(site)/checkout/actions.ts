@@ -168,6 +168,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   // paralelo y cada uno registra su propio error por separado.
   const emailData = {
     orderNumber: row.order_number,
+    createdAt: row.created_at,
     customerName: `${input.contact.firstName} ${input.contact.lastName}`.trim(),
     customerPhone: input.contact.phone,
     customerEmail: input.contact.email,
