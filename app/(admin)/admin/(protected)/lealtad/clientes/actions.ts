@@ -78,6 +78,14 @@ export interface CreateMemberResult {
 // mismo criterio de "deshacer el primer paso si el segundo falla" que ya
 // usa createProductRecord (ver lib/catalog/productWrite.ts) para
 // producto+variantes.
+//
+// admin.createUser() dispara handle_new_user() (migración de autoregistro),
+// que YA inserta la fila en club57_members (full_name/email/referral_code,
+// phone null, origen_alta='autoregistro') antes de que este código
+// siquiera corra — un insert aparte aquí choca con esa fila por la misma
+// primary key. Se usa upsert para completar lo que el trigger dejó a
+// medias (phone, origen_alta='vendedor') sin tocar referral_code, que debe
+// quedar exactamente como el trigger ya lo generó.
 export async function createClub57Member(
   fullName: string,
   email: string,
@@ -120,13 +128,16 @@ export async function createClub57Member(
     return { error: `No se pudo crear la cuenta: ${authError?.message ?? "error desconocido"}` };
   }
 
-  const { error: memberError } = await adminClient.from("club57_members").insert({
-    id: authUser.user.id,
-    full_name: normalizedName,
-    email: normalizedEmail,
-    phone: normalizedPhone,
-    origen_alta: "vendedor",
-  });
+  const { error: memberError } = await adminClient.from("club57_members").upsert(
+    {
+      id: authUser.user.id,
+      full_name: normalizedName,
+      email: normalizedEmail,
+      phone: normalizedPhone,
+      origen_alta: "vendedor",
+    },
+    { onConflict: "id" }
+  );
 
   if (memberError) {
     // Deshace el usuario de Auth ya creado — nunca debe quedar una cuenta
