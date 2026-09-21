@@ -15,6 +15,7 @@ export interface Club57CatalogFormValues {
   nombre: string;
   descripcion: string;
   clave: string;
+  codigo: string;
   costoPuntos: string;
   stock: string;
   imageUrl: string | null;
@@ -26,7 +27,16 @@ const inputClass =
 const labelClass = "mb-1.5 block font-sans text-sm font-medium text-brand-black";
 
 function emptyValues(): Club57CatalogFormValues {
-  return { nombre: "", descripcion: "", clave: "", costoPuntos: "", stock: "0", imageUrl: null, active: false };
+  return {
+    nombre: "",
+    descripcion: "",
+    clave: "",
+    codigo: "",
+    costoPuntos: "",
+    stock: "0",
+    imageUrl: null,
+    active: false,
+  };
 }
 
 export function Club57CatalogForm({
@@ -41,6 +51,7 @@ export function Club57CatalogForm({
   const nombreId = useId();
   const descripcionId = useId();
   const claveId = useId();
+  const codigoId = useId();
   const costoPuntosId = useId();
   const stockId = useId();
   const activeId = useId();
@@ -71,6 +82,7 @@ export function Club57CatalogForm({
     formData.set("nombre", values.nombre);
     formData.set("descripcion", values.descripcion);
     formData.set("clave", values.clave);
+    formData.set("codigo", values.codigo);
     formData.set("costoPuntos", values.costoPuntos);
     formData.set("stock", values.stock);
     formData.set("imageUrl", values.imageUrl ?? "");
@@ -123,20 +135,37 @@ export function Club57CatalogForm({
           />
         </div>
 
-        <div>
-          <label htmlFor={claveId} className={labelClass}>
-            Clave (referencia interna, opcional)
-          </label>
-          <input
-            id={claveId}
-            type="text"
-            value={values.clave}
-            onChange={(event) => setValues((current) => ({ ...current, clave: event.target.value }))}
-            className={inputClass}
-          />
-          <p className="mt-1 font-sans text-xs text-brand-slate/70">
-            Código interno del artículo — nunca se muestra al cliente.
-          </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor={claveId} className={labelClass}>
+              Clave (referencia interna, opcional)
+            </label>
+            <input
+              id={claveId}
+              type="text"
+              value={values.clave}
+              onChange={(event) => setValues((current) => ({ ...current, clave: event.target.value }))}
+              className={inputClass}
+            />
+            <p className="mt-1 font-sans text-xs text-brand-slate/70">
+              Código interno del artículo — nunca se muestra al cliente.
+            </p>
+          </div>
+          <div>
+            <label htmlFor={codigoId} className={labelClass}>
+              Código (opcional)
+            </label>
+            <input
+              id={codigoId}
+              type="text"
+              value={values.codigo}
+              onChange={(event) => setValues((current) => ({ ...current, codigo: event.target.value }))}
+              className={inputClass}
+            />
+            <p className="mt-1 font-sans text-xs text-brand-slate/70">
+              Código numérico de Truper — sirve para localizar la imagen del artículo en su catálogo.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

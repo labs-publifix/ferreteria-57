@@ -10,7 +10,7 @@ export default async function AdminClub57EditarCatalogoPage({ params }: { params
   const supabase = await createClient();
   const { data: item } = await supabase
     .from("club57_redemption_catalog")
-    .select("id, nombre, descripcion, clave, costo_puntos, stock, image_url, active")
+    .select("id, nombre, descripcion, clave, codigo, costo_puntos, stock, image_url, active")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -35,6 +35,7 @@ export default async function AdminClub57EditarCatalogoPage({ params }: { params
           nombre: item.nombre,
           descripcion: item.descripcion ?? "",
           clave: item.clave ?? "",
+          codigo: item.codigo ?? "",
           costoPuntos: String(item.costo_puntos),
           stock: String(item.stock),
           imageUrl: item.image_url,

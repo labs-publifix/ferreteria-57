@@ -179,6 +179,7 @@ export async function parseAndValidateCatalogImportFile(formData: FormData): Pro
 
 export interface CatalogImportCommitRow {
   rowNumber: number;
+  codigo: string;
   clave: string;
   descripcion: string;
   puntos: number;
@@ -223,6 +224,10 @@ export async function commitCatalogImportRows(rows: CatalogImportCommitRow[]): P
       nombre: row.descripcion,
       descripcion: row.descripcion,
       clave: row.clave || null,
+      // Código numérico de Truper (ej. 68069) — se usa para localizar la
+      // imagen del artículo en el catálogo del fabricante, nunca se
+      // muestra al cliente.
+      codigo: row.codigo || null,
       costo_puntos: row.puntos,
       stock: 0,
       image_url: null,

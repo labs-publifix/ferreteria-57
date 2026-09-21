@@ -11,6 +11,7 @@ import { toggleCatalogItemActive } from "@/app/(admin)/admin/(protected)/lealtad
 export interface Club57CatalogRow {
   id: string;
   nombre: string;
+  codigo: string | null;
   costo_puntos: number;
   stock: number;
   image_url: string | null;
@@ -82,7 +83,12 @@ export function Club57CatalogTable({ items }: { items: Club57CatalogRow[] }) {
                       ) : (
                         <ProductImagePlaceholder className="size-10 shrink-0 text-[10px]" />
                       )}
-                      <p className="truncate font-medium text-brand-black">{item.nombre}</p>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-brand-black">{item.nombre}</p>
+                        {item.codigo && (
+                          <p className="truncate text-xs text-brand-slate/60">Cód. {item.codigo}</p>
+                        )}
+                      </div>
                     </div>
                     {rowError && <p className="mt-1 text-xs text-red-700">{rowError}</p>}
                   </td>

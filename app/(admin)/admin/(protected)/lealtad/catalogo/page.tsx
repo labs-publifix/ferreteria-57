@@ -11,7 +11,7 @@ export default async function AdminClub57CatalogoPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("club57_redemption_catalog")
-    .select("id, nombre, costo_puntos, stock, image_url, active")
+    .select("id, nombre, codigo, costo_puntos, stock, image_url, active")
     .order("created_at", { ascending: false });
 
   return (

@@ -23,6 +23,8 @@ interface LedgerRow {
   estado: "pendiente" | "disponible";
   fecha_disponible: string | null;
   referencia: string | null;
+  producto_nombre: string | null;
+  producto_sku: string | null;
   created_at: string;
 }
 
@@ -54,7 +56,7 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   const { data: ledger } = await supabase
     .from("club57_points_ledger")
-    .select("id, cantidad, tipo, estado, fecha_disponible, referencia, created_at")
+    .select("id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, created_at")
     .eq("member_id", params.id)
     .order("created_at", { ascending: false });
 
@@ -136,11 +138,12 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
           <p className="font-sans text-sm text-brand-slate/70">Sin movimientos todavía.</p>
         ) : (
           <div className="min-w-0 overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left font-sans text-sm">
+            <table className="w-full min-w-[680px] text-left font-sans text-sm">
               <thead>
                 <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
                   <th className="py-2">Fecha</th>
                   <th className="py-2">Tipo</th>
+                  <th className="py-2">Producto</th>
                   <th className="py-2">Puntos</th>
                   <th className="py-2">Estado</th>
                   <th className="py-2">Referencia</th>
@@ -151,6 +154,18 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
                   <tr key={row.id} className="border-b border-brand-slate/10 last:border-0">
                     <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
                     <td className="py-2 text-brand-black">{TIPO_LABEL[row.tipo] ?? row.tipo}</td>
+                    <td className="max-w-[200px] py-2 text-brand-black">
+                      {row.producto_nombre ? (
+                        <>
+                          {row.producto_nombre}
+                          {row.producto_sku && (
+                            <span className="block text-xs text-brand-slate/60">Cód. {row.producto_sku}</span>
+                          )}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>
                       {row.cantidad > 0 ? "+" : ""}
                       {row.cantidad}

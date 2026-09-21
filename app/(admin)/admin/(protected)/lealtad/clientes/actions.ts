@@ -152,9 +152,16 @@ export interface RegisterPurchaseResult {
 // 'disponible' en un proceso de un prompt posterior (ver comentario en la
 // migración sobre fecha_disponible). puntos = floor(monto / monto_por_punto):
 // redondeado hacia abajo para nunca otorgar una fracción de punto.
+// producto/codigo son opcionales (no todo lo que se vende en mostrador
+// tiene un código a la mano) pero quedan guardados en columnas propias —
+// mismos datos que ya captura un pedido real (product_name/sku en
+// order_items) — para que el historial de un cliente diga QUÉ compró, no
+// solo cuánto.
 export async function registerClub57ManualPurchase(
   memberId: string,
-  montoRaw: string
+  montoRaw: string,
+  productoNombre: string,
+  productoSku: string
 ): Promise<RegisterPurchaseResult> {
   const supabase = await requireAdmin();
   if (!supabase) return { error: "No autorizado." };
@@ -163,6 +170,11 @@ export async function registerClub57ManualPurchase(
   if (Number.isNaN(monto) || monto <= 0) {
     return { error: "El monto debe ser un número mayor a 0." };
   }
+  const nombre = productoNombre.trim();
+  if (!nombre) {
+    return { error: "Escribe qué compró el cliente." };
+  }
+  const sku = productoSku.trim();
 
   const { data: member, error: memberError } = await supabase
     .from("club57_members")
@@ -197,6 +209,8 @@ export async function registerClub57ManualPurchase(
     estado: "pendiente",
     fecha_disponible: fechaDisponible.toISOString().slice(0, 10),
     referencia: `Compra en tienda: $${monto.toFixed(2)} MXN`,
+    producto_nombre: nombre,
+    producto_sku: sku || null,
   });
 
   if (insertError) return { error: `No se pudo registrar la compra: ${insertError.message}` };

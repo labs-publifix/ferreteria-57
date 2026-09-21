@@ -70,6 +70,7 @@ export function Club57CatalogImportWizard() {
 
     const payload: CatalogImportCommitRow[] = rows.map((row) => ({
       rowNumber: row.rowNumber,
+      codigo: row.codigo,
       clave: row.clave,
       descripcion: row.descripcion,
       puntos: row.puntosEditados,
@@ -161,6 +162,7 @@ export function Club57CatalogImportWizard() {
             <thead>
               <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
                 <th className="px-3 py-2.5">Fila</th>
+                <th className="px-3 py-2.5">Código</th>
                 <th className="px-3 py-2.5">Nombre</th>
                 <th className="px-3 py-2.5">Costo original</th>
                 <th className="px-3 py-2.5">Puntos calculados</th>
@@ -171,6 +173,7 @@ export function Club57CatalogImportWizard() {
               {rows.map((row) => (
                 <tr key={row.rowNumber} className="border-b border-brand-slate/10 last:border-0 align-top">
                   <td className="px-3 py-2 text-brand-slate/70">{row.rowNumber}</td>
+                  <td className="px-3 py-2 text-brand-slate">{row.codigo || "—"}</td>
                   <td className="max-w-[280px] px-3 py-2 text-brand-black">{row.descripcion || "—"}</td>
                   <td className="px-3 py-2 text-brand-slate">{row.costoRaw ? `$${row.costoRaw}` : "—"}</td>
                   <td className="px-3 py-2">

@@ -25,6 +25,7 @@ function parseCatalogForm(formData: FormData) {
   const nombre = String(formData.get("nombre") ?? "").trim();
   const descripcion = String(formData.get("descripcion") ?? "").trim();
   const clave = String(formData.get("clave") ?? "").trim();
+  const codigo = String(formData.get("codigo") ?? "").trim();
   const costoPuntos = Number.parseInt(String(formData.get("costoPuntos") ?? ""), 10);
   const stock = Number.parseInt(String(formData.get("stock") ?? ""), 10);
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
@@ -46,6 +47,7 @@ function parseCatalogForm(formData: FormData) {
     nombre,
     descripcion,
     clave: clave || null,
+    codigo: codigo || null,
     costoPuntos,
     stock,
     imageUrl: imageUrl || null,
@@ -64,6 +66,7 @@ export async function createCatalogItem(formData: FormData): Promise<Club57Catal
     nombre: parsed.nombre,
     descripcion: parsed.descripcion,
     clave: parsed.clave,
+    codigo: parsed.codigo,
     costo_puntos: parsed.costoPuntos,
     stock: parsed.stock,
     image_url: parsed.imageUrl,
@@ -91,6 +94,7 @@ export async function updateCatalogItem(
       nombre: parsed.nombre,
       descripcion: parsed.descripcion,
       clave: parsed.clave,
+      codigo: parsed.codigo,
       costo_puntos: parsed.costoPuntos,
       stock: parsed.stock,
       image_url: parsed.imageUrl,
