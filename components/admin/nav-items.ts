@@ -28,7 +28,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/resenas", label: "Reseñas", icon: Star },
   { href: "/admin/top-banner", label: "Top Banner", icon: ImageIcon },
   { href: "/admin/promo-banners", label: "Promo Banners", icon: Images },
-  { href: "/admin/lealtad", label: "Programa de Lealtad", icon: Gift },
+  { href: "/admin/lealtad", label: "Club 57", icon: Gift },
   // Al final: a diferencia de las 7 anteriores (gestión de contenido de la
   // tienda), esta es administración del propio panel — mismo criterio que
   // separa "Programa de Lealtad" del resto de categorías en el header de
