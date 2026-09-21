@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gift, Settings, Users } from "lucide-react";
+import { Gift, RefreshCw, Settings, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "Club 57 — Panel de administración" };
 
@@ -22,6 +22,12 @@ const SECTIONS = [
     label: "Catálogo",
     description: "Artículos de canje: alta manual e importación desde Excel.",
     icon: Gift,
+  },
+  {
+    href: "/admin/lealtad/canjes",
+    label: "Canjes",
+    description: "Solicitudes de canje pendientes de entrega en tienda.",
+    icon: RefreshCw,
   },
 ];
 

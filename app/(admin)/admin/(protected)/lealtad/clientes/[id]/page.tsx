@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Club57RegisterPurchaseForm } from "@/components/admin/Club57RegisterPurchaseForm";
 import { createClient } from "@/lib/supabase/server";
+import { CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
 
 export const metadata: Metadata = { title: "Detalle de cliente — Club 57" };
 
@@ -29,14 +30,6 @@ interface LedgerRow {
 }
 
 const dateFormatter = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
-
-const TIPO_LABEL: Record<string, string> = {
-  compra_online: "Compra en línea",
-  compra_manual: "Compra en tienda",
-  referido_bono: "Bono por referido",
-  reversion_cancelacion: "Reversión por cancelación",
-  canje: "Canje",
-};
 
 const ORIGEN_LABEL: Record<MemberDetail["origen_alta"], string> = {
   vendedor: "Alta manual (vendedor)",
@@ -153,7 +146,7 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
                 {ledgerRows.map((row) => (
                   <tr key={row.id} className="border-b border-brand-slate/10 last:border-0">
                     <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
-                    <td className="py-2 text-brand-black">{TIPO_LABEL[row.tipo] ?? row.tipo}</td>
+                    <td className="py-2 text-brand-black">{CLUB57_TIPO_LABEL[row.tipo] ?? row.tipo}</td>
                     <td className="max-w-[200px] py-2 text-brand-black">
                       {row.producto_nombre ? (
                         <>
