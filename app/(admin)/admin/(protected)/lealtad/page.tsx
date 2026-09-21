@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Settings, Users } from "lucide-react";
+import { Gift, Settings, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "Club 57 — Panel de administración" };
 
@@ -16,6 +16,12 @@ const SECTIONS = [
     label: "Clientes",
     description: "Alta manual, saldo de puntos y compras en tienda.",
     icon: Users,
+  },
+  {
+    href: "/admin/lealtad/catalogo",
+    label: "Catálogo",
+    description: "Artículos de canje: alta manual e importación desde Excel.",
+    icon: Gift,
   },
 ];
 
@@ -33,7 +39,7 @@ export default function AdminClub57Page() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {SECTIONS.map((section) => {
           const Icon = section.icon;
           return (

@@ -151,8 +151,11 @@ export function Club57NewMemberWizard() {
         <ul className="flex flex-col gap-2">
           {matches.map((match) => (
             <li key={match.id} className="rounded-md border border-brand-slate/15 p-3">
-              <p className="font-sans text-sm font-semibold text-brand-black">{match.fullName}</p>
-              <p className="font-sans text-xs text-brand-slate/70">
+              <p className="break-words font-sans text-sm font-semibold text-brand-black">{match.fullName}</p>
+              {/* break-all: un correo largo sin espacios no tiene dónde
+                  partir la línea por default y puede sacar a la tarjeta
+                  (y a la página) de su ancho en móvil. */}
+              <p className="break-all font-sans text-xs text-brand-slate/70">
                 {match.email} · {match.phone}
               </p>
               <Link

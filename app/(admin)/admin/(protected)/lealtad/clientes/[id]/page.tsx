@@ -90,17 +90,25 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Datos</h2>
           <dl className="font-sans text-sm text-brand-black">
+            {/* min-w-0 + break-all: un correo largo sin espacios (nada que
+                le dé al navegador dónde partir la línea) puede estirar el
+                flex y sacar a toda la página de su ancho en 375/390px —
+                min-w-0 permite que este hijo se encoja por debajo de su
+                ancho de contenido, break-all le da un punto de corte. */}
             <div className="flex justify-between gap-3 py-1">
-              <dt className="text-brand-slate/70">Correo</dt>
-              <dd className="text-right font-medium">{memberDetail.email}</dd>
+              <dt className="shrink-0 text-brand-slate/70">Correo</dt>
+              <dd className="min-w-0 break-all text-right font-medium">{memberDetail.email}</dd>
             </div>
             <div className="flex justify-between gap-3 py-1">
-              <dt className="text-brand-slate/70">Teléfono</dt>
-              <dd className="text-right font-medium">{memberDetail.phone}</dd>
+              <dt className="shrink-0 text-brand-slate/70">Teléfono</dt>
+              {/* El teléfono queda null para autoregistro/backfill (el
+                  formulario de /cuenta no lo pide) — "—" en vez de un
+                  espacio vacío sin explicación. */}
+              <dd className="min-w-0 break-all text-right font-medium">{memberDetail.phone || "—"}</dd>
             </div>
             <div className="flex justify-between gap-3 py-1">
-              <dt className="text-brand-slate/70">Código de referido</dt>
-              <dd className="text-right font-medium">{memberDetail.referral_code}</dd>
+              <dt className="shrink-0 text-brand-slate/70">Código de referido</dt>
+              <dd className="min-w-0 break-all text-right font-medium">{memberDetail.referral_code}</dd>
             </div>
           </dl>
         </div>
