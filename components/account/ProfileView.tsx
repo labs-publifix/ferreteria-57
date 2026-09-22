@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
+// Barra de identidad compacta, una sola fila: avatar + nombre a la
+// izquierda, "Cerrar sesión" como enlace discreto a la derecha — nunca el
+// mismo peso visual que el saldo de puntos, que es lo que el cliente
+// realmente viene a ver. El código de referido vive ahora en la franja de
+// saldo (Club57MemberPanel), no aquí.
 export function ProfileView({
   email,
   fullName,
-  referralCode,
 }: {
   email: string;
   fullName: string | null;
-  referralCode: string | null;
 }) {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -31,41 +33,28 @@ export function ProfileView({
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-lg bg-white p-6 shadow-sm">
-      <div
-        aria-hidden="true"
-        className="flex size-16 items-center justify-center rounded-full bg-brand-slate font-display text-xl text-white"
-      >
-        {initial}
-      </div>
-
-      <div className="text-center">
-        <p className="font-display text-lg uppercase text-brand-slate">
-          {displayName}
-        </p>
-        <p className="font-sans text-sm text-brand-slate/70">{email}</p>
-      </div>
-
-      {referralCode && (
-        <div className="w-full rounded-md bg-brand-gray px-4 py-3 text-center">
-          <p className="font-sans text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
-            Tu código de referido
-          </p>
-          <p className="font-display text-lg text-brand-black">
-            {referralCode}
-          </p>
+    <div className="flex w-full max-w-4xl items-center justify-between gap-3 rounded-lg bg-white px-4 py-3 shadow-sm">
+      <div className="flex min-w-0 items-center gap-3">
+        <div
+          aria-hidden="true"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-slate font-display text-sm text-white"
+        >
+          {initial}
         </div>
-      )}
+        <div className="min-w-0 text-left">
+          <p className="truncate font-sans text-sm font-semibold text-brand-black">{displayName}</p>
+          <p className="truncate font-sans text-xs text-brand-slate/60">{email}</p>
+        </div>
+      </div>
 
-      <Button
+      <button
         type="button"
-        variant="secondary"
         onClick={handleSignOut}
         disabled={isSigningOut}
-        className="w-full"
+        className="shrink-0 rounded font-sans text-sm text-brand-slate hover:text-brand-black hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:opacity-50"
       >
-        {isSigningOut ? "Cerrando sesión…" : "Cerrar sesión"}
-      </Button>
+        {isSigningOut ? "Cerrando…" : "Cerrar sesión"}
+      </button>
     </div>
   );
 }

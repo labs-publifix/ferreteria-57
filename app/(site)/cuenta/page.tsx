@@ -146,9 +146,9 @@ export default async function CuentaPage() {
           <ProfileView
             email={user.email ?? ""}
             fullName={profile?.full_name ?? null}
-            referralCode={profile?.referral_code ?? null}
           />
           <Club57MemberPanel
+            referralCode={profile?.referral_code ?? null}
             saldoDisponible={saldoDisponible}
             puntosPendientes={puntosPendientes}
             proximaFechaDisponible={proximaFechaDisponible}
