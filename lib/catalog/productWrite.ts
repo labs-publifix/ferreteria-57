@@ -96,11 +96,22 @@ export async function createProductRecord(
   return { id: product.id };
 }
 
-// Reemplaza todas las variantes en vez de calcular un diff: usado solo por
-// la edición manual completa (el admin ve y controla cada presentación en
-// pantalla). La actualización disparada desde el importador usa
-// updateProductFromImportRow en su lugar — ver la nota ahí sobre por qué
-// NO comparte esta función.
+// Actualiza en el lugar las variantes que coinciden por SKU (conserva su
+// id) en vez de borrar todas e insertarlas de nuevo con ids nuevos — usado
+// solo por la edición manual completa (el admin ve y controla cada
+// presentación en pantalla). La actualización disparada desde el
+// importador usa updateProductFromImportRow en su lugar — ver la nota ahí
+// sobre por qué NO comparte esta función.
+//
+// Antes, CUALQUIER edición del producto (incluso solo cambiar la
+// descripción) borraba y recreaba TODAS sus variantes. Como
+// order_items.variant_id referencia product_variants.id con
+// "on delete set null" (ver 20260919010000_stock_and_cancel.sql), eso
+// dejaba huérfanos los renglones de pedidos YA HECHOS que compraron esa
+// presentación — rompiendo, entre otras cosas, la restauración de stock
+// al cancelar esos pedidos. Se detectó al investigar 3 líneas huérfanas en
+// un pedido de prueba (limpieza pre-lanzamiento) cuyo SKU seguía existiendo
+// con un variant_id distinto al que el pedido tenía guardado.
 export async function updateProductRecord(
   supabase: SupabaseServerClient,
   productId: string,
@@ -140,27 +151,70 @@ export async function updateProductRecord(
     return { error: describeDbError("No se pudo actualizar el producto", productError) };
   }
 
-  const { error: deleteError } = await supabase
+  const { data: existingVariants, error: existingError } = await supabase
     .from("product_variants")
-    .delete()
+    .select("id, sku")
     .eq("product_id", productId);
-  if (deleteError) {
-    return { error: describeDbError("No se pudieron actualizar las presentaciones", deleteError) };
+  if (existingError) {
+    return { error: describeDbError("No se pudieron leer las presentaciones actuales", existingError) };
   }
 
-  const { error: insertError } = await supabase.from("product_variants").insert(
-    input.variants.map((variant, index) => ({
-      product_id: productId,
-      sku: variant.sku,
-      label: variant.label,
-      price: variant.price,
-      compare_at_price: variant.compareAtPrice,
-      stock: variant.stock,
-      position: index,
-    }))
-  );
-  if (insertError) {
-    return { error: describeDbError("No se pudieron guardar las presentaciones", insertError) };
+  const existingIdBySku = new Map((existingVariants ?? []).map((v) => [v.sku, v.id]));
+  const incomingSkus = new Set(input.variants.map((variant) => variant.sku));
+
+  // Presentaciones que de verdad desaparecieron del formulario (SKU ya no
+  // está en el input) — a esas sí les toca borrarse; sus pedidos ya hechos
+  // quedan con variant_id nulo, pero es el caso correcto (la presentación
+  // en sí se eliminó), no un efecto secundario de editar otra cosa.
+  const removedIds = (existingVariants ?? [])
+    .filter((v) => !incomingSkus.has(v.sku))
+    .map((v) => v.id);
+  if (removedIds.length > 0) {
+    const { error } = await supabase.from("product_variants").delete().in("id", removedIds);
+    if (error) {
+      return { error: describeDbError("No se pudieron actualizar las presentaciones", error) };
+    }
+  }
+
+  const toInsert = input.variants
+    .map((variant, index) => ({ variant, index }))
+    .filter(({ variant }) => !existingIdBySku.has(variant.sku));
+  if (toInsert.length > 0) {
+    const { error } = await supabase.from("product_variants").insert(
+      toInsert.map(({ variant, index }) => ({
+        product_id: productId,
+        sku: variant.sku,
+        label: variant.label,
+        price: variant.price,
+        compare_at_price: variant.compareAtPrice,
+        stock: variant.stock,
+        position: index,
+      }))
+    );
+    if (error) {
+      return { error: describeDbError("No se pudieron guardar las presentaciones", error) };
+    }
+  }
+
+  // Las que sí ya existían (mismo SKU) se actualizan sobre su fila
+  // original — conserva su id, y por lo tanto cualquier
+  // order_items.variant_id que ya la referencie.
+  for (const [index, variant] of input.variants.entries()) {
+    const existingId = existingIdBySku.get(variant.sku);
+    if (!existingId) continue;
+    const { error } = await supabase
+      .from("product_variants")
+      .update({
+        label: variant.label,
+        price: variant.price,
+        compare_at_price: variant.compareAtPrice,
+        stock: variant.stock,
+        position: index,
+      })
+      .eq("id", existingId);
+    if (error) {
+      return { error: describeDbError("No se pudieron actualizar las presentaciones", error) };
+    }
   }
 
   return {};
