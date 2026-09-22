@@ -7,6 +7,7 @@ import {
   Club57MemberPanel,
   type Club57CatalogItem,
   type Club57LedgerRow,
+  type Club57OrderRow,
   type Club57RedemptionRow,
 } from "@/components/account/Club57MemberPanel";
 
@@ -51,29 +52,46 @@ export default async function CuentaPage() {
   let profile: { full_name: string | null; referral_code: string | null } | null = null;
   let saldoDisponible = 0;
   let puntosPendientes = 0;
+  let proximaFechaDisponible: string | null = null;
   let historial: Club57LedgerRow[] = [];
   let catalogo: Club57CatalogItem[] = [];
   let misCanjes: Club57RedemptionRow[] = [];
+  let pedidos: Club57OrderRow[] = [];
+  let montoPorPunto = 50;
 
   if (user) {
-    const [profileResult, ledgerResult, catalogResult, redemptionsResult] = await Promise.all([
-      supabase.from("profiles").select("full_name, referral_code").eq("id", user.id).single(),
-      supabase
-        .from("club57_points_ledger")
-        .select("id, cantidad, tipo, estado, referencia, created_at")
-        .eq("member_id", user.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("club57_redemption_catalog")
-        .select("id, nombre, descripcion, costo_puntos, stock, image_url")
-        .eq("active", true)
-        .order("costo_puntos", { ascending: true }),
-      supabase
-        .from("club57_redemptions")
-        .select("id, puntos_usados, estado, created_at, club57_redemption_catalog(nombre)")
-        .eq("member_id", user.id)
-        .order("created_at", { ascending: false }),
-    ]);
+    // Los puntos 'pendiente' cuya fecha_disponible ya llegó se pasan a
+    // 'disponible' aquí — "al cargar el panel de cliente" es la
+    // implementación aceptada para esta primera versión (sin cron todavía,
+    // ver migración 20260925010000). Se espera a que termine antes de leer
+    // el ledger para que el saldo mostrado ya refleje la transición.
+    await supabase.rpc("promote_due_club57_points");
+
+    const [profileResult, ledgerResult, catalogResult, redemptionsResult, ordersResult, configResult] =
+      await Promise.all([
+        supabase.from("profiles").select("full_name, referral_code").eq("id", user.id).single(),
+        supabase
+          .from("club57_points_ledger")
+          .select("id, cantidad, tipo, estado, fecha_disponible, referencia, created_at")
+          .eq("member_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("club57_redemption_catalog")
+          .select("id, nombre, descripcion, costo_puntos, stock, image_url")
+          .eq("active", true)
+          .order("costo_puntos", { ascending: true }),
+        supabase
+          .from("club57_redemptions")
+          .select("id, puntos_usados, estado, created_at, club57_redemption_catalog(nombre)")
+          .eq("member_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("orders")
+          .select("id, order_number, created_at, total, status")
+          .eq("customer_email", user.email ?? "")
+          .order("created_at", { ascending: false }),
+        supabase.from("club57_config").select("monto_por_punto").maybeSingle(),
+      ]);
 
     profile = profileResult.data;
 
@@ -82,11 +100,19 @@ export default async function CuentaPage() {
     saldoDisponible = ledgerRows
       .filter((row) => row.estado === "disponible")
       .reduce((sum, row) => sum + row.cantidad, 0);
-    puntosPendientes = ledgerRows
-      .filter((row) => row.estado === "pendiente")
-      .reduce((sum, row) => sum + row.cantidad, 0);
+    const pendientes = ledgerRows.filter((row) => row.estado === "pendiente");
+    puntosPendientes = pendientes.reduce((sum, row) => sum + row.cantidad, 0);
+    // La fecha más próxima entre los movimientos pendientes — la que le
+    // importa al cliente es cuándo se libera el PRIMER lote, no el último.
+    const fechasPendientes = pendientes
+      .map((row) => row.fecha_disponible)
+      .filter((fecha): fecha is string => Boolean(fecha))
+      .sort();
+    proximaFechaDisponible = fechasPendientes[0] ?? null;
 
     catalogo = catalogResult.data ?? [];
+    pedidos = ordersResult.data ?? [];
+    montoPorPunto = configResult.data?.monto_por_punto ? Number(configResult.data.monto_por_punto) : 50;
 
     // La relación embebida llega como objeto o arreglo según cómo Supabase
     // resuelva el join — nunca se confía en una sola forma, un artículo
@@ -125,9 +151,12 @@ export default async function CuentaPage() {
           <Club57MemberPanel
             saldoDisponible={saldoDisponible}
             puntosPendientes={puntosPendientes}
+            proximaFechaDisponible={proximaFechaDisponible}
+            montoPorPunto={montoPorPunto}
             historial={historial}
             catalogo={catalogo}
             misCanjes={misCanjes}
+            pedidos={pedidos}
           />
         </>
       ) : (
