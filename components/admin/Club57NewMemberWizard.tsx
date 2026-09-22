@@ -21,7 +21,15 @@ const labelClass = "mb-1.5 block font-sans text-sm font-medium text-brand-black"
 // se guarda la contraseña en ningún estado más allá de este componente —
 // vive solo en la respuesta del Server Action y en el estado de React de
 // este árbol, se pierde apenas se navega fuera de aquí.
-export function Club57NewMemberWizard() {
+//
+// basePath: la vista de vendedor (/admin/vendedor/clientes/nuevo) reutiliza
+// este mismo wizard — sin esto, "Ver cliente"/"Ir al perfil" mandarían a un
+// vendedor a la ruta de admin, que el middleware le rechaza.
+export function Club57NewMemberWizard({
+  basePath = "/admin/lealtad/clientes",
+}: {
+  basePath?: string;
+}) {
   const [step, setStep] = useState<Step>("search");
 
   const [query, setQuery] = useState("");
@@ -159,7 +167,7 @@ export function Club57NewMemberWizard() {
                 {match.email} · {match.phone}
               </p>
               <Link
-                href={`/admin/lealtad/clientes/${match.id}`}
+                href={`${basePath}/${match.id}`}
                 className="mt-1 inline-block font-sans text-sm text-brand-slate underline underline-offset-2 hover:text-brand-black"
               >
                 Ver cliente
@@ -289,7 +297,7 @@ export function Club57NewMemberWizard() {
       </div>
 
       <Link
-        href={`/admin/lealtad/clientes/${createdMember?.id}`}
+        href={`${basePath}/${createdMember?.id}`}
         className={buttonClassName("primary", "w-full sm:w-auto sm:self-start")}
       >
         Ir al perfil del cliente

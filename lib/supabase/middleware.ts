@@ -58,6 +58,7 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
   const isAdminLoginRoute = pathname === "/admin/login";
+  const isVendedorRoute = pathname.startsWith("/admin/vendedor");
 
   if (isAdminRoute && !isAdminLoginRoute) {
     // Cualquier error de red/RPC (incluida la función is_admin() todavía
@@ -65,6 +66,7 @@ export async function updateSession(request: NextRequest) {
     // admin" — fail-closed: ante la duda, se niega el acceso en vez de
     // dejarlo pasar.
     let isAdmin = false;
+    let isVendedor = false;
     if (user) {
       try {
         const { data, error } = await supabase.rpc("is_admin");
@@ -72,10 +74,29 @@ export async function updateSession(request: NextRequest) {
       } catch {
         isAdmin = false;
       }
+      // is_vendedor() solo se consulta cuando hace falta (no es admin): un
+      // admin real nunca paga esta segunda ida y vuelta, su camino queda
+      // idéntico al de antes de que existiera el rol de vendedor.
+      if (!isAdmin) {
+        try {
+          const { data, error } = await supabase.rpc("is_vendedor");
+          isVendedor = !error && data === true;
+        } catch {
+          isVendedor = false;
+        }
+      }
     }
 
-    if (!isAdmin) {
-      const redirectUrl = new URL("/admin/login", request.url);
+    // /admin/vendedor/** acepta admin O vendedor; el resto de /admin sigue
+    // exigiendo exactamente is_admin(), igual que siempre.
+    const hasAccess = isVendedorRoute ? isAdmin || isVendedor : isAdmin;
+
+    if (!hasAccess) {
+      // Un vendedor autenticado que golpea una ruta de admin fuera de la
+      // suya va a su propia vista (ya probó quién es, solo no le toca esa
+      // ruta) — cualquier otro caso (sin sesión, error de RPC, cliente sin
+      // rol de staff) cae al login exactamente como antes.
+      const redirectUrl = new URL(isVendedor ? "/admin/vendedor" : "/admin/login", request.url);
       const redirectResponse = NextResponse.redirect(redirectUrl);
       // Conserva cualquier cookie de sesión refrescada por getUser() de
       // arriba aunque la respuesta final sea una redirección.

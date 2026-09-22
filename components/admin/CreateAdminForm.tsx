@@ -2,8 +2,15 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, PasswordInput } from "@/components/ui";
+import { Button, PasswordInput, Select } from "@/components/ui";
 import { createAdminUser } from "@/app/(admin)/admin/(protected)/accesos/actions";
+
+type StaffRole = "admin" | "vendedor";
+
+const ROLE_OPTIONS: { value: StaffRole; label: string }[] = [
+  { value: "admin", label: "Administrador — acceso completo al panel" },
+  { value: "vendedor", label: "Vendedor — solo sus propios clientes de Club 57" },
+];
 
 export function CreateAdminForm() {
   const router = useRouter();
@@ -13,6 +20,7 @@ export function CreateAdminForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<StaffRole>("admin");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,6 +35,7 @@ export function CreateAdminForm() {
     formData.set("fullName", fullName);
     formData.set("email", email);
     formData.set("password", password);
+    formData.set("role", role);
 
     const result = await createAdminUser(formData);
 
@@ -40,6 +49,7 @@ export function CreateAdminForm() {
     setFullName("");
     setEmail("");
     setPassword("");
+    setRole("admin");
     setIsSubmitting(false);
     // Refresca la lista de administradores de la página (Server
     // Component) sin perder el estado de éxito de este formulario.
@@ -53,7 +63,7 @@ export function CreateAdminForm() {
       noValidate
     >
       <h2 className="font-display text-base uppercase text-brand-slate">
-        Crear administrador
+        Crear cuenta de acceso
       </h2>
 
       {error && (
@@ -69,9 +79,14 @@ export function CreateAdminForm() {
           role="status"
           className="rounded-md bg-brand-gray px-4 py-2.5 font-sans text-sm text-brand-black"
         >
-          Administrador creado — ya puede iniciar sesión en /admin/login.
+          Cuenta creada — ya puede iniciar sesión en /admin/login.
         </p>
       )}
+
+      <div>
+        <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Rol</span>
+        <Select value={role} onChange={(value) => setRole(value as StaffRole)} options={ROLE_OPTIONS} label="Rol" />
+      </div>
 
       <div>
         <label
@@ -119,7 +134,7 @@ export function CreateAdminForm() {
       />
 
       <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto sm:self-start">
-        {isSubmitting ? "Creando…" : "Crear administrador"}
+        {isSubmitting ? "Creando…" : role === "admin" ? "Crear administrador" : "Crear vendedor"}
       </Button>
     </form>
   );

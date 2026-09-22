@@ -8,7 +8,16 @@ export interface Club57MemberRow {
   saldoDisponible: number;
 }
 
-export function Club57MembersTable({ members }: { members: Club57MemberRow[] }) {
+// basePath: la vista de vendedor (/admin/vendedor/clientes) reutiliza esta
+// misma tabla — sin esto, el enlace de cada fila mandaría a un vendedor a
+// la ruta de admin, que el middleware le rechaza por no ser suya.
+export function Club57MembersTable({
+  members,
+  basePath = "/admin/lealtad/clientes",
+}: {
+  members: Club57MemberRow[];
+  basePath?: string;
+}) {
   if (members.length === 0) {
     return (
       <p className="rounded-lg bg-white p-6 text-center font-sans text-sm text-brand-slate/70 shadow-sm">
@@ -32,7 +41,7 @@ export function Club57MembersTable({ members }: { members: Club57MemberRow[] }) 
             <tr key={member.id} className="border-b border-brand-slate/10 last:border-0 hover:bg-brand-gray/40">
               <td className="max-w-[240px] px-4 py-3">
                 <Link
-                  href={`/admin/lealtad/clientes/${member.id}`}
+                  href={`${basePath}/${member.id}`}
                   className="font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
                 >
                   {member.fullName}

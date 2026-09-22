@@ -33,12 +33,16 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const role = String(formData.get("role") ?? "admin");
 
   if (!fullName || !email || !password) {
     return { error: "Completa nombre, correo y contraseña." };
   }
   if (password.length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres." };
+  }
+  if (role !== "admin" && role !== "vendedor") {
+    return { error: "Rol inválido." };
   }
 
   let adminClient;
@@ -71,13 +75,14 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
   // un usuario normal, no contra la service_role).
   const { error: promoteError } = await adminClient
     .from("profiles")
-    .update({ role: "admin" })
+    .update({ role })
     .eq("id", created.user.id);
 
   if (promoteError) {
     return {
-      error:
-        "El usuario se creó pero no se pudo asignar el rol de administrador. Avísale a soporte.",
+      error: `El usuario se creó pero no se pudo asignar el rol de ${
+        role === "admin" ? "administrador" : "vendedor"
+      }. Avísale a soporte.`,
     };
   }
 

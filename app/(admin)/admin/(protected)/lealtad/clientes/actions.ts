@@ -2,27 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireStaff } from "@/lib/supabase/requireStaff";
 import { generateSecurePassword } from "@/lib/generatePassword";
-
-// Mismo criterio que el resto del admin: cada Server Action confirma
-// is_admin() por su cuenta, sin confiar en que el middleware ya filtró la
-// request. Devuelve el cliente normal (respeta RLS) — createAdminClient
-// (service_role) solo se usa puntualmente donde hace falta saltarse RLS o
-// tocar la Admin API de Auth (crear el usuario), nunca como reemplazo
-// general de este chequeo.
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: isAdmin, error } = await supabase.rpc("is_admin");
-  if (error || !isAdmin) return null;
-
-  return supabase;
-}
 
 export interface Club57MemberMatch {
   id: string;
@@ -41,14 +22,22 @@ export interface FindMemberResult {
 // guardó. El objetivo es "¿ya existe este contacto puntual?", no
 // "¿hay algo parecido?": un match parcial aquí bloquearía altas legítimas
 // de clientes distintos con datos similares.
+//
+// Usa la service_role a propósito, sin importar si quien llama es admin o
+// vendedor: un vendedor solo VE (por RLS) a sus propios clientes, pero el
+// bloqueo de duplicados tiene que mirar a TODOS los clientes de Club 57
+// (de otros vendedores, de un admin, o autoregistrados) — si esta
+// búsqueda respetara ese mismo RLS, un vendedor podría dar de alta a un
+// cliente que ya existe con otro dueño sin que nada se lo impida.
 export async function findClub57MemberByContact(query: string): Promise<FindMemberResult> {
-  const supabase = await requireAdmin();
-  if (!supabase) return { error: "No autorizado." };
+  const staff = await requireStaff();
+  if (!staff) return { error: "No autorizado." };
 
   const normalized = query.trim();
   if (!normalized) return { error: "Escribe un correo o teléfono para buscar." };
 
-  const { data, error } = await supabase
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
     .from("club57_members")
     .select("id, full_name, email, phone")
     .or(`email.eq.${normalized.toLowerCase()},phone.eq.${normalized}`);
@@ -91,8 +80,8 @@ export async function createClub57Member(
   email: string,
   phone: string
 ): Promise<CreateMemberResult> {
-  const supabase = await requireAdmin();
-  if (!supabase) return { error: "No autorizado." };
+  const staff = await requireStaff();
+  if (!staff) return { error: "No autorizado." };
 
   const normalizedName = fullName.trim();
   const normalizedEmail = email.trim().toLowerCase();
@@ -102,11 +91,14 @@ export async function createClub57Member(
   if (!normalizedEmail || !normalizedEmail.includes("@")) return { error: "Escribe un correo válido." };
   if (!normalizedPhone) return { error: "Escribe el teléfono del cliente." };
 
-  // Nunca se confía en que el admin ya buscó y no encontró nada en el paso
-  // anterior de este mismo flujo (pudo pasar tiempo, o pudo llamarse esta
-  // acción directo) — se vuelve a checar aquí, contra el estado real de la
-  // base, justo antes de crear nada.
-  const { data: existing, error: existingError } = await supabase
+  const adminClient = createAdminClient();
+
+  // Mismo motivo que findClub57MemberByContact: la búsqueda de duplicados
+  // tiene que ver a TODOS los clientes de Club 57, sin importar de qué
+  // vendedor/admin sean o si se autoregistraron — nunca se confía en que
+  // ya se buscó en el paso anterior de este mismo flujo (pudo pasar
+  // tiempo, o pudo llamarse esta acción directo).
+  const { data: existing, error: existingError } = await adminClient
     .from("club57_members")
     .select("id")
     .or(`email.eq.${normalizedEmail},phone.eq.${normalizedPhone}`)
@@ -116,7 +108,6 @@ export async function createClub57Member(
 
   const temporaryPassword = generateSecurePassword();
 
-  const adminClient = createAdminClient();
   const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
     email: normalizedEmail,
     password: temporaryPassword,
@@ -135,6 +126,10 @@ export async function createClub57Member(
       email: normalizedEmail,
       phone: normalizedPhone,
       origen_alta: "vendedor",
+      // Solo se llena cuando quien da de alta es un vendedor — un admin
+      // completo sigue dejando este campo en null, igual que el
+      // autoregistro online.
+      creado_por_vendedor_id: staff.role === "vendedor" ? staff.userId : null,
     },
     { onConflict: "id" }
   );
@@ -147,6 +142,7 @@ export async function createClub57Member(
   }
 
   revalidatePath("/admin/lealtad/clientes");
+  revalidatePath("/admin/vendedor/clientes");
 
   return {
     member: { id: authUser.user.id, fullName: normalizedName, email: normalizedEmail, phone: normalizedPhone },
@@ -174,8 +170,9 @@ export async function registerClub57ManualPurchase(
   productoNombre: string,
   productoSku: string
 ): Promise<RegisterPurchaseResult> {
-  const supabase = await requireAdmin();
-  if (!supabase) return { error: "No autorizado." };
+  const staff = await requireStaff();
+  if (!staff) return { error: "No autorizado." };
+  const { supabase } = staff;
 
   const monto = Number.parseFloat(montoRaw);
   if (Number.isNaN(monto) || monto <= 0) {
@@ -238,5 +235,6 @@ export async function registerClub57ManualPurchase(
   }
 
   revalidatePath(`/admin/lealtad/clientes/${memberId}`);
+  revalidatePath(`/admin/vendedor/clientes/${memberId}`);
   return { puntos };
 }
