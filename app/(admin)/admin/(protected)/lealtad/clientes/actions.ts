@@ -226,6 +226,17 @@ export async function registerClub57ManualPurchase(
 
   if (insertError) return { error: `No se pudo registrar la compra: ${insertError.message}` };
 
+  // Mismo bono de referido que ya aplica create_order (ver migración
+  // 20260926010000) — se llama DESPUÉS de insertar la compra: si esta es
+  // la primera compra real del cliente (online o manual) y tiene
+  // referred_by, otorga los puntos a ambos lados, una sola vez por
+  // relación. Un error aquí nunca debe tumbar la confirmación de la
+  // compra ya registrada arriba — solo se registra para revisar después.
+  const { error: bonusError } = await supabase.rpc("grant_club57_referral_bonus", { p_member_id: memberId });
+  if (bonusError) {
+    console.error("Club 57: no se pudo aplicar el bono de referido", bonusError);
+  }
+
   revalidatePath(`/admin/lealtad/clientes/${memberId}`);
   return { puntos };
 }

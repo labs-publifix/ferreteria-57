@@ -47,6 +47,13 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   if (!member) notFound();
 
+  // Puntos 'pendiente' de ESTE cliente cuya fecha ya llegó se pasan a
+  // 'disponible' aquí — así el saldo que ve el vendedor en mostrador ya
+  // está al día sin depender de que el cliente haya entrado a /cuenta
+  // (que solo promueve lo propio). Se espera antes de leer el ledger para
+  // que el saldo mostrado ya refleje la transición.
+  await supabase.rpc("promote_due_club57_points_for_member", { p_member_id: params.id });
+
   const { data: ledger } = await supabase
     .from("club57_points_ledger")
     .select("id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, created_at")
