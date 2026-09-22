@@ -143,7 +143,7 @@ export function CheckoutView() {
 
     const result = await createOrder(input);
 
-    if (result.error || !result.orderNumber) {
+    if (result.error || !result.orderNumber || !result.redirectUrl) {
       setSubmitError(result.error ?? "No se pudo registrar tu pedido. Intenta de nuevo.");
       setIsSubmitting(false);
       return;
@@ -198,7 +198,11 @@ export function CheckoutView() {
       total: result.total ?? subtotal,
     });
     clearCart();
-    router.push("/checkout/confirmacion");
+    // Fuera del sitio a pagar en Mercado Pago (Checkout Pro) — no es
+    // router.push: es un cambio de origen de verdad, no una navegación
+    // interna de Next. Vuelve a /checkout/confirmacion (back_urls, ver
+    // createCheckoutPreference.ts) cuando el cliente termina de pagar.
+    window.location.href = result.redirectUrl;
   }
 
   return (
