@@ -21,3 +21,6 @@ export { ConfirmDialog } from "./ConfirmDialog";
 export type { ConfirmDialogProps } from "./ConfirmDialog";
 export { Tabs, TabPanel } from "./Tabs";
 export type { TabItem, TabsProps } from "./Tabs";
+export { Modal } from "./Modal";
+export type { ModalProps } from "./Modal";
+export { SimplePagination } from "./SimplePagination";

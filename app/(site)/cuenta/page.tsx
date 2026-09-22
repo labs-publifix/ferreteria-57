@@ -10,6 +10,7 @@ import {
   type Club57OrderRow,
   type Club57RedemptionRow,
 } from "@/components/account/Club57MemberPanel";
+import type { Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
 // app/layout.tsx.
@@ -77,7 +78,7 @@ export default async function CuentaPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("club57_redemption_catalog")
-          .select("id, nombre, descripcion, costo_puntos, stock, image_url")
+          .select("id, nombre, descripcion, costo_puntos, stock, image_url, clave, codigo")
           .eq("active", true)
           .order("costo_puntos", { ascending: true }),
         supabase
@@ -87,7 +88,9 @@ export default async function CuentaPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("orders")
-          .select("id, order_number, created_at, total, status")
+          .select(
+            "id, order_number, created_at, total, status, fulfillment_type, colonia, shipping_address, subtotal, shipping_cost"
+          )
           .eq("customer_email", user.email ?? "")
           .order("created_at", { ascending: false }),
         supabase.from("club57_config").select("monto_por_punto").maybeSingle(),
@@ -111,8 +114,34 @@ export default async function CuentaPage() {
     proximaFechaDisponible = fechasPendientes[0] ?? null;
 
     catalogo = catalogResult.data ?? [];
-    pedidos = ordersResult.data ?? [];
     montoPorPunto = configResult.data?.monto_por_punto ? Number(configResult.data.monto_por_punto) : 50;
+
+    const orderRows = ordersResult.data ?? [];
+    const orderIds = orderRows.map((order) => order.id);
+    // Segunda consulta, no parte del Promise.all de arriba, porque
+    // depende de los ids de pedidos que esa primera tanda todavía no
+    // conoce — un solo "in (...)" para todos los pedidos del cliente en
+    // vez de una consulta por pedido.
+    const orderItemsData: (Club57OrderItemRow & { order_id: string })[] =
+      orderIds.length > 0
+        ? ((
+            await supabase
+              .from("order_items")
+              .select("id, order_id, product_name, variant_label, sku, unit_price, quantity")
+              .in("order_id", orderIds)
+          ).data ?? [])
+        : [];
+
+    const itemsByOrderId = new Map<string, Club57OrderItemRow[]>();
+    for (const item of orderItemsData ?? []) {
+      const list = itemsByOrderId.get(item.order_id) ?? [];
+      list.push(item);
+      itemsByOrderId.set(item.order_id, list);
+    }
+    pedidos = orderRows.map((order) => ({
+      ...order,
+      items: itemsByOrderId.get(order.id) ?? [],
+    }));
 
     // La relación embebida llega como objeto o arreglo según cómo Supabase
     // resuelva el join — nunca se confía en una sola forma, un artículo
@@ -133,14 +162,6 @@ export default async function CuentaPage() {
 
   return (
     <main className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 py-16 text-center sm:py-24">
-      <Image
-        src="/brand/logo-naranja.png"
-        alt="Ferretería 57"
-        width={983}
-        height={302}
-        className="h-10 w-auto sm:h-12"
-      />
-
       {user ? (
         <>
           <ProfileView
@@ -161,6 +182,13 @@ export default async function CuentaPage() {
         </>
       ) : (
         <>
+          <Image
+            src="/brand/logo-naranja.png"
+            alt="Ferretería 57"
+            width={983}
+            height={302}
+            className="h-10 w-auto sm:h-12"
+          />
           <div className="max-w-prose">
             <h1 className="font-display text-2xl uppercase text-brand-slate sm:text-3xl">
               Mi cuenta
