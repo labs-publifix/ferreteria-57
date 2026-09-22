@@ -5,6 +5,37 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/sendEmail";
 import { buildRedemptionRequestedEmail } from "@/lib/email/club57Emails";
 
+export interface RequestPasswordResetResult {
+  error?: string;
+}
+
+// Server Action (no llamado directo desde el navegador) para poder leer
+// APP_BASE_URL del servidor al armar el redirectTo — mismo criterio que ya
+// usa createCheckoutPreference.ts con Mercado Pago. resetPasswordForEmail()
+// de Supabase ya está diseñado para no distinguir "correo no registrado" de
+// "correo enviado" (nunca revela si una cuenta existe): este Server Action
+// no le agrega ninguna lógica que pudiera romper esa protección, solo
+// pasa cualquier error real (límite de envíos, config faltante) tal cual.
+export async function requestPasswordReset(email: string): Promise<RequestPasswordResetResult> {
+  const appBaseUrl = process.env.APP_BASE_URL;
+  if (!appBaseUrl) {
+    console.error("[requestPasswordReset] falta configurar APP_BASE_URL en el servidor.");
+    return { error: "No se pudo procesar tu solicitud. Intenta más tarde." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${appBaseUrl}/cuenta/restablecer-contrasena`,
+  });
+
+  if (error) {
+    console.error("[requestPasswordReset]", error.message);
+    return { error: "No se pudo procesar tu solicitud. Intenta más tarde." };
+  }
+
+  return {};
+}
+
 export interface RequestRedemptionResult {
   error?: string;
   redemptionId?: string;

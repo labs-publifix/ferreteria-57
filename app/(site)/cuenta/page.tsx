@@ -24,7 +24,11 @@ export const metadata: Metadata = {
 // sesión del lado del servidor con el cliente de lib/supabase/server.ts,
 // para que la primera pintura ya llegue correcta (sin parpadeo mostrando
 // primero el formulario y luego el perfil una vez resuelto el cliente).
-export default async function CuentaPage() {
+export default async function CuentaPage({
+  searchParams,
+}: {
+  searchParams: { passwordReset?: string };
+}) {
   // Si todavía no se agregaron las variables de entorno en Vercel, esta
   // página es la única que depende de ellas de forma directa (el resto
   // del sitio sigue funcionando, ver AuthProvider/middleware) — mejor un
@@ -214,6 +218,11 @@ export default async function CuentaPage() {
             </p>
           </div>
 
+          {searchParams.passwordReset === "1" && (
+            <p role="status" className="w-full max-w-sm rounded-lg bg-green-50 px-4 py-2.5 font-sans text-sm text-green-800">
+              Tu contraseña se actualizó — ya puedes iniciar sesión con ella.
+            </p>
+          )}
           <AuthTabs />
         </>
       )}

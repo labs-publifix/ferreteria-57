@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { Button, PasswordInput } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/authErrors";
+import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
 type Tab = "login" | "signup";
+type LoginView = "credentials" | "forgot";
 
 // Un solo <input> reutilizado por los 3 campos de los 2 formularios: mismo
 // estilo que ya usa ContactSection.tsx en checkout, para no inventar un
@@ -80,7 +82,7 @@ export function AuthTabs() {
         </TabButton>
       </div>
 
-      {tab === "login" ? <LoginForm /> : <SignupForm />}
+      {tab === "login" ? <LoginPanel /> : <SignupForm />}
     </div>
   );
 }
@@ -111,7 +113,20 @@ function TabButton({
   );
 }
 
-function LoginForm() {
+// La pestaña "Iniciar sesión" alterna entre el formulario de credenciales
+// y el de recuperación en el mismo espacio, en vez de mandar a otra
+// pantalla — evita perder el contexto de "sigo intentando entrar" con una
+// navegación completa por algo que es un caso secundario del mismo flujo.
+function LoginPanel() {
+  const [view, setView] = useState<LoginView>("credentials");
+  return view === "credentials" ? (
+    <LoginForm onForgotPassword={() => setView("forgot")} />
+  ) : (
+    <ForgotPasswordForm onBack={() => setView("credentials")} />
+  );
+}
+
+function LoginForm({ onForgotPassword }: { onForgotPassword: () => void }) {
   const router = useRouter();
   const emailId = useId();
   const passwordId = useId();
@@ -168,6 +183,13 @@ function LoginForm() {
         value={password}
         onChange={setPassword}
       />
+      <button
+        type="button"
+        onClick={onForgotPassword}
+        className="self-end font-sans text-xs font-medium text-brand-slate underline underline-offset-2 hover:text-brand-black"
+      >
+        ¿Olvidaste tu contraseña?
+      </button>
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Iniciando sesión…" : "Iniciar sesión"}
       </Button>
