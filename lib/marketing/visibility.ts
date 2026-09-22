@@ -14,6 +14,20 @@ export function todayInStoreTimezone(): string {
   }).format(new Date());
 }
 
+// Suma días de calendario a una fecha "YYYY-MM-DD" ya resuelta en huso de
+// tienda (por default, hoy) — nunca a partir de new Date() + setDate()
+// directo: eso opera en el huso del proceso de Node (UTC en producción),
+// que cerca de la medianoche de Querétaro ya puede estar un día adelante
+// o atrasado. Construir con Date.UTC(y, m-1, d + days) es aritmética de
+// calendario pura (Date normaliza el desbordamiento de mes/año solo), sin
+// volver a interpretar el resultado en ningún huso horario.
+export function addDaysInStoreTimezone(days: number, from: string = todayInStoreTimezone()): string {
+  const [year, month, day] = from.split("-").map(Number);
+  const target = new Date(Date.UTC(year, month - 1, day + days));
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${target.getUTCFullYear()}-${pad(target.getUTCMonth() + 1)}-${pad(target.getUTCDate())}`;
+}
+
 // Regla compartida por Top Banner y Promo Banners: cuando hay fecha de
 // inicio y/o fin, esas fechas deciden solas si algo se ve o no — el
 // toggle activo/inactivo se ignora por completo mientras haya alguna

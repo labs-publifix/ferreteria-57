@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/sendEmail";
+import { buildRedemptionRequestedEmail } from "@/lib/email/club57Emails";
 
 export interface RequestRedemptionResult {
   error?: string;
@@ -28,6 +30,26 @@ export async function requestClub57Redemption(itemId: string): Promise<RequestRe
     return { error: error.message };
   }
 
+  const redemption = data as { id: string; puntos_usados: number };
+
+  // El canje ya quedó registrado en este punto — un correo que falle
+  // nunca debe deshacerlo ni bloquear la respuesta de éxito al cliente
+  // (mismo criterio que checkout/actions.ts con sus correos de pedido).
+  const [{ data: item }, { data: profile }] = await Promise.all([
+    supabase.from("club57_redemption_catalog").select("nombre").eq("id", itemId).maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+  ]);
+
+  if (item && user.email) {
+    const emailContent = buildRedemptionRequestedEmail({
+      customerName: profile?.full_name?.trim() || "cliente",
+      itemName: item.nombre,
+      pointsUsed: redemption.puntos_usados,
+    });
+    const emailResult = await sendEmail({ to: user.email, subject: emailContent.subject, html: emailContent.html });
+    if (emailResult.error) console.error("[requestClub57Redemption] correo de confirmación:", emailResult.error);
+  }
+
   revalidatePath("/cuenta");
-  return { redemptionId: (data as { id: string })?.id };
+  return { redemptionId: redemption.id };
 }

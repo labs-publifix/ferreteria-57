@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/supabase/requireStaff";
 import { generateSecurePassword } from "@/lib/generatePassword";
+import { addDaysInStoreTimezone } from "@/lib/marketing/visibility";
 
 export interface Club57MemberMatch {
   id: string;
@@ -207,15 +208,12 @@ export async function registerClub57ManualPurchase(
     };
   }
 
-  const fechaDisponible = new Date();
-  fechaDisponible.setDate(fechaDisponible.getDate() + Number(config.dias_espera_pendiente));
-
   const { error: insertError } = await supabase.from("club57_points_ledger").insert({
     member_id: memberId,
     cantidad: puntos,
     tipo: "compra_manual",
     estado: "pendiente",
-    fecha_disponible: fechaDisponible.toISOString().slice(0, 10),
+    fecha_disponible: addDaysInStoreTimezone(Number(config.dias_espera_pendiente)),
     referencia: `Compra en tienda: $${monto.toFixed(2)} MXN`,
     producto_nombre: nombre,
     producto_sku: sku || null,

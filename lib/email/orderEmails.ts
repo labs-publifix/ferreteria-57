@@ -20,11 +20,11 @@ import { LOGO_NARANJA_BASE64 } from "./logoBase64";
 // 57.pdf, sección 03) — mismos valores que tailwind.config.ts, repetidos
 // aquí como hex literal porque un correo no puede depender de clases de
 // Tailwind ni de CSS externo, solo de estilos inline.
-const COLOR_ORANGE = "#FF6600";
-const COLOR_SLATE = "#3F515A";
-const COLOR_BLACK = "#1A1A1A";
-const COLOR_GRAY = "#F2F1EF";
-const COLOR_WHITE = "#FFFFFF";
+export const COLOR_ORANGE = "#FF6600";
+export const COLOR_SLATE = "#3F515A";
+export const COLOR_BLACK = "#1A1A1A";
+export const COLOR_GRAY = "#F2F1EF";
+export const COLOR_WHITE = "#FFFFFF";
 
 export interface OrderEmailItem {
   productName: string;
@@ -70,7 +70,7 @@ export interface OrderEmailData {
 // antes de insertarse en el HTML del correo — nunca se confía en que un
 // nombre o una referencia de entrega no traigan caracteres que rompan el
 // markup.
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -97,7 +97,7 @@ function formatAddress(address: OrderEmailAddress): string {
 // gris-pizarra que el footer del sitio (components/layout/Footer.tsx).
 // HTML de correo real (tablas + estilos inline): los clientes de correo no
 // respetan hojas de estilo externas ni la mayoría de CSS moderno.
-function renderEmailLayout(bodyHtml: string): string {
+export function renderEmailLayout(bodyHtml: string): string {
   return `
 <!DOCTYPE html>
 <html lang="es">
