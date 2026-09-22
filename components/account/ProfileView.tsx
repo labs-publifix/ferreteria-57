@@ -51,7 +51,7 @@ export function ProfileView({
         type="button"
         onClick={handleSignOut}
         disabled={isSigningOut}
-        className="shrink-0 rounded font-sans text-sm text-brand-slate hover:text-brand-black hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:opacity-50"
+        className="flex min-h-9 shrink-0 items-center rounded-md border border-brand-slate/30 px-3 font-sans text-sm font-medium text-brand-slate hover:border-brand-slate hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:opacity-50"
       >
         {isSigningOut ? "Cerrando…" : "Cerrar sesión"}
       </button>

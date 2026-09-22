@@ -202,7 +202,7 @@ export function Header({
             className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 font-sans text-sm font-semibold text-brand-black transition-colors hover:bg-[#E65C00]"
           >
             <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
-            Programa de Lealtad
+            Club 57
           </Link>
         </div>
       </nav>
@@ -245,7 +245,7 @@ export function Header({
               className="mb-3 flex min-h-11 items-center gap-1.5 rounded-full bg-brand-orange px-3 font-sans text-sm font-semibold text-brand-black"
             >
               <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
-              Programa de Lealtad
+              Club 57
             </Link>
 
             <ul className="flex flex-col">

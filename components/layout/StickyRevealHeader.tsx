@@ -152,7 +152,7 @@ export function StickyRevealHeader({ categories }: { categories: Category[] }) {
             className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-orange px-3 py-1 font-sans text-sm font-semibold text-brand-black transition-colors hover:bg-[#E65C00]"
           >
             <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
-            Programa de Lealtad
+            Club 57
           </Link>
         </div>
       </nav>

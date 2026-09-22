@@ -59,6 +59,7 @@ export default async function CuentaPage() {
   let misCanjes: Club57RedemptionRow[] = [];
   let pedidos: Club57OrderRow[] = [];
   let montoPorPunto = 50;
+  let bonoReferidoPendientePts: number | null = null;
 
   if (user) {
     // Los puntos 'pendiente' cuya fecha_disponible ya llegó se pasan a
@@ -68,9 +69,10 @@ export default async function CuentaPage() {
     // el ledger para que el saldo mostrado ya refleje la transición.
     await supabase.rpc("promote_due_club57_points");
 
-    const [profileResult, ledgerResult, catalogResult, redemptionsResult, ordersResult, configResult] =
+    const [profileResult, memberResult, ledgerResult, catalogResult, redemptionsResult, ordersResult, configResult] =
       await Promise.all([
         supabase.from("profiles").select("full_name, referral_code").eq("id", user.id).single(),
+        supabase.from("club57_members").select("referred_by").eq("id", user.id).maybeSingle(),
         supabase
           .from("club57_points_ledger")
           .select("id, cantidad, tipo, estado, fecha_disponible, referencia, created_at")
@@ -93,7 +95,7 @@ export default async function CuentaPage() {
           )
           .eq("customer_email", user.email ?? "")
           .order("created_at", { ascending: false }),
-        supabase.from("club57_config").select("monto_por_punto").maybeSingle(),
+        supabase.from("club57_config").select("monto_por_punto, puntos_referido").maybeSingle(),
       ]);
 
     profile = profileResult.data;
@@ -115,6 +117,18 @@ export default async function CuentaPage() {
 
     catalogo = catalogResult.data ?? [];
     montoPorPunto = configResult.data?.monto_por_punto ? Number(configResult.data.monto_por_punto) : 50;
+
+    // El bono de referido (grant_club57_referral_bonus) se otorga hasta la
+    // PRIMERA compra real del cliente, nunca al registrarse — este cálculo
+    // no cambia esa lógica, solo decide si mostrar el aviso de "te falta
+    // por ganar": vino con referred_by Y todavía no tiene un movimiento
+    // 'referido_bono' propio en su historial.
+    const yaTieneBonoReferido = ledgerRows.some((row) => row.tipo === "referido_bono");
+    if (memberResult.data?.referred_by && !yaTieneBonoReferido) {
+      bonoReferidoPendientePts = configResult.data?.puntos_referido
+        ? Number(configResult.data.puntos_referido)
+        : 10;
+    }
 
     const orderRows = ordersResult.data ?? [];
     const orderIds = orderRows.map((order) => order.id);
@@ -174,6 +188,7 @@ export default async function CuentaPage() {
             puntosPendientes={puntosPendientes}
             proximaFechaDisponible={proximaFechaDisponible}
             montoPorPunto={montoPorPunto}
+            bonoReferidoPendientePts={bonoReferidoPendientePts}
             historial={historial}
             catalogo={catalogo}
             misCanjes={misCanjes}

@@ -82,6 +82,7 @@ export function Club57MemberPanel({
   puntosPendientes,
   proximaFechaDisponible,
   montoPorPunto,
+  bonoReferidoPendientePts,
   historial,
   catalogo,
   misCanjes,
@@ -92,6 +93,7 @@ export function Club57MemberPanel({
   puntosPendientes: number;
   proximaFechaDisponible: string | null;
   montoPorPunto: number;
+  bonoReferidoPendientePts?: number | null;
   historial: Club57LedgerRow[];
   catalogo: Club57CatalogItem[];
   misCanjes: Club57RedemptionRow[];
@@ -165,7 +167,8 @@ export function Club57MemberPanel({
           pestaña). Incluye el código de referido de forma compacta, en
           vez de la tarjeta grande aparte que tenía antes. */}
       <div className="rounded-lg bg-white p-5 shadow-sm">
-        <div className="flex flex-col items-center gap-1 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+        <p className="font-display text-xs uppercase tracking-wide text-brand-slate/60 sm:text-left">Club 57</p>
+        <div className="mt-1 flex flex-col items-center gap-1 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
           <div>
             <p className="font-display text-4xl text-brand-black">{saldoDisponible} pts</p>
             <p className="font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
@@ -178,12 +181,23 @@ export function Club57MemberPanel({
               </p>
             )}
           </div>
+          {/* Pastilla con borde en vez de texto suelto: el código es algo
+              que el cliente comparte con otros, así que necesita más peso
+              visual que una etiqueta secundaria cualquiera. */}
           {referralCode && (
-            <p className="mt-2 font-sans text-xs text-brand-slate/70 sm:mt-0">
-              Código de referido: <span className="font-semibold text-brand-black">{referralCode}</span>
-            </p>
+            <div className="mt-3 inline-flex items-center gap-2 self-center rounded-lg border border-brand-orange/40 bg-brand-orange/5 px-3 py-2 sm:mt-0 sm:self-auto">
+              <span className="font-sans text-xs text-brand-slate/70">Tu código de referido</span>
+              <span className="font-display text-base tracking-wide text-brand-black">{referralCode}</span>
+            </div>
           )}
         </div>
+
+        {!!bonoReferidoPendientePts && (
+          <p className="mt-3 rounded-md bg-brand-gray px-3 py-2 text-center font-sans text-sm text-brand-black sm:text-left">
+            🎁 Te uniste con un código de referido — gana <strong>{bonoReferidoPendientePts} pts extra</strong> en
+            tu primera compra.
+          </p>
+        )}
       </div>
 
       {error && (

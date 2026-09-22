@@ -30,7 +30,7 @@ export function buildRedemptionRequestedEmail(data: RedemptionRequestedEmailData
   const body = `
     <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">¡Listo, ${escapeHtml(firstName)}!</h1>
     <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
-      Tu canje de <strong>${escapeHtml(data.itemName)}</strong> quedó registrado.
+      Tu canje de Club 57 — <strong>${escapeHtml(data.itemName)}</strong> — quedó registrado.
     </p>
 
     <div style="margin:0 0 20px; padding:14px 16px; background-color:${COLOR_GRAY}; border-radius:8px; border-left:4px solid ${COLOR_ORANGE};">
@@ -55,7 +55,7 @@ export function buildRedemptionRequestedEmail(data: RedemptionRequestedEmailData
   `;
 
   return {
-    subject: `Tu canje de ${data.itemName} está listo para recoger — Ferretería 57`,
+    subject: `Club 57: tu canje de ${data.itemName} está listo para recoger`,
     html: renderEmailLayout(body),
   };
 }
