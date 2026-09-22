@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
 import { getLastOrder, type ConfirmedOrder } from "@/lib/checkout/lastOrder";
 import { formatPrice } from "@/lib/formatPrice";
@@ -29,11 +30,29 @@ function getFulfillmentMessage(order: ConfirmedOrder): string {
   return `Tu pedido llegará a más tardar el ${formatEtaDate(eta)}.`;
 }
 
+type PaymentState = "approved" | "pending" | "rejected";
+
+// Mercado Pago agrega "status" a las tres back_urls (éxito/pendiente/
+// rechazo apuntan al mismo lugar, ver createCheckoutPreference.ts) — el
+// estatus real y definitivo del pedido lo decide el webhook del lado del
+// servidor (ver app/api/mercadopago/webhook/route.ts), esto solo decide
+// qué mostrar mientras tanto. Sin el parámetro (p. ej. alguien vuelve a
+// esta pantalla desde el historial del navegador) se asume aprobado —
+// mismo comportamiento que tenía esta pantalla antes de conectar Mercado
+// Pago.
+function getPaymentState(status: string | null): PaymentState {
+  if (status === "pending" || status === "in_process") return "pending";
+  if (status === "rejected" || status === "cancelled") return "rejected";
+  return "approved";
+}
+
 export function ConfirmationView() {
   // undefined = todavía no leímos sessionStorage; null = no había nada;
   // objeto = pedido encontrado. Distinguir "todavía no sabemos" de "no
   // hay nada" evita un parpadeo mostrando el estado de error de más.
   const [order, setOrder] = useState<ConfirmedOrder | null | undefined>(undefined);
+  const searchParams = useSearchParams();
+  const paymentState = getPaymentState(searchParams.get("status"));
 
   useEffect(() => {
     setOrder(getLastOrder());
@@ -54,15 +73,35 @@ export function ConfirmationView() {
     );
   }
 
-  return (
-    <div className="flex flex-col items-center gap-6 text-center">
+  const stateIcon =
+    paymentState === "approved" ? (
       <span className="flex size-16 items-center justify-center rounded-full bg-brand-orange text-brand-black">
         <CheckCircle2 className="size-8" aria-hidden="true" strokeWidth={1.75} />
       </span>
+    ) : paymentState === "pending" ? (
+      <span className="flex size-16 items-center justify-center rounded-full bg-amber-100 text-amber-800">
+        <Clock className="size-8" aria-hidden="true" strokeWidth={1.75} />
+      </span>
+    ) : (
+      <span className="flex size-16 items-center justify-center rounded-full bg-red-100 text-red-700">
+        <XCircle className="size-8" aria-hidden="true" strokeWidth={1.75} />
+      </span>
+    );
+
+  const stateHeading =
+    paymentState === "approved"
+      ? "¡Pedido confirmado!"
+      : paymentState === "pending"
+        ? "Tu pago está en proceso"
+        : "No se pudo procesar tu pago";
+
+  return (
+    <div className="flex flex-col items-center gap-6 text-center">
+      {stateIcon}
 
       <div>
         <h1 className="font-display text-2xl uppercase text-brand-slate sm:text-3xl">
-          ¡Pedido confirmado!
+          {stateHeading}
         </h1>
         <p className="mt-2 font-sans text-sm text-brand-slate">
           Folio de pedido:{" "}
@@ -71,9 +110,15 @@ export function ConfirmationView() {
       </div>
 
       <div className="w-full rounded-lg bg-brand-gray p-4 text-left sm:p-6">
-        <p className="mb-3 font-sans text-sm font-semibold text-brand-black">
-          {getFulfillmentMessage(order)}
-        </p>
+        {paymentState === "rejected" ? (
+          <p className="mb-3 font-sans text-sm font-semibold text-brand-black">
+            Tu pedido no se completó — el pago no se procesó.
+          </p>
+        ) : (
+          <p className="mb-3 font-sans text-sm font-semibold text-brand-black">
+            {getFulfillmentMessage(order)}
+          </p>
+        )}
         {order.address && (
           <p className="mb-3 font-sans text-xs text-brand-slate">
             {order.address.street} {order.address.exteriorNumber}
@@ -112,9 +157,11 @@ export function ConfirmationView() {
       </div>
 
       <p className="max-w-prose font-sans text-xs text-brand-slate/70">
-        Esta es una confirmación simulada — todavía no se procesó ningún
-        pago real ni se envió este pedido. Cuando conectemos Mercado Pago,
-        la confirmación real llegará a {order.email}.
+        {paymentState === "approved"
+          ? `Te mandamos la confirmación de tu pedido a ${order.email}.`
+          : paymentState === "pending"
+            ? `Tu pago está siendo procesado por Mercado Pago — te avisamos por correo a ${order.email} en cuanto se confirme.`
+            : "Puedes intentar de nuevo desde el carrito, o contáctanos por WhatsApp si el problema sigue."}
       </p>
 
       <Link href="/" className={buttonClassName("primary")}>

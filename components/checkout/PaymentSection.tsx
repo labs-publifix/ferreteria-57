@@ -26,11 +26,11 @@ const PAYMENT_OPTIONS: {
   },
 ];
 
-// Solo visual por ahora: la integración real con Mercado Pago (cargos,
-// validación de tarjeta) es una fase posterior — aquí únicamente se guarda
-// cuál método quedó seleccionado, sin procesar nada. OXXO se eliminó por
-// completo (solo tarjeta queda habilitada); MSI se deja visible pero
-// deshabilitado como adelanto de lo que viene.
+// El cobro real corre en Mercado Pago (Checkout Pro, ver
+// app/(site)/checkout/actions.ts): esta sección solo deja elegido el
+// método antes de redirigir a pagar, la tarjeta en sí se captura del otro
+// lado. OXXO se eliminó por completo (solo tarjeta queda habilitada); MSI
+// se deja visible pero deshabilitado como adelanto de lo que viene.
 export function PaymentSection({
   paymentMethod,
   onPaymentMethodChange,
@@ -90,7 +90,7 @@ export function PaymentSection({
       </div>
 
       <p className="mt-3 font-sans text-xs text-brand-slate/60">
-        Pago simulado — la integración con Mercado Pago se conecta en una fase posterior.
+        Se te redirigirá a Mercado Pago para completar tu pago de forma segura.
       </p>
     </section>
   );
