@@ -6,6 +6,7 @@ import {
   LayoutGrid,
   Package,
   Image as ImageIcon,
+  Settings,
   ShieldCheck,
   Star,
   type LucideIcon,
@@ -29,10 +30,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/top-banner", label: "Top Banner", icon: ImageIcon },
   { href: "/admin/promo-banners", label: "Promo Banners", icon: Images },
   { href: "/admin/lealtad", label: "Club 57", icon: Gift },
-  // Al final: a diferencia de las 7 anteriores (gestión de contenido de la
-  // tienda), esta es administración del propio panel — mismo criterio que
-  // separa "Programa de Lealtad" del resto de categorías en el header de
-  // la tienda, aquí como el último ítem en vez de un tratamiento visual
-  // aparte.
+  // Las últimas dos: a diferencia de las 7 anteriores (gestión de
+  // contenido de la tienda), estas son administración del propio panel —
+  // mismo criterio que separa "Programa de Lealtad" del resto de
+  // categorías en el header de la tienda, aquí como los últimos ítems en
+  // vez de un tratamiento visual aparte.
   { href: "/admin/accesos", label: "Accesos", icon: ShieldCheck },
+  { href: "/admin/configuracion", label: "Configuración", icon: Settings },
 ];
