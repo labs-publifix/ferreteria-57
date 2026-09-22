@@ -97,7 +97,18 @@ export default async function HomePage() {
           <Testimonials />
         </section>
 
-        <section className="mt-14 sm:mt-20">
+        <section className="mt-14 sm:mt-20" aria-labelledby="club57-heading">
+          <div className="mb-4 text-center sm:mb-6">
+            <h2
+              id="club57-heading"
+              className="font-display text-lg uppercase text-brand-slate sm:text-xl"
+            >
+              Que cada compra te regrese algo
+            </h2>
+            <p className="mx-auto mt-2 max-w-prose font-sans text-sm text-brand-black/70 sm:text-base">
+              Únete a Club 57 y cambia tus puntos por artículos Truper de regalo — sin costo, sin trámites.
+            </p>
+          </div>
           <LoyaltySection />
         </section>
 

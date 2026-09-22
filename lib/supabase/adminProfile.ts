@@ -30,3 +30,33 @@ export async function getAdminProfile(): Promise<AdminProfile | null> {
 
   return { fullName: profile.full_name, email: user.email ?? "" };
 }
+
+export interface StaffProfile {
+  fullName: string | null;
+  email: string;
+  role: "admin" | "vendedor";
+}
+
+// Mismo criterio que getAdminProfile(), pero para el layout de
+// app/(admin)/admin/(vendedor)/vendedor/ — admite admin O vendedor
+// (un admin completo puede entrar a la vista de vendedor sin restricción,
+// igual que el middleware ya lo permite), segunda capa de verificación
+// del lado del servidor independiente del middleware.
+export async function getStaffProfile(): Promise<StaffProfile | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || (profile.role !== "admin" && profile.role !== "vendedor")) return null;
+
+  return { fullName: profile.full_name, email: user.email ?? "", role: profile.role };
+}

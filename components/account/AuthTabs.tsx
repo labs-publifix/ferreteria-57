@@ -19,6 +19,8 @@ function FormField({
   onChange,
   autoComplete,
   minLength,
+  required = true,
+  placeholder,
 }: {
   id: string;
   label: string;
@@ -27,6 +29,8 @@ function FormField({
   onChange: (value: string) => void;
   autoComplete: string;
   minLength?: number;
+  required?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div>
@@ -39,9 +43,10 @@ function FormField({
       <input
         id={id}
         type={type}
-        required
+        required={required}
         minLength={minLength}
         autoComplete={autoComplete}
+        placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black placeholder:text-brand-slate/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
@@ -175,9 +180,11 @@ function SignupForm() {
   const nameId = useId();
   const emailId = useId();
   const passwordId = useId();
+  const referralCodeId = useId();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
@@ -188,10 +195,33 @@ function SignupForm() {
     setError(null);
 
     const supabase = createClient();
+
+    // El código es opcional, pero si se escribió algo, tiene que ser
+    // válido — nunca se descarta en silencio. club57_referral_code_exists()
+    // es SECURITY DEFINER a propósito: antes de signUp() todavía no hay
+    // sesión, así que una consulta normal a club57_members no vería nada
+    // (RLS solo deja leer la fila propia).
+    const trimmedReferralCode = referralCode.trim();
+    if (trimmedReferralCode) {
+      const { data: codeExists, error: codeCheckError } = await supabase.rpc("club57_referral_code_exists", {
+        p_code: trimmedReferralCode,
+      });
+      if (codeCheckError || !codeExists) {
+        setError("No encontramos ese código, revísalo e intenta de nuevo.");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: {
+          full_name: fullName,
+          ...(trimmedReferralCode ? { referred_by_code: trimmedReferralCode } : {}),
+        },
+      },
     });
 
     if (signUpError) {
@@ -259,6 +289,16 @@ function SignupForm() {
         minLength={6}
         value={password}
         onChange={setPassword}
+      />
+      <FormField
+        id={referralCodeId}
+        label="¿Alguien te invitó a Club 57? Ingresa su código (opcional)"
+        type="text"
+        autoComplete="off"
+        required={false}
+        placeholder="Código de referido"
+        value={referralCode}
+        onChange={setReferralCode}
       />
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Creando cuenta…" : "Crear cuenta"}
