@@ -40,6 +40,7 @@ export function Club57NewMemberWizard({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -51,6 +52,7 @@ export function Club57NewMemberWizard({
   const fullNameId = useId();
   const emailId = useId();
   const phoneId = useId();
+  const referralCodeId = useId();
 
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,7 +87,7 @@ export function Club57NewMemberWizard({
     setIsCreating(true);
     setCreateError(null);
 
-    const result = await createClub57Member(fullName, email, phone);
+    const result = await createClub57Member(fullName, email, phone, referralCode);
     setIsCreating(false);
 
     if (result.error || !result.member || !result.temporaryPassword) {
@@ -239,6 +241,20 @@ export function Club57NewMemberWizard({
             required
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor={referralCodeId} className={labelClass}>
+            Código de quien lo invitó (opcional)
+          </label>
+          <input
+            id={referralCodeId}
+            type="text"
+            autoComplete="off"
+            placeholder="Código de referido"
+            value={referralCode}
+            onChange={(event) => setReferralCode(event.target.value)}
             className={inputClass}
           />
         </div>

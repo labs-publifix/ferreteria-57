@@ -79,7 +79,8 @@ export interface CreateMemberResult {
 export async function createClub57Member(
   fullName: string,
   email: string,
-  phone: string
+  phone: string,
+  referralCodeInput: string = ""
 ): Promise<CreateMemberResult> {
   const staff = await requireStaff();
   if (!staff) return { error: "No autorizado." };
@@ -87,6 +88,7 @@ export async function createClub57Member(
   const normalizedName = fullName.trim();
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedPhone = phone.trim();
+  const normalizedReferralCode = referralCodeInput.trim();
 
   if (!normalizedName) return { error: "Escribe el nombre del cliente." };
   if (!normalizedEmail || !normalizedEmail.includes("@")) return { error: "Escribe un correo válido." };
@@ -107,6 +109,24 @@ export async function createClub57Member(
   if (existingError) return { error: `No se pudo validar duplicados: ${existingError.message}` };
   if (existing) return { error: "Ya existe un cliente con ese correo o teléfono." };
 
+  // El código de quien invitó es opcional, pero si se escribió algo tiene
+  // que ser válido — mismo criterio que el registro online, nunca se
+  // descarta en silencio. Los códigos siempre se generan en mayúsculas
+  // (generate_club57_referral_code()), así que comparar contra la versión
+  // en mayúsculas del texto escrito ya es case-insensitive sin arriesgar
+  // un ilike con comodines si alguien tecleara "%" o "_" por error.
+  let referredById: string | null = null;
+  if (normalizedReferralCode) {
+    const { data: referrer, error: referrerError } = await adminClient
+      .from("club57_members")
+      .select("id")
+      .eq("referral_code", normalizedReferralCode.toUpperCase())
+      .maybeSingle();
+    if (referrerError) return { error: `No se pudo validar el código de referido: ${referrerError.message}` };
+    if (!referrer) return { error: "No encontramos ese código, revísalo e intenta de nuevo." };
+    referredById = referrer.id;
+  }
+
   const temporaryPassword = generateSecurePassword();
 
   const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
@@ -120,6 +140,11 @@ export async function createClub57Member(
     return { error: `No se pudo crear la cuenta: ${authError?.message ?? "error desconocido"}` };
   }
 
+  // Autorreferencia (Parte 3, defensivo): estructuralmente imposible que
+  // el id recién creado ya existiera como dueño de un código, pero se
+  // ignora igual que un código no encontrado si por lo que sea coincidiera.
+  if (referredById === authUser.user.id) referredById = null;
+
   const { error: memberError } = await adminClient.from("club57_members").upsert(
     {
       id: authUser.user.id,
@@ -131,6 +156,7 @@ export async function createClub57Member(
       // completo sigue dejando este campo en null, igual que el
       // autoregistro online.
       creado_por_vendedor_id: staff.role === "vendedor" ? staff.userId : null,
+      referred_by: referredById,
     },
     { onConflict: "id" }
   );
