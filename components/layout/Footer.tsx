@@ -37,15 +37,6 @@ function InstagramIcon() {
   );
 }
 
-function TikTokIcon() {
-  return (
-    <svg {...ICON_PROPS} className="size-5" aria-hidden="true">
-      <path d="M14 4v10.5a3 3 0 11-3-3" />
-      <path d="M14 4c.4 2 2 3.5 4 3.8V10c-1.5 0-3-.5-4-1.5" />
-    </svg>
-  );
-}
-
 export function Footer() {
   return (
     <footer className="bg-brand-slate text-white">
@@ -103,18 +94,6 @@ export function Footer() {
             >
               <InstagramIcon />
             </a>
-            {/*
-              TODO: reemplazar href="#" por la liga real de TikTok de
-              Ferretería 57 en cuanto exista. Es el único placeholder de
-              contenido pendiente en todo el sitio.
-            */}
-            <a
-              href="#"
-              aria-label="TikTok (próximamente)"
-              className="flex size-11 items-center justify-center rounded-md text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            >
-              <TikTokIcon />
-            </a>
           </div>
         </div>
       </div>
@@ -138,6 +117,13 @@ export function Footer() {
             className="text-white underline underline-offset-2 hover:text-white/80"
           >
             Términos y Condiciones
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link
+            href="/politica-de-envios"
+            className="text-white underline underline-offset-2 hover:text-white/80"
+          >
+            Política de Envíos
           </Link>
         </div>
       </div>

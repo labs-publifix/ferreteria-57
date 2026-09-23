@@ -31,6 +31,9 @@ export default async function BuscarPage({ searchParams }: BuscarPageProps) {
   if (!query) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-16 text-center sm:px-6 lg:px-8">
+        <h1 className="mb-4 font-display text-xl uppercase text-brand-slate sm:text-2xl">
+          Buscar productos
+        </h1>
         <p className="font-sans text-base text-brand-black">
           Escribe algo en la barra de búsqueda para encontrar productos.
         </p>

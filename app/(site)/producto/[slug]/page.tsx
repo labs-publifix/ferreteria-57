@@ -9,17 +9,47 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductGrid } from "@/components/product/ProductGrid";
+import { buildBreadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 interface ProductoPageProps {
   params: { slug: string };
 }
 
+// Trunca en un espacio, no a la mitad de una palabra — 155 caracteres es
+// el límite práctico antes de que Google empiece a cortar la meta
+// description en el snippet de resultados.
+function truncateDescription(text: string, maxLength = 155): string {
+  if (text.length <= maxLength) return text;
+  const truncated = text.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return `${truncated.slice(0, lastSpace > 0 ? lastSpace : maxLength)}…`;
+}
+
 export async function generateMetadata({ params }: ProductoPageProps): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
   if (!product) return {};
+  const title = `${product.name} — ${product.brand} | Ferretería 57`;
+  const description = truncateDescription(product.shortDescription);
+  const canonicalUrl = `${SITE_URL}/producto/${product.slug}`;
+  // product.images ya son URLs absolutas de Supabase Storage (no rutas
+  // relativas de /public), así que sirven tal cual como og:image sin
+  // pasar por metadataBase — si el producto todavía no tiene fotos, se
+  // omite y el sitio cae al og-image.jpg default del layout raíz.
+  const primaryImage = product.images[0];
   return {
-    title: `${product.name} — Ferretería 57`,
-    description: product.shortDescription,
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      type: "website",
+      ...(primaryImage ? { images: [{ url: primaryImage, alt: `${product.name} — ${product.brand}` }] } : {}),
+    },
+    twitter: primaryImage
+      ? { card: "summary_large_image", title, description, images: [primaryImage] }
+      : undefined,
   };
 }
 
@@ -51,8 +81,10 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
     ...(product.images.length > 0 ? { image: product.images } : {}),
     description: product.shortDescription,
     brand: { "@type": "Brand", name: product.brand },
+    ...(firstVariant?.sku ? { sku: firstVariant.sku } : {}),
     offers: {
       "@type": "Offer",
+      url: `${SITE_URL}/producto/${product.slug}`,
       price: firstVariant?.price ?? 0,
       priceCurrency: "MXN",
       availability: inStock
@@ -61,12 +93,27 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
     },
   };
 
+  // Misma ruta que el <nav> de abajo (Inicio > Categoría > Producto) —
+  // sin categoría resuelta (no debería pasar, pero product.categoryId
+  // podría no matchear ninguna activa) el breadcrumb se acorta a
+  // Inicio > Producto en vez de inventar un tramo intermedio.
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Inicio", url: SITE_URL },
+    ...(category ? [{ name: category.label, url: `${SITE_URL}${category.href}` }] : []),
+    { name: product.name, url: `${SITE_URL}/producto/${product.slug}` },
+  ]);
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <nav
@@ -94,7 +141,7 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
       </nav>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-        <ProductGallery images={product.images} productName={product.name} />
+        <ProductGallery images={product.images} productName={product.name} brand={product.brand} />
         <ProductPurchasePanel product={product} />
       </div>
 

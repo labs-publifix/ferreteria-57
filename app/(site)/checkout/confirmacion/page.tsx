@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ConfirmationView } from "@/components/checkout/ConfirmationView";
+import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Pedido confirmado — Ferretería 57",
   description: "Confirmación de tu pedido en Ferretería 57.",
+  robots: NO_INDEX_NO_FOLLOW,
 };
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
