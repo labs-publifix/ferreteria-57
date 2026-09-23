@@ -1,12 +1,9 @@
 import { Resend } from "resend";
 
-// Remitente mientras el dominio propio no esté verificado en Resend —
-// "onboarding@resend.dev" solo puede mandar a la cuenta dueña del API key,
-// que es justo lo que EMAIL_OVERRIDE ya fuerza (ver más abajo). El día que
-// el dominio esté verificado, cambia SOLO este valor a algo como
-// "pedidos@ferreteria57.com" — es la única referencia al remitente en
-// todo el código, nada más que cambiar.
-export const EMAIL_FROM = "onboarding@resend.dev";
+// Dominio ferreteria57.com ya verificado en Resend (DKIM + SPF) — única
+// referencia al remitente en todo el código, nada más que cambiar si el
+// día de mañana se quiere usar otra dirección bajo el mismo dominio.
+export const EMAIL_FROM = "pedidos@ferreteria57.com";
 
 let resendClient: Resend | null = null;
 
@@ -16,7 +13,7 @@ function getResendClient(): Resend {
 }
 
 export interface SendEmailInput {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
 }
@@ -28,15 +25,12 @@ export interface SendEmailResult {
 // Único punto de envío de correo de toda la app — todo lo que mande un
 // correo pasa por aquí, nunca directo por el SDK de Resend.
 //
-// EMAIL_OVERRIDE: mientras el dominio de envío no esté verificado, TODO
-// correo (sin excepción) se redirige a esa dirección en vez del
-// destinatario real — pero el asunto y el cuerpo NO cambian, siguen
-// dirigidos a quien de verdad iba dirigido el correo (si es la
-// confirmación de "Juan Pérez", el cuerpo sigue diciendo "Juan Pérez"
-// aunque llegue físicamente a la bandeja de override). Esto permite
-// probar el flujo completo hoy sin que Resend rechace el envío por
-// dominio no verificado; el día que se quite la variable, los correos
-// empiezan a llegar a sus destinatarios reales sin tocar código.
+// EMAIL_OVERRIDE ya no debe existir en Vercel (era necesaria solo
+// mientras el dominio no estaba verificado, para redirigir TODO correo a
+// una sola bandeja de prueba sin que Resend lo rechazara). Se deja el
+// mecanismo en el código por si hace falta reactivarlo para pruebas
+// puntuales, pero sin la variable seteada `to` llega tal cual a su
+// destinatario real.
 //
 // Nunca lanza — siempre regresa {error?} para que quien llama decida qué
 // hacer (hoy, todos los callers solo registran el error en el log sin
