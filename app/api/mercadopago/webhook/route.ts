@@ -9,7 +9,7 @@ import {
 } from "@/lib/email/orderEmails";
 import type { FulfillmentType } from "@/lib/orders/status";
 
-const INTERNAL_NOTIFICATION_EMAIL = "ferreteria57@proton.me";
+const INTERNAL_NOTIFICATION_EMAILS = ["labs.publifix@gmail.com", "ferreteria57qro@hotmail.com"];
 
 interface MpPaymentResource {
   id: number;
@@ -170,7 +170,7 @@ async function sendOrderConfirmationEmails(
     const customerEmailContent = buildCustomerConfirmationEmail(emailData);
 
     const [internalResult, customerResult] = await Promise.all([
-      sendEmail({ to: INTERNAL_NOTIFICATION_EMAIL, subject: internalEmail.subject, html: internalEmail.html }),
+      sendEmail({ to: INTERNAL_NOTIFICATION_EMAILS, subject: internalEmail.subject, html: internalEmail.html }),
       sendEmail({ to: emailData.customerEmail, subject: customerEmailContent.subject, html: customerEmailContent.html }),
     ]);
     if (internalResult.error) console.error("[mercadopago/webhook] correo interno:", internalResult.error);
