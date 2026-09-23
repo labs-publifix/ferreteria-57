@@ -3,14 +3,26 @@
 // final ferreteria57.com todavía no resuelve, así que esto lee
 // NEXT_PUBLIC_SITE_URL en vez de tenerlo fijo en el código; cuando el
 // dominio quede listo, solo hay que poner esa variable en Vercel, sin
-// tocar ningún archivo. Mientras no exista, cae al dominio que Vercel ya
-// asigna automáticamente a cada deployment (VERCEL_URL, sin prefijo
-// NEXT_PUBLIC_ porque Vercel la define server-side) — nunca un string
-// inventado que pudiera no coincidir con dónde de verdad vive el sitio.
-export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-).replace(/\/$/, "");
+// tocar ningún archivo. Mientras no exista, cae al dominio de Vercel:
+// en producción a VERCEL_PROJECT_PRODUCTION_URL (el dominio ESTABLE del
+// proyecto — el custom domain si ya está conectado, si no el alias
+// *.vercel.app fijo), nunca a VERCEL_URL, que identifica cada deployment
+// individual y cambia en cada build — usarlo rompía el og:image (la URL
+// absoluta apuntaba a un deployment específico, no al dominio que la
+// gente de verdad visita/comparte, y ese host de deployment puede tener
+// Vercel Authentication bloqueando a crawlers externos como WhatsApp).
+// Fuera de producción (preview deployments) sí se usa VERCEL_URL, porque
+// ahí no existe un dominio estable — cada preview es su propio deployment.
+function resolveSiteUrl(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  const domain =
+    process.env.VERCEL_ENV === "production"
+      ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+      : process.env.VERCEL_URL;
+  return domain ? `https://${domain}` : "http://localhost:3000";
+}
+
+export const SITE_URL = resolveSiteUrl().replace(/\/$/, "");
 
 export const OG_IMAGE_PATH = "/og-image.jpg";
 export const OG_IMAGE_WIDTH = 1200;
