@@ -20,7 +20,7 @@ export function ProductThumbnail({
   return (
     <Image
       src={firstImage}
-      alt={product.name}
+      alt={`${product.name} — ${product.brand}`}
       width={400}
       height={400}
       className={`rounded-lg object-cover ${className}`}

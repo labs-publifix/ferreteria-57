@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CartView } from "@/components/cart/CartView";
+import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Carrito de compras — Ferretería 57",
   description: "Revisa los productos en tu carrito antes de continuar a pago.",
+  robots: NO_INDEX_NO_FOLLOW,
 };
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde

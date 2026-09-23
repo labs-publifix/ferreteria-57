@@ -14,10 +14,16 @@ const ZOOM_FACTOR = 2.5;
 export function ProductGallery({
   images,
   productName,
+  brand,
 }: {
   images: string[];
   productName: string;
+  /** Opcional: el quickview de canje de Club 57 (Club57ItemQuickView) no
+   *  tiene marca — solo /producto/[slug] (un producto real del catálogo)
+   *  la pasa, para un alt descriptivo de verdad (nombre + marca). */
+  brand?: string;
 }) {
+  const altText = brand ? `${productName} — ${brand}` : productName;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [canHover, setCanHover] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
@@ -92,7 +98,7 @@ export function ProductGallery({
           >
             <Image
               src={selectedImage}
-              alt={productName}
+              alt={altText}
               width={800}
               height={800}
               priority
@@ -200,7 +206,7 @@ export function ProductGallery({
           <div className="flex min-h-full items-center justify-center p-4">
             <Image
               src={selectedImage}
-              alt={productName}
+              alt={altText}
               width={1600}
               height={1600}
               className="h-auto w-full max-w-3xl"

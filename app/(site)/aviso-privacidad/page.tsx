@@ -8,11 +8,21 @@ import {
   LegalPageHeader,
   LegalUl,
 } from "@/components/legal/LegalContent";
+import { NO_INDEX, SITE_URL } from "@/lib/seo";
 
+const title = "Aviso de Privacidad — Ferretería 57";
+const description =
+  "Aviso de privacidad de Ferretería 57, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.";
+
+// noindex: es texto legal fijo, sin nada propio que rankear en
+// resultados de búsqueda — pero sí puede seguir sus links salientes
+// (INAI), así que solo se excluye index, no follow (ver lib/seo.ts).
 export const metadata: Metadata = {
-  title: "Aviso de Privacidad — Ferretería 57",
-  description:
-    "Aviso de privacidad de Ferretería 57, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.",
+  title,
+  description,
+  robots: NO_INDEX,
+  alternates: { canonical: `${SITE_URL}/aviso-privacidad` },
+  openGraph: { title, description, url: `${SITE_URL}/aviso-privacidad` },
 };
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde

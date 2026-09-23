@@ -7,10 +7,19 @@ import {
   LegalPageHeader,
   LegalUl,
 } from "@/components/legal/LegalContent";
+import { NO_INDEX, SITE_URL } from "@/lib/seo";
 
+const title = "Política de Envíos — Ferretería 57";
+const description = "Condiciones, tiempos y costos de entrega para compras realizadas en Ferretería 57.";
+
+// noindex, sí follow — mismo criterio que /aviso-privacidad (ver ese
+// archivo).
 export const metadata: Metadata = {
-  title: "Política de Envíos — Ferretería 57",
-  description: "Condiciones, tiempos y costos de entrega para compras realizadas en Ferretería 57.",
+  title,
+  description,
+  robots: NO_INDEX,
+  alternates: { canonical: `${SITE_URL}/politica-de-envios` },
+  openGraph: { title, description, url: `${SITE_URL}/politica-de-envios` },
 };
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde

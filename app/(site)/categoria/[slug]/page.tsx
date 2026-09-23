@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getActiveCategories } from "@/lib/navigation/categories";
 import { getCategoryProducts } from "@/lib/catalog/queries";
 import { CategoryProductBrowser } from "@/components/category/CategoryProductBrowser";
+import { buildBreadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
 interface CategoriaPageProps {
   params: { slug: string };
@@ -15,9 +16,18 @@ export async function generateMetadata({ params }: CategoriaPageProps): Promise<
   const categories = await getActiveCategories();
   const category = categories.find((item) => item.slug === params.slug);
   if (!category) return {};
+  const title = `${category.label} — Ferretería 57`;
+  const description = `Productos de ${category.label} en Ferretería 57, distribuidor autorizado Truper en Querétaro.`;
+  // Canonical siempre a la URL limpia de la categoría — CategoryProductBrowser
+  // filtra/ordena/pagina con estado de React, nunca con query params en la
+  // URL (ver ese componente), así que hoy no hay variantes reales que
+  // deduplicar; esto es la capa defensiva para cuando sí las haya.
+  const canonicalUrl = `${SITE_URL}/categoria/${category.slug}`;
   return {
-    title: `${category.label} — Ferretería 57`,
-    description: `Productos de ${category.label} en Ferretería 57, distribuidor autorizado Truper en Querétaro.`,
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: { title, description, url: canonicalUrl },
   };
 }
 
@@ -32,8 +42,22 @@ export default async function CategoriaPage({ params }: CategoriaPageProps) {
 
   const products = await getCategoryProducts(category.slug);
 
+  // Refleja exactamente la misma ruta del <nav> de abajo (Inicio >
+  // Categoría) — nunca una jerarquía distinta a la que el usuario ve y
+  // puede navegar de verdad.
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Inicio", url: SITE_URL },
+    { name: category.label, url: `${SITE_URL}/categoria/${category.slug}` },
+  ]);
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+
       <nav aria-label="Ruta de navegación" className="mb-4 font-sans text-sm text-brand-slate">
         <ol className="flex flex-wrap items-center gap-1">
           <li>

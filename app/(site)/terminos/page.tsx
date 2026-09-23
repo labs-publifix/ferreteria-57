@@ -8,10 +8,19 @@ import {
   LegalPageHeader,
   LegalUl,
 } from "@/components/legal/LegalContent";
+import { NO_INDEX, SITE_URL } from "@/lib/seo";
 
+const title = "Términos y Condiciones — Ferretería 57";
+const description = "Condiciones generales de uso y compra en la tienda en línea de Ferretería 57.";
+
+// noindex, sí follow — mismo criterio que /aviso-privacidad (ver ese
+// archivo).
 export const metadata: Metadata = {
-  title: "Términos y Condiciones — Ferretería 57",
-  description: "Condiciones generales de uso y compra en la tienda en línea de Ferretería 57.",
+  title,
+  description,
+  robots: NO_INDEX,
+  alternates: { canonical: `${SITE_URL}/terminos` },
+  openGraph: { title, description, url: `${SITE_URL}/terminos` },
 };
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde

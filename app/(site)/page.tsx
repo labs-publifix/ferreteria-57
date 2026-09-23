@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { BrandLogos } from "@/components/home/BrandLogos";
@@ -11,6 +12,15 @@ import { VisitUs } from "@/components/home/VisitUs";
 import { StickyRevealHeader } from "@/components/layout/StickyRevealHeader";
 import { getVisiblePromoBanners } from "@/lib/marketing/queries";
 import { getActiveCategories } from "@/lib/navigation/categories";
+import { buildWebSiteJsonLd, SITE_URL } from "@/lib/seo";
+
+// Solo agrega el canonical — título/descripción/Open Graph ya vienen del
+// layout raíz (app/(site)/layout.tsx) ya orientados a "Ferretería 57",
+// "Querétaro" y "Truper", y Next.js los conserva al fusionar metadata de
+// layout con la de esta página (solo se pisa lo que se declara aquí).
+export const metadata: Metadata = {
+  alternates: { canonical: SITE_URL },
+};
 
 // Home real del e-commerce. Header y Footer no se repiten aquí: ya envuelven
 // esta página desde app/layout.tsx (layout global). Mobile-first: cada
@@ -20,9 +30,23 @@ export default async function HomePage() {
   // (StickyRevealHeader y CategoryGrid) — evita pedirlas dos veces.
   const categories = await getActiveCategories();
   const promoBanners = await getVisiblePromoBanners();
+  const websiteJsonLd = buildWebSiteJsonLd();
 
   return (
     <main className="pb-14 sm:pb-20">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+
+      {/* La página no tenía ningún <h1> (todo el diseño visual arranca
+          directo en las secciones, cada una con su propio h2) — este es
+          el único, en sr-only para no alterar nada visual: cada página
+          necesita exactamente un h1 real para SEO/accesibilidad, no solo
+          un h2 como primer encabezado visible. */}
+      <h1 className="sr-only">Ferretería 57 — Herramientas y materiales de ferretería en Querétaro</h1>
+
       {/* Solo en Home (por eso se monta aquí y no en el layout global) y
           solo desktop: barra condensada que aparece al hacer scroll hacia
           arriba, para no perder acceso rápido a búsqueda y categorías sin

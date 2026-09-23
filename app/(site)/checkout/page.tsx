@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { CheckoutView } from "@/components/checkout/CheckoutView";
+import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Checkout — Ferretería 57",
   description: "Completa tu pedido: contacto, entrega y método de pago.",
+  robots: NO_INDEX_NO_FOLLOW,
 };
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde

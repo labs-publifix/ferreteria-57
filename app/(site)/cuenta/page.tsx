@@ -11,6 +11,7 @@ import {
   type Club57RedemptionRow,
 } from "@/components/account/Club57MemberPanel";
 import type { Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
+import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
 // app/layout.tsx.
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   title: "Mi cuenta — Ferretería 57",
   description:
     "Inicia sesión o crea tu cuenta de Ferretería 57. Al registrarte ya formas parte del Programa de Lealtad.",
+  robots: NO_INDEX_NO_FOLLOW,
 };
 
 // Server Component: decide qué mostrar (formulario o perfil) leyendo la

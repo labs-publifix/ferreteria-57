@@ -116,9 +116,12 @@ export function PromoCard({ promo }: { promo: PromoBanner }) {
               {promo.eyebrow}
             </p>
           )}
-          <h3 className="line-clamp-2 font-display text-lg uppercase leading-tight text-white sm:text-xl">
+          {/* h2, no h3: esta tarjeta puede ser lo primero que el Home
+              renderiza (antes de cualquier h2 propio de la página, ver
+              app/(site)/page.tsx) — un h3 ahí saltaría un nivel. */}
+          <h2 className="line-clamp-2 font-display text-lg uppercase leading-tight text-white sm:text-xl">
             {promo.title}
-          </h3>
+          </h2>
           {promo.subtitle && (
             <p className="line-clamp-2 font-sans text-sm text-white/90">{promo.subtitle}</p>
           )}
@@ -152,9 +155,9 @@ export function PromoCard({ promo }: { promo: PromoBanner }) {
               {promo.eyebrow}
             </p>
           )}
-          <h3 className={`line-clamp-2 font-display text-lg uppercase leading-tight sm:text-xl ${theme.title}`}>
+          <h2 className={`line-clamp-2 font-display text-lg uppercase leading-tight sm:text-xl ${theme.title}`}>
             {promo.title}
-          </h3>
+          </h2>
           {promo.subtitle && (
             <p className={`line-clamp-2 font-sans text-sm ${theme.subtitle}`}>{promo.subtitle}</p>
           )}

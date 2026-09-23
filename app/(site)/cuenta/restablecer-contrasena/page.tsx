@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ResetPasswordView } from "@/components/account/ResetPasswordView";
+import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Restablecer contraseña — Ferretería 57",
   description: "Crea una nueva contraseña para tu cuenta de Ferretería 57.",
+  robots: NO_INDEX_NO_FOLLOW,
 };
 
 // El enlace de recuperación de Supabase trae un ?code= en la URL —
