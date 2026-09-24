@@ -190,13 +190,21 @@ export function Footer({ categories }: { categories: Category[] }) {
             href="https://labs.publifix.net"
             target="_blank"
             rel="noopener"
-            className="flex items-center gap-2 text-white/60 transition-colors hover:text-white/90"
+            className="group flex items-center gap-2 text-white/60 transition-colors hover:text-white/90"
           >
             Sitio desarrollado por
-            {/* TODO: reemplazar por el <Image> del logo de LABS by
-                Publifix en cuanto se reciba el archivo (~20-24px de alto,
-                en /public) — ver conversación, el adjunto no llegó. */}
-            <span className="font-semibold text-white/80">LABS by Publifix</span>
+            {/* Logo original es trazo negro sobre fondo transparente (no
+                se lee sobre el pizarra #3F515A del footer) — invert lo
+                vuelve blanco sin necesitar una segunda versión del
+                archivo. opacity-70→100 en hover, mismo tratamiento de
+                sutileza que ya tiene el texto de este link. */}
+            <Image
+              src="/labs-publifix-logo.png"
+              alt="LABS by Publifix"
+              width={110}
+              height={44}
+              className="h-5 w-auto invert opacity-70 transition-opacity group-hover:opacity-100"
+            />
           </a>
         </div>
       </div>
