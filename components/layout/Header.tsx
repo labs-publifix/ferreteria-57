@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Gift } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import type { Category } from "@/lib/navigation/categories";
@@ -11,13 +10,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useCart } from "@/components/cart/CartProvider";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { CategoryNavRail } from "./CategoryNavRail";
-import {
-  ICON_PROPS,
-  SearchIcon,
-  UserIcon,
-  CartIcon,
-  IconLink,
-} from "./header-icons";
+import { SearchForm } from "./SearchForm";
+import { ICON_PROPS, SearchIcon, UserIcon, CartIcon, IconLink } from "./header-icons";
 
 function MenuIcon() {
   return (
@@ -42,13 +36,10 @@ export function Header({
   categories: Category[];
   topBanner: TopBannerConfig | null;
 }) {
-  const router = useRouter();
   const { totalQuantity } = useCart();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchInputId = useId();
   const mobileMenuId = useId();
 
   // Cerrar el menú móvil con Escape: toda acción debe poder hacerse sin
@@ -61,16 +52,6 @@ export function Header({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [menuOpen]);
-
-  // Un solo estado para las dos versiones del formulario (escritorio y la
-  // colapsada de móvil): ambas están siempre montadas, solo una es visible
-  // según el viewport, así que comparten el mismo valor sin duplicar nada.
-  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = searchQuery.trim();
-    if (!trimmed) return;
-    router.push(`/buscar?q=${encodeURIComponent(trimmed)}`);
-  }
 
   return (
     <header className="bg-brand-white">
@@ -102,30 +83,7 @@ export function Header({
           </Link>
 
           {/* Búsqueda: visible siempre desde sm, icono expandible antes de sm */}
-          <form
-            role="search"
-            onSubmit={handleSearchSubmit}
-            className="relative hidden flex-1 sm:block"
-          >
-            <label htmlFor={searchInputId} className="sr-only">
-              Buscar productos
-            </label>
-            <input
-              id={searchInputId}
-              type="search"
-              placeholder="Buscar productos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-brand-slate/30 bg-brand-white py-2 pl-4 pr-11 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-            />
-            <button
-              type="submit"
-              aria-label="Buscar"
-              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-brand-slate hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-            >
-              <SearchIcon />
-            </button>
-          </form>
+          <SearchForm className="hidden flex-1 sm:block" />
 
           <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:gap-2">
             <button
@@ -151,33 +109,7 @@ export function Header({
         </div>
 
         {/* Búsqueda colapsada: solo antes de sm, cuando el ícono se activa */}
-        {searchOpen && (
-          <form
-            role="search"
-            onSubmit={handleSearchSubmit}
-            className="relative mx-auto mt-3 max-w-6xl sm:hidden"
-          >
-            <label htmlFor={`${searchInputId}-mobile`} className="sr-only">
-              Buscar productos
-            </label>
-            <input
-              id={`${searchInputId}-mobile`}
-              type="search"
-              placeholder="Buscar productos..."
-              autoFocus
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-brand-slate/30 bg-brand-white py-2 pl-4 pr-11 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-            />
-            <button
-              type="submit"
-              aria-label="Buscar"
-              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-brand-slate hover:text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-            >
-              <SearchIcon />
-            </button>
-          </form>
-        )}
+        {searchOpen && <SearchForm autoFocus className="mx-auto mt-3 max-w-6xl sm:hidden" />}
       </div>
 
       {/* Mega-menú: riel horizontal desde md, oculto en móvil. El riel se

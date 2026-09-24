@@ -1,14 +1,6 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
-import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { CartProvider } from "@/components/cart/CartProvider";
-import { ProductCatalogProvider } from "@/components/cart/ProductCatalogProvider";
-import { ToastProvider } from "@/components/ui";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { inter, russoOne } from "@/lib/fonts";
-import { getVisibleTopBanner } from "@/lib/marketing/queries";
-import { getActiveCategories } from "@/lib/navigation/categories";
 import { buildLocalBusinessJsonLd, OG_IMAGE_HEIGHT, OG_IMAGE_PATH, OG_IMAGE_WIDTH, SITE_URL } from "@/lib/seo";
 import "../globals.css";
 
@@ -49,17 +41,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Categorías activas del catálogo real, resueltas una sola vez aquí y
-  // pasadas como prop a Header (Client Component: no puede hacer su
-  // propio await) — mismo dato que necesita el mega-menú y el menú móvil.
-  const categories = await getActiveCategories();
-  const topBanner = await getVisibleTopBanner();
-
   // HardwareStore: el mismo negocio en todas las páginas, así que vive
   // aquí (layout raíz) en vez de repetirse página por página — ver
   // lib/seo.ts para por qué HardwareStore y no un LocalBusiness genérico.
@@ -73,26 +59,7 @@ export default async function RootLayout({
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
         />
-        {/* ToastProvider por fuera de CartProvider: el carrito dispara el
-            toast de confirmación (useToast) al agregar un producto, así
-            que necesita que el provider de toasts ya exista por encima.
-            AuthProvider por fuera de ambos: Header lee el estado de sesión
-            para el ícono de cuenta, sin depender de carrito ni toasts.
-            ProductCatalogProvider por fuera de CartProvider: el carrito
-            necesita resolver producto/variante de forma síncrona (ver ese
-            archivo) contra el catálogo real, no contra datos de prueba. */}
-        <ToastProvider>
-          <AuthProvider>
-            <ProductCatalogProvider>
-              <CartProvider>
-                <Header categories={categories} topBanner={topBanner} />
-                {children}
-                <Footer />
-                <WhatsAppButton />
-              </CartProvider>
-            </ProductCatalogProvider>
-          </AuthProvider>
-        </ToastProvider>
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );
