@@ -3,11 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/seo";
 
 // /sitemap.xml generado en cada request (sin caché propia más allá de la
-// que Next.js ya aplica a las rutas de metadata) — home, las 3 páginas
-// legales, todas las categorías activas y todos los productos activos.
-// Nunca incluye /carrito, /checkout, /cuenta ni /admin: esas se excluyen
-// además explícitamente en robots.ts (ver app/robots.ts) y con
-// robots:{index:false} en su propia metadata.
+// que Next.js ya aplica a las rutas de metadata) — home, todas las
+// categorías activas y todos los productos activos. Nunca incluye
+// /carrito, /checkout, /cuenta ni /admin: esas se excluyen además
+// explícitamente en robots.ts (ver app/robots.ts) y con
+// robots:{index:false} en su propia metadata. Las páginas legales
+// (aviso-privacidad, términos, política de envíos) tampoco van aquí a
+// propósito: llevan robots:{index:false} (ver cada una), y un sitemap
+// nunca debe listar una URL marcada noindex — Google la reporta como
+// "Excluida" en Search Console, una señal contradictoria sin ningún
+// beneficio.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient();
 
@@ -16,12 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     supabase.from("products").select("slug, updated_at").eq("active", true),
   ]);
 
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: SITE_URL, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE_URL}/aviso-privacidad`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE_URL}/terminos`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE_URL}/politica-de-envios`, changeFrequency: "yearly", priority: 0.3 },
-  ];
+  const staticRoutes: MetadataRoute.Sitemap = [{ url: SITE_URL, changeFrequency: "daily", priority: 1 }];
 
   const categoryRoutes: MetadataRoute.Sitemap = (categories ?? []).map((category) => ({
     url: `${SITE_URL}/categoria/${category.slug}`,
