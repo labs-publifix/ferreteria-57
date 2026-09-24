@@ -35,7 +35,7 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
           <CartProvider>
             <Header categories={categories} topBanner={topBanner} />
             {children}
-            <Footer />
+            <Footer categories={categories} />
             <WhatsAppButton />
           </CartProvider>
         </ProductCatalogProvider>
