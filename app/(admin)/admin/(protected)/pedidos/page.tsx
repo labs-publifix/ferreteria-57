@@ -97,8 +97,8 @@ export default async function AdminPedidosPage({
       <div>
         <h1 className="font-display text-xl uppercase text-brand-slate sm:text-2xl">Pedidos</h1>
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-slate/70">
-          Pedidos creados desde el checkout de la tienda. El pago se procesa de forma simulada por
-          ahora — todo pedido nace con estatus &quot;Pagado&quot;.
+          Pedidos creados desde el checkout de la tienda. Todo pedido nace &quot;Pendiente de pago&quot;
+          y pasa a &quot;Pagado&quot; cuando Mercado Pago confirma el cobro.
         </p>
       </div>
 
