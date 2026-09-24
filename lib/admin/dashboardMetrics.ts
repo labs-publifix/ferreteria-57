@@ -57,13 +57,16 @@ export interface OrderMetrics {
   needsAttention: number;
   /** preparando + listo + enviado: ya se está trabajando, aún no se entrega. */
   inProgress: number;
-  /** Suma de `total` de todo pedido que no esté cancelado — venta reservada
-   *  en firme, no solo la ya entregada. */
+  /** Suma de `total` de todo pedido ya pagado (pagado, preparando, listo,
+   *  enviado, entregado) — nunca 'pendiente_pago' (todavía no es una venta,
+   *  puede quedar así para siempre si el cliente abandona el pago) ni
+   *  'cancelado'. */
   totalRevenue: number;
   byStatus: Record<OrderStatus, number>;
 }
 
 const IN_PROGRESS_STATUSES: OrderStatus[] = ["preparando", "listo", "enviado"];
+const UNPAID_STATUSES: OrderStatus[] = ["pendiente_pago", "cancelado"];
 
 interface OrderMetricsRow {
   status: OrderStatus;
@@ -79,7 +82,7 @@ export function computeOrderMetrics(orders: OrderMetricsRow[]): OrderMetrics {
 
   for (const order of orders) {
     byStatus[order.status] += 1;
-    if (order.status !== "cancelado") totalRevenue += order.total;
+    if (!UNPAID_STATUSES.includes(order.status)) totalRevenue += order.total;
   }
 
   return {
