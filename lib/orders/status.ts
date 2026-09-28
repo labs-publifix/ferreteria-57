@@ -80,10 +80,15 @@ export function getNextStatus(status: OrderStatus, fulfillmentType: FulfillmentT
 }
 
 // Todos los estatus a los que se puede avanzar DIRECTAMENTE desde el
-// actual: el siguiente de la secuencia normal de este tipo de entrega, más
-// "cancelado" como salida disponible en cualquier estado no terminal — la
-// única fuente de verdad de "qué opciones ofrecer" en /admin/pedidos, así
-// nunca se puede saltar un paso ni reabrir un pedido ya cerrado.
+// actual: el siguiente de la secuencia normal de este tipo de entrega,
+// "entregado" como atajo disponible desde cualquier estatus no terminal
+// (p. ej. retiro inmediato en mostrador sin pasar uno por uno por
+// preparando/listo), y "cancelado" como salida disponible en cualquier
+// estado no terminal — la única fuente de verdad de "qué opciones
+// ofrecer" en /admin/pedidos, así nunca se puede reabrir un pedido ya
+// cerrado. Sí se puede saltar directo a "entregado" a propósito (única
+// excepción a "un paso a la vez"); cualquier otro salto sigue sin poder
+// hacerse.
 export function getAvailableNextStatuses(
   status: OrderStatus,
   fulfillmentType: FulfillmentType
@@ -92,6 +97,7 @@ export function getAvailableNextStatuses(
   const options: OrderStatus[] = [];
   const next = getNextStatus(status, fulfillmentType);
   if (next) options.push(next);
+  if (next !== "entregado") options.push("entregado");
   options.push("cancelado");
   return options;
 }
