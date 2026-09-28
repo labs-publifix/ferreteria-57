@@ -2,27 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSellerAccessToken, MercadoPagoNotConnectedError } from "@/lib/mercadopago/getSellerAccessToken";
 import { sendEmail } from "@/lib/email/sendEmail";
+import { getBusinessNotificationRecipients } from "@/lib/email/businessRecipients";
 import {
   buildCustomerConfirmationEmail,
   buildInternalNotificationEmail,
   type OrderEmailAddress,
 } from "@/lib/email/orderEmails";
 import type { FulfillmentType } from "@/lib/orders/status";
-
-const INTERNAL_NOTIFICATION_EMAILS = ["labs.publifix@gmail.com", "ferreteria57qro@hotmail.com"];
-
-// Lista adicional configurable por entorno (coma-separada) para no tener que
-// tocar código cada vez que el negocio quiera sumar/quitar una bandeja de
-// aviso de pedidos — ver ORDER_NOTIFICATION_EXTRA_RECIPIENTS en .env.example.
-// Se combina (Set) con INTERNAL_NOTIFICATION_EMAILS en vez de reemplazarlo:
-// ningún destinatario actual se pierde.
-function getInternalNotificationRecipients(): string[] {
-  const extra = (process.env.ORDER_NOTIFICATION_EXTRA_RECIPIENTS ?? "ferreteria57qro@gmail.com")
-    .split(",")
-    .map((email) => email.trim())
-    .filter(Boolean);
-  return Array.from(new Set([...INTERNAL_NOTIFICATION_EMAILS, ...extra]));
-}
 
 interface MpPaymentResource {
   id: number;
@@ -184,7 +170,7 @@ async function sendOrderConfirmationEmails(
 
     const [internalResult, customerResult] = await Promise.all([
       sendEmail({
-        to: getInternalNotificationRecipients(),
+        to: getBusinessNotificationRecipients(),
         subject: internalEmail.subject,
         html: internalEmail.html,
       }),

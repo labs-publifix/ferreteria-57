@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/sendEmail";
-import { buildRedemptionRequestedEmail } from "@/lib/email/club57Emails";
+import { buildRedemptionRequestedEmail, buildRedemptionRequestedInternalEmail } from "@/lib/email/club57Emails";
+import { getBusinessNotificationRecipients } from "@/lib/email/businessRecipients";
 
 export interface RequestPasswordResetResult {
   error?: string;
@@ -72,13 +73,28 @@ export async function requestClub57Redemption(itemId: string): Promise<RequestRe
   ]);
 
   if (item && user.email) {
+    const customerName = profile?.full_name?.trim() || "cliente";
     const emailContent = buildRedemptionRequestedEmail({
-      customerName: profile?.full_name?.trim() || "cliente",
+      customerName,
       itemName: item.nombre,
       pointsUsed: redemption.puntos_usados,
     });
-    const emailResult = await sendEmail({ to: user.email, subject: emailContent.subject, html: emailContent.html });
+    const internalEmailContent = buildRedemptionRequestedInternalEmail({
+      customerName,
+      customerEmail: user.email,
+      itemName: item.nombre,
+      pointsUsed: redemption.puntos_usados,
+    });
+    const [emailResult, internalEmailResult] = await Promise.all([
+      sendEmail({ to: user.email, subject: emailContent.subject, html: emailContent.html }),
+      sendEmail({
+        to: getBusinessNotificationRecipients(),
+        subject: internalEmailContent.subject,
+        html: internalEmailContent.html,
+      }),
+    ]);
     if (emailResult.error) console.error("[requestClub57Redemption] correo de confirmación:", emailResult.error);
+    if (internalEmailResult.error) console.error("[requestClub57Redemption] correo interno:", internalEmailResult.error);
   }
 
   revalidatePath("/cuenta");

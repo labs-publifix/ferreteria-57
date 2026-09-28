@@ -59,3 +59,54 @@ export function buildRedemptionRequestedEmail(data: RedemptionRequestedEmailData
     html: renderEmailLayout(body),
   };
 }
+
+export interface RedemptionRequestedInternalEmailData {
+  customerName: string;
+  customerEmail: string;
+  itemName: string;
+  pointsUsed: number;
+}
+
+// Correo interno — mismo momento y mismos datos que el de confirmación al
+// cliente (buildRedemptionRequestedEmail), pero dirigido al negocio para
+// que sepa qué artículo preparar y a nombre de quién, ver
+// getBusinessNotificationRecipients().
+export function buildRedemptionRequestedInternalEmail(
+  data: RedemptionRequestedInternalEmailData
+): { subject: string; html: string } {
+  const body = `
+    <h1 style="margin:0 0 16px; font-size:18px; color:${COLOR_BLACK};">Nuevo canje de Club 57</h1>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+      <tr>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_SLATE};">Cliente</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_BLACK}; text-align:right; font-weight:bold;">${escapeHtml(data.customerName)}</td>
+      </tr>
+      <tr>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_SLATE};">Correo</td>
+        <td style="padding:2px 0; font-size:14px; color:${COLOR_BLACK}; text-align:right;">${escapeHtml(data.customerEmail)}</td>
+      </tr>
+    </table>
+
+    <div style="margin:0 0 20px; padding:14px 16px; background-color:${COLOR_GRAY}; border-radius:8px; border-left:4px solid ${COLOR_ORANGE};">
+      <p style="margin:0; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:${COLOR_SLATE};">
+        Artículo a preparar
+      </p>
+      <p style="margin:6px 0 0; font-size:15px; font-weight:bold; color:${COLOR_BLACK};">
+        ${escapeHtml(data.itemName)}
+      </p>
+      <p style="margin:6px 0 0; font-size:13px; color:${COLOR_SLATE};">
+        ${data.pointsUsed} pts usados
+      </p>
+    </div>
+
+    <p style="margin:0; font-size:14px; color:${COLOR_BLACK};">
+      El cliente pasa a recogerlo a la tienda — ver el canje en <strong>/admin/lealtad/canjes</strong>.
+    </p>
+  `;
+
+  return {
+    subject: `Nuevo canje Club 57: ${data.itemName}`,
+    html: renderEmailLayout(body),
+  };
+}
