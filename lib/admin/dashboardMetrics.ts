@@ -110,7 +110,10 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const [productsResult, categoriesResult, customersResult, pendingReviewsResult, ordersResult] = await Promise.all([
     supabase.from("products").select("active, images, activated_at, product_variants(stock)"),
     supabase.from("categories").select("active"),
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    // role='customer': profiles también incluye cuentas admin/vendedor (ver
+    // 20260910040000_admin_roles.sql y 20260927010000_club57_vendedor_role.sql)
+    // — sin este filtro el staff se contaba como "cliente registrado".
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "customer"),
     supabase.from("reviews").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("orders").select("status, total"),
   ]);

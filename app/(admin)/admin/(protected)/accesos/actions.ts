@@ -86,6 +86,13 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
     };
   }
 
+  // handle_new_user() (ver migraciones) mete a TODA cuenta nueva a
+  // club57_members sin importar el rol — correcto para clientes, pero un
+  // admin/vendedor no es un cliente y no debe aparecer en
+  // /admin/lealtad/clientes ni acumular puntos. No falla el alta si esto
+  // falla (el usuario ya quedó creado y promovido, que es lo importante).
+  await adminClient.from("club57_members").delete().eq("id", created.user.id);
+
   revalidatePath("/admin/accesos");
   return { success: true };
 }
