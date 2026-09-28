@@ -66,19 +66,36 @@ export async function getRelatedProducts(
   return products.filter((product) => product.id !== excludeProductId);
 }
 
-// Home (FeaturedProducts): los más recientes primero — todavía no hay
-// noción de "destacado" propia, solo "activo".
+// Home (FeaturedProducts): #11 — primero los que el admin marcó como
+// destacados (featured=true), más reciente el marcado primero. Si nadie
+// ha destacado nada todavía (catálogo recién migrado, o el admin los
+// desmarcó todos), conserva el comportamiento de antes — los más
+// recientes activos — para que el Home nunca se quede vacío por falta de
+// selección manual.
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("active", true)
-    .order("created_at", { ascending: false })
+    .eq("featured", true)
+    .order("featured_at", { ascending: false })
     .limit(limit);
   logCatalogError("getFeaturedProducts", error);
 
-  return (data ?? []).map(mapRowToProduct);
+  if (data && data.length > 0) {
+    return data.map(mapRowToProduct);
+  }
+
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  logCatalogError("getFeaturedProducts (fallback)", fallbackError);
+
+  return (fallbackData ?? []).map(mapRowToProduct);
 }
 
 // Busca por nombre de producto, por Clave (a nivel producto) o por SKU de

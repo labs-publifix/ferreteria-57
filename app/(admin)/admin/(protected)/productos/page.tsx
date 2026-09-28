@@ -22,18 +22,22 @@ async function getAdminProducts(filters: {
   marca: string;
   sinImagen: boolean;
   stockBajo: boolean;
+  soloDestacados: boolean;
 }) {
   const supabase = await createClient();
 
   let query = supabase
     .from("products")
-    .select("id, name, slug, brand, active, images, categories(name), product_variants(sku, price, stock)")
+    .select(
+      "id, name, slug, brand, active, featured, images, categories(name), product_variants(sku, price, stock)"
+    )
     .order("created_at", { ascending: false });
 
   if (filters.categoria) query = query.eq("category_id", filters.categoria);
   if (filters.estado === "activo") query = query.eq("active", true);
   if (filters.estado === "inactivo") query = query.eq("active", false);
   if (filters.marca) query = query.eq("brand", filters.marca);
+  if (filters.soloDestacados) query = query.eq("featured", true);
 
   const { data, error } = await query;
   // Supabase nunca lanza una excepción por un error de la base — devuelve
@@ -78,6 +82,7 @@ export default async function AdminProductosPage({
     marca?: string;
     sinImagen?: string;
     stockBajo?: string;
+    destacados?: string;
   };
 }) {
   const supabase = await createClient();
@@ -88,6 +93,7 @@ export default async function AdminProductosPage({
     marca: searchParams.marca ?? "",
     sinImagen: searchParams.sinImagen === "1",
     stockBajo: searchParams.stockBajo === "1",
+    soloDestacados: searchParams.destacados === "1",
   };
 
   let products: ProductRow[] = [];
@@ -108,6 +114,15 @@ export default async function AdminProductosPage({
     (a, b) => a.localeCompare(b, "es")
   );
 
+  // Contador "N destacados" (#11): del catálogo completo, no del resultado
+  // ya acotado por los demás filtros — mismo criterio que availableBrands
+  // arriba, para que siga diciendo el total real aunque se esté viendo
+  // "Solo destacados" combinado con otro filtro que no coincida con todos.
+  const { count: featuredCount } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("featured", true);
+
   try {
     products = await getAdminProducts(filters);
   } catch (err) {
@@ -117,7 +132,12 @@ export default async function AdminProductosPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-xl uppercase text-brand-slate sm:text-2xl">Productos</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="font-display text-xl uppercase text-brand-slate sm:text-2xl">Productos</h1>
+          <span className="rounded-full bg-brand-orange/10 px-2.5 py-1 font-sans text-xs font-semibold text-brand-orange">
+            {featuredCount ?? 0} destacados
+          </span>
+        </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/admin/productos/importar" className={buttonClassName("secondary", "shrink-0")}>
             <Upload className="size-4" aria-hidden="true" strokeWidth={2} />
@@ -202,6 +222,17 @@ export default async function AdminProductosPage({
             className="size-5 rounded border-brand-slate/40 accent-brand-orange"
           />
           Sin imagen
+        </label>
+
+        <label className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black">
+          <input
+            type="checkbox"
+            name="destacados"
+            value="1"
+            defaultChecked={filters.soloDestacados}
+            className="size-5 rounded border-brand-slate/40 accent-brand-orange"
+          />
+          Solo destacados
         </label>
 
         <label className="flex min-h-11 items-center gap-2 font-sans text-sm text-brand-black">

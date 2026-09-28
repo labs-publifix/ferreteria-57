@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Upload } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { Button, buttonClassName } from "@/components/ui";
 import {
   commitCatalogImportRows,
@@ -101,12 +101,21 @@ export function Club57CatalogImportWizard() {
   if (step === "upload") {
     return (
       <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:p-6">
-        <p className="font-sans text-sm text-brand-slate">
-          El archivo debe traer las columnas <strong>Codigos</strong>, <strong>Clave</strong>,{" "}
-          <strong>Descripcion</strong> y <strong>Costos</strong> (el orden no importa, espacios de más en el
-          encabezado no afectan). Cada fila se importa como un artículo independiente. Los puntos requeridos
-          se calculan solos con la configuración vigente de Club 57 — puedes ajustarlos antes de confirmar.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <p className="max-w-prose font-sans text-sm text-brand-slate">
+            El archivo debe traer las columnas <strong>Codigos</strong>, <strong>Clave</strong>,{" "}
+            <strong>Descripcion</strong> y <strong>Costos</strong> (el orden no importa, espacios de más en el
+            encabezado no afectan). Cada fila se importa como un artículo independiente. Los puntos requeridos
+            se calculan solos con la configuración vigente de Club 57 — puedes ajustarlos antes de confirmar.
+          </p>
+          <a
+            href="/api/admin/lealtad/catalogo/plantilla"
+            className={buttonClassName("secondary", "shrink-0")}
+          >
+            <Download className="size-4" aria-hidden="true" strokeWidth={2} />
+            Descargar plantilla
+          </a>
+        </div>
 
         <label className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-brand-slate/30 px-4 py-6 font-sans text-sm text-brand-slate hover:border-brand-slate/50">
           <Upload className="size-4" aria-hidden="true" strokeWidth={1.75} />

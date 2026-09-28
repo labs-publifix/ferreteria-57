@@ -222,6 +222,7 @@ export async function updateProduct(
   if (result.error) return { error: result.error };
 
   revalidatePath("/admin/productos");
+  revalidatePath("/");
   redirect("/admin/productos");
 }
 
@@ -248,9 +249,15 @@ export async function bulkSetProductsActive(
   if (ids.length === 0) return { error: "No hay productos seleccionados." };
 
   if (!active) {
-    const { error } = await supabase.from("products").update({ active: false }).in("id", ids);
+    // #11: ver el mismo comentario en updateProductRecord — desactivar
+    // también quita el destacado, no solo lo oculta del Home.
+    const { error } = await supabase
+      .from("products")
+      .update({ active: false, featured: false, featured_at: null })
+      .in("id", ids);
     if (error) return { error: describeDbError("No se pudieron desactivar los productos", error) };
     revalidatePath("/admin/productos");
+    revalidatePath("/");
     return { deactivated: ids.length };
   }
 
@@ -276,5 +283,87 @@ export async function bulkSetProductsActive(
   }
 
   revalidatePath("/admin/productos");
+  revalidatePath("/");
   return { activated: eligibleIds.length, skipped };
+}
+
+export interface ToggleFeaturedResult {
+  error?: string;
+  featured?: boolean;
+}
+
+// Checkbox individual de la tabla (#11) — actualización inmediata de una
+// sola fila. Solo un producto activo puede destacarse; intentar destacar
+// uno inactivo se rechaza aquí (defensa server-side, la UI ya deshabilita
+// el checkbox en ese caso). Quitar el destacado no tiene esa restricción,
+// siempre se permite.
+export async function toggleProductFeatured(id: string, featured: boolean): Promise<ToggleFeaturedResult> {
+  const supabase = await requireAdmin();
+  if (!supabase) return { error: "No autorizado." };
+
+  if (featured) {
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("active")
+      .eq("id", id)
+      .maybeSingle();
+    if (fetchError) return { error: describeDbError("No se pudo validar el producto", fetchError) };
+    if (!product?.active) return { error: "Solo un producto activo puede marcarse como destacado." };
+  }
+
+  const { error } = await supabase
+    .from("products")
+    .update({ featured, featured_at: featured ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { error: describeDbError("No se pudo actualizar el destacado", error) };
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/");
+  return { featured };
+}
+
+export interface BulkFeaturedResult {
+  error?: string;
+  featured?: number;
+  skipped?: number;
+  unfeatured?: number;
+}
+
+// Acción en lote (#11) — mismo criterio de "omitir en vez de fallar todo
+// el lote" que bulkSetProductsActive: los inactivos seleccionados se
+// omiten al marcar, y el resumen dice cuántos se omitieron. Quitar
+// destacado no tiene esa restricción.
+export async function bulkSetProductsFeatured(ids: string[], featured: boolean): Promise<BulkFeaturedResult> {
+  const supabase = await requireAdmin();
+  if (!supabase) return { error: "No autorizado." };
+  if (ids.length === 0) return { error: "No hay productos seleccionados." };
+
+  if (!featured) {
+    const { error } = await supabase
+      .from("products")
+      .update({ featured: false, featured_at: null })
+      .in("id", ids);
+    if (error) return { error: describeDbError("No se pudieron actualizar los productos", error) };
+    revalidatePath("/admin/productos");
+    revalidatePath("/");
+    return { unfeatured: ids.length };
+  }
+
+  const { data, error } = await supabase.from("products").select("id, active").in("id", ids);
+  if (error) return { error: describeDbError("No se pudieron validar los productos", error) };
+
+  const eligibleIds = (data ?? []).filter((product) => product.active).map((product) => product.id);
+  const skipped = ids.length - eligibleIds.length;
+
+  if (eligibleIds.length > 0) {
+    const { error: updateError } = await supabase
+      .from("products")
+      .update({ featured: true, featured_at: new Date().toISOString() })
+      .in("id", eligibleIds);
+    if (updateError) return { error: describeDbError("No se pudieron destacar los productos", updateError) };
+  }
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/");
+  return { featured: eligibleIds.length, skipped };
 }

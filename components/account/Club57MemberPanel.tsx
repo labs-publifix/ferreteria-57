@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { buttonClassName, ConfirmDialog, ProductImagePlaceholder, SimplePagination, TabPanel, Tabs } from "@/components/ui";
 import { requestClub57Redemption } from "@/app/(site)/cuenta/actions";
 import { CLUB57_REDEMPTION_ESTADO_LABEL, CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
@@ -100,6 +100,7 @@ export function Club57MemberPanel({
   pedidos: Club57OrderRow[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const searchInputId = useId();
   const [activeTab, setActiveTab] = useState("catalogo");
   const [confirmTarget, setConfirmTarget] = useState<Club57CatalogItem | null>(null);
@@ -108,37 +109,124 @@ export function Club57MemberPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [catalogSearch, setCatalogSearch] = useState("");
+
+  // #7 filtros del catálogo de canje — persistidos en la URL (prefijo "c"
+  // para no chocar si algún día otra pestaña también guarda su estado ahí)
+  // para que se puedan compartir/recargar. Se inicializan leyendo la URL
+  // una sola vez al montar; de ahí en adelante el estado de React manda y
+  // cada cambio se refleja de vuelta a la URL con router.replace
+  // (shallow — sigue siendo filtrado 100% en el cliente sobre `catalogo`,
+  // ya cargado completo por /cuenta/page.tsx, no dispara ningún fetch).
+  const [catalogSearch, setCatalogSearch] = useState(() => searchParams.get("cq") ?? "");
+  const [puntosMin, setPuntosMin] = useState(() => searchParams.get("cmin") ?? "");
+  const [puntosMax, setPuntosMax] = useState(() => searchParams.get("cmax") ?? "");
+  const [soloCanjeable, setSoloCanjeable] = useState(() => searchParams.get("csolo") === "1");
+  const [orden, setOrden] = useState<"puntos_asc" | "puntos_desc" | "nombre">(() => {
+    const value = searchParams.get("corden");
+    return value === "puntos_desc" || value === "nombre" ? value : "puntos_asc";
+  });
   const [catalogPage, setCatalogPage] = useState(1);
   const [pedidosPage, setPedidosPage] = useState(1);
 
+  const syncCatalogFiltersToUrl = useCallback(
+    (next: { q: string; min: string; max: string; solo: boolean; orden: string }) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (next.q) params.set("cq", next.q);
+      else params.delete("cq");
+      if (next.min) params.set("cmin", next.min);
+      else params.delete("cmin");
+      if (next.max) params.set("cmax", next.max);
+      else params.delete("cmax");
+      if (next.solo) params.set("csolo", "1");
+      else params.delete("csolo");
+      if (next.orden !== "puntos_asc") params.set("corden", next.orden);
+      else params.delete("corden");
+      const query = params.toString();
+      router.replace(query ? `?${query}` : "?", { scroll: false });
+    },
+    [router, searchParams]
+  );
+
   const normalizedSearch = catalogSearch.trim().toLowerCase();
-  const isSearching = normalizedSearch.length > 0;
+  const puntosMinNumber = puntosMin ? Number.parseInt(puntosMin, 10) : null;
+  const puntosMaxNumber = puntosMax ? Number.parseInt(puntosMax, 10) : null;
+  const hasCatalogFilters =
+    normalizedSearch.length > 0 || puntosMin !== "" || puntosMax !== "" || soloCanjeable || orden !== "puntos_asc";
 
-  // Al buscar se ignora la paginación normal y se muestran TODOS los que
-  // hagan match — pedido explícito, no importa "en qué página estarían".
   const catalogFiltered = useMemo(() => {
-    if (!isSearching) return catalogo;
-    return catalogo.filter((item) => {
-      return (
-        item.nombre.toLowerCase().includes(normalizedSearch) ||
-        (item.clave ?? "").toLowerCase().includes(normalizedSearch) ||
-        (item.codigo ?? "").toLowerCase().includes(normalizedSearch)
+    let result = catalogo;
+    if (normalizedSearch) {
+      result = result.filter(
+        (item) =>
+          item.nombre.toLowerCase().includes(normalizedSearch) ||
+          (item.clave ?? "").toLowerCase().includes(normalizedSearch) ||
+          (item.codigo ?? "").toLowerCase().includes(normalizedSearch)
       );
+    }
+    if (puntosMinNumber !== null && !Number.isNaN(puntosMinNumber)) {
+      result = result.filter((item) => item.costo_puntos >= puntosMinNumber);
+    }
+    if (puntosMaxNumber !== null && !Number.isNaN(puntosMaxNumber)) {
+      result = result.filter((item) => item.costo_puntos <= puntosMaxNumber);
+    }
+    if (soloCanjeable) {
+      // Saldo DISPONIBLE, nunca el pendiente — un artículo no se puede
+      // canjear todavía con puntos que aún no maduraron.
+      result = result.filter((item) => saldoDisponible >= item.costo_puntos && item.stock > 0);
+    }
+    result = [...result].sort((a, b) => {
+      if (orden === "nombre") return a.nombre.localeCompare(b.nombre, "es");
+      if (orden === "puntos_desc") return b.costo_puntos - a.costo_puntos;
+      return a.costo_puntos - b.costo_puntos;
     });
-  }, [catalogo, isSearching, normalizedSearch]);
+    return result;
+  }, [catalogo, normalizedSearch, puntosMinNumber, puntosMaxNumber, soloCanjeable, orden, saldoDisponible]);
 
-  // Vuelve a la página 1 cada vez que cambia la búsqueda (entrar o salir
-  // de ella) — nunca deja al cliente varado en una página que ya no
-  // corresponde a los resultados actuales.
+  // Con cualquier filtro activo se ignora la paginación normal y se
+  // muestran TODOS los que hagan match — mismo criterio que ya existía
+  // solo para la búsqueda de texto, ahora extendido a los filtros nuevos.
   useEffect(() => {
     setCatalogPage(1);
-  }, [catalogSearch]);
+  }, [catalogSearch, puntosMin, puntosMax, soloCanjeable, orden]);
 
   const catalogTotalPages = Math.max(1, Math.ceil(catalogFiltered.length / CATALOGO_PAGE_SIZE));
-  const catalogVisible = isSearching
+  const catalogVisible = hasCatalogFilters
     ? catalogFiltered
     : catalogFiltered.slice((catalogPage - 1) * CATALOGO_PAGE_SIZE, catalogPage * CATALOGO_PAGE_SIZE);
+
+  function handleClearCatalogFilters() {
+    setCatalogSearch("");
+    setPuntosMin("");
+    setPuntosMax("");
+    setSoloCanjeable(false);
+    setOrden("puntos_asc");
+    syncCatalogFiltersToUrl({ q: "", min: "", max: "", solo: false, orden: "puntos_asc" });
+  }
+
+  function handleCatalogSearchChange(value: string) {
+    setCatalogSearch(value);
+    syncCatalogFiltersToUrl({ q: value, min: puntosMin, max: puntosMax, solo: soloCanjeable, orden });
+  }
+
+  function handlePuntosMinChange(value: string) {
+    setPuntosMin(value);
+    syncCatalogFiltersToUrl({ q: catalogSearch, min: value, max: puntosMax, solo: soloCanjeable, orden });
+  }
+
+  function handlePuntosMaxChange(value: string) {
+    setPuntosMax(value);
+    syncCatalogFiltersToUrl({ q: catalogSearch, min: puntosMin, max: value, solo: soloCanjeable, orden });
+  }
+
+  function handleSoloCanjeableChange(value: boolean) {
+    setSoloCanjeable(value);
+    syncCatalogFiltersToUrl({ q: catalogSearch, min: puntosMin, max: puntosMax, solo: value, orden });
+  }
+
+  function handleOrdenChange(value: "puntos_asc" | "puntos_desc" | "nombre") {
+    setOrden(value);
+    syncCatalogFiltersToUrl({ q: catalogSearch, min: puntosMin, max: puntosMax, solo: soloCanjeable, orden: value });
+  }
 
   const pedidosTotalPages = Math.max(1, Math.ceil(pedidos.length / PEDIDOS_PAGE_SIZE));
   const pedidosVisible = pedidos.slice((pedidosPage - 1) * PEDIDOS_PAGE_SIZE, pedidosPage * PEDIDOS_PAGE_SIZE);
@@ -220,23 +308,92 @@ export function Club57MemberPanel({
               <p className="font-sans text-sm text-brand-slate/70">Todavía no hay artículos disponibles para canje.</p>
             ) : (
               <>
-                <div className="mb-4">
-                  <label htmlFor={searchInputId} className="sr-only">
-                    Buscar en el catálogo de canje
-                  </label>
-                  <input
-                    id={searchInputId}
-                    type="search"
-                    placeholder="Buscar por nombre o código del artículo..."
-                    value={catalogSearch}
-                    onChange={(event) => setCatalogSearch(event.target.value)}
-                    className="w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-                  />
+                <div className="mb-4 flex flex-col gap-3">
+                  <div>
+                    <label htmlFor={searchInputId} className="sr-only">
+                      Buscar en el catálogo de canje
+                    </label>
+                    <input
+                      id={searchInputId}
+                      type="search"
+                      placeholder="Buscar por nombre o código del artículo..."
+                      value={catalogSearch}
+                      onChange={(event) => handleCatalogSearchChange(event.target.value)}
+                      className="w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black placeholder:text-brand-slate/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                      <label className="mb-1 block font-sans text-xs font-medium text-brand-black">
+                        Puntos desde
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        value={puntosMin}
+                        onChange={(event) => handlePuntosMinChange(event.target.value)}
+                        className="w-24 rounded-md border border-brand-slate/30 px-3 py-2 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block font-sans text-xs font-medium text-brand-black">
+                        Puntos hasta
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        value={puntosMax}
+                        onChange={(event) => handlePuntosMaxChange(event.target.value)}
+                        className="w-24 rounded-md border border-brand-slate/30 px-3 py-2 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block font-sans text-xs font-medium text-brand-black">
+                        Ordenar por
+                      </label>
+                      <select
+                        value={orden}
+                        onChange={(event) => handleOrdenChange(event.target.value as typeof orden)}
+                        className="min-h-9 rounded-md border border-brand-slate/30 px-3 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+                      >
+                        <option value="puntos_asc">Puntos: menor a mayor</option>
+                        <option value="puntos_desc">Puntos: mayor a menor</option>
+                        <option value="nombre">Nombre</option>
+                      </select>
+                    </div>
+                    <label className="flex min-h-9 items-center gap-2 font-sans text-sm text-brand-black">
+                      <input
+                        type="checkbox"
+                        checked={soloCanjeable}
+                        onChange={(event) => handleSoloCanjeableChange(event.target.checked)}
+                        className="size-5 rounded border-brand-slate/40 accent-brand-orange"
+                      />
+                      Solo lo que puedo canjear
+                    </label>
+                    {hasCatalogFilters && (
+                      <button
+                        type="button"
+                        onClick={handleClearCatalogFilters}
+                        className="font-sans text-sm text-brand-slate underline underline-offset-2 hover:text-brand-black"
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="font-sans text-xs text-brand-slate/60">
+                    {catalogFiltered.length} {catalogFiltered.length === 1 ? "artículo" : "artículos"}
+                  </p>
                 </div>
 
                 {catalogVisible.length === 0 ? (
                   <p className="font-sans text-sm text-brand-slate/70">
-                    Sin resultados para &quot;{catalogSearch}&quot; — prueba con otro nombre o código.
+                    {hasCatalogFilters
+                      ? "Ningún artículo coincide con esos filtros — prueba con otro nombre, código o rango de puntos."
+                      : "Todavía no hay artículos disponibles para canje."}
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -304,7 +461,7 @@ export function Club57MemberPanel({
                   </div>
                 )}
 
-                {!isSearching && (
+                {!hasCatalogFilters && (
                   <div className="mt-4">
                     <SimplePagination
                       page={catalogPage}

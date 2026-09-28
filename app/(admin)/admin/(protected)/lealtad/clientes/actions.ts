@@ -13,46 +13,40 @@ export interface Club57MemberMatch {
   phone: string;
 }
 
-export interface FindMemberResult {
+export interface ContactDuplicateCheckResult {
   error?: string;
-  matches?: Club57MemberMatch[];
+  duplicate?: { field: "email" | "phone"; fullName: string };
 }
 
-// Búsqueda de duplicados EXACTA (no un buscador difuso como el de la lista
-// de clientes) — email normalizado a minúsculas, teléfono tal cual se
-// guardó. El objetivo es "¿ya existe este contacto puntual?", no
-// "¿hay algo parecido?": un match parcial aquí bloquearía altas legítimas
-// de clientes distintos con datos similares.
-//
-// Usa la service_role a propósito, sin importar si quien llama es admin o
-// vendedor: un vendedor solo VE (por RLS) a sus propios clientes, pero el
-// bloqueo de duplicados tiene que mirar a TODOS los clientes de Club 57
-// (de otros vendedores, de un admin, o autoregistrados) — si esta
-// búsqueda respetara ese mismo RLS, un vendedor podría dar de alta a un
-// cliente que ya existe con otro dueño sin que nada se lo impida.
-export async function findClub57MemberByContact(query: string): Promise<FindMemberResult> {
+// Alta manual directa (#10b): ya no hay un paso de búsqueda previa
+// obligatorio — el formulario abre directo. Esto es el chequeo TEMPRANO
+// (onBlur, un campo a la vez) que solo avisa, nunca bloquea por sí solo:
+// el bloqueo real ocurre en createClub57Member() al guardar, que vuelve a
+// validar sin confiar en que este chequeo ya corrió (pudo no dispararse,
+// o pudo pasar tiempo y alguien más registrar ese contacto mientras
+// tanto). Reutiliza el mismo RPC find_club57_contact_duplicate() que usa
+// createClub57Member — una sola fuente de verdad para la normalización de
+// email/teléfono (ver migración 20261004010000_club57_contact_duplicate_check.sql).
+export async function checkClub57ContactDuplicate(
+  field: "email" | "phone",
+  value: string
+): Promise<ContactDuplicateCheckResult> {
   const staff = await requireStaff();
   if (!staff) return { error: "No autorizado." };
 
-  const normalized = query.trim();
-  if (!normalized) return { error: "Escribe un correo o teléfono para buscar." };
+  const trimmed = value.trim();
+  if (!trimmed) return {};
 
   const adminClient = createAdminClient();
-  const { data, error } = await adminClient
-    .from("club57_members")
-    .select("id, full_name, email, phone")
-    .or(`email.eq.${normalized.toLowerCase()},phone.eq.${normalized}`);
+  const { data, error } = await adminClient.rpc("find_club57_contact_duplicate", {
+    p_email: field === "email" ? trimmed : "",
+    p_phone: field === "phone" ? trimmed : "",
+  });
+  if (error) return { error: `No se pudo validar: ${error.message}` };
 
-  if (error) return { error: `No se pudo buscar: ${error.message}` };
-
-  return {
-    matches: (data ?? []).map((row) => ({
-      id: row.id,
-      fullName: row.full_name,
-      email: row.email,
-      phone: row.phone,
-    })),
-  };
+  const match = data?.[0];
+  if (!match) return {};
+  return { duplicate: { field, fullName: match.full_name } };
 }
 
 export interface CreateMemberResult {
@@ -86,7 +80,9 @@ export async function createClub57Member(
   if (!staff) return { error: "No autorizado." };
 
   const normalizedName = fullName.trim();
-  const normalizedEmail = email.trim().toLowerCase();
+  // Sin espacios (no solo trim — un espacio interno pegado al copiar/pegar
+  // no debe colarse al correo guardado) + minúsculas.
+  const normalizedEmail = email.replace(/\s+/g, "").toLowerCase();
   const normalizedPhone = phone.trim();
   const normalizedReferralCode = referralCodeInput.trim();
 
@@ -96,18 +92,28 @@ export async function createClub57Member(
 
   const adminClient = createAdminClient();
 
-  // Mismo motivo que findClub57MemberByContact: la búsqueda de duplicados
-  // tiene que ver a TODOS los clientes de Club 57, sin importar de qué
-  // vendedor/admin sean o si se autoregistraron — nunca se confía en que
-  // ya se buscó en el paso anterior de este mismo flujo (pudo pasar
-  // tiempo, o pudo llamarse esta acción directo).
-  const { data: existing, error: existingError } = await adminClient
-    .from("club57_members")
-    .select("id")
-    .or(`email.eq.${normalizedEmail},phone.eq.${normalizedPhone}`)
-    .maybeSingle();
-  if (existingError) return { error: `No se pudo validar duplicados: ${existingError.message}` };
-  if (existing) return { error: "Ya existe un cliente con ese correo o teléfono." };
+  // Único punto de bloqueo real (#10b: ya no hay paso de búsqueda previa
+  // en la UI, checkClub57ContactDuplicate() en onBlur solo avisa temprano
+  // sin bloquear). Nunca se confía en que el aviso de la UI ya corrió —
+  // esta revalidación es independiente y siempre se ejecuta. Compara
+  // email normalizado (sin espacios, minúsculas) y teléfono por sus
+  // últimos 10 dígitos vía el mismo RPC que usa el chequeo onBlur (ver
+  // migración 20261004010000_club57_contact_duplicate_check.sql) — tiene
+  // que ver a TODOS los clientes de Club 57, sin importar de qué
+  // vendedor/admin sean o si se autoregistraron, por eso usa el cliente
+  // service_role en vez del RLS normal.
+  const { data: duplicates, error: dupError } = await adminClient.rpc("find_club57_contact_duplicate", {
+    p_email: normalizedEmail,
+    p_phone: normalizedPhone,
+  });
+  if (dupError) return { error: `No se pudo validar duplicados: ${dupError.message}` };
+  const duplicate = duplicates?.[0];
+  if (duplicate) {
+    const fieldLabel = duplicate.matched_field === "email" ? "correo" : "teléfono";
+    return {
+      error: `Ya existe un cliente con ese ${fieldLabel}: ${duplicate.full_name}. Búscalo en la lista de clientes para ayudarlo.`,
+    };
+  }
 
   // El código de quien invitó es opcional, pero si se escribió algo tiene
   // que ser válido — mismo criterio que el registro online, nunca se

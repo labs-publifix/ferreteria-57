@@ -144,6 +144,12 @@ export async function updateProductRecord(
       active: input.active,
       updated_at: new Date().toISOString(),
       ...(justActivated ? { activated_at: new Date().toISOString() } : {}),
+      // #11: solo un producto activo puede estar destacado — si esta
+      // edición lo desactiva, se le quita el destacado también aquí (no
+      // solo se oculta del Home por el filtro de la consulta) para que el
+      // contador "N destacados" del admin no siga contando algo que ya no
+      // se puede ver ni volver a destacar sin antes reactivarlo.
+      ...(!input.active ? { featured: false, featured_at: null } : {}),
     })
     .eq("id", productId);
 

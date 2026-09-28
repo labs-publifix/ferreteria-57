@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowUpRight, Upload } from "lucide-react";
+import { ArrowUpRight, Download, Upload } from "lucide-react";
 import { Button, buttonClassName } from "@/components/ui";
 import {
   commitImportRows,
@@ -250,7 +250,19 @@ export function ImportWizard() {
   if (step === "upload") {
     return (
       <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:p-6">
-        <ModeToggle mode={mode} onChange={setMode} />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <ModeToggle mode={mode} onChange={setMode} />
+          {/* #8: la plantilla cambia según el modo elegido arriba — nunca
+              tiene sentido ofrecer la de "crear" mientras se está en modo
+              "actualizar clave", son columnas distintas. */}
+          <a
+            href={mode === "update" ? "/api/admin/productos/plantilla?modo=actualizar" : "/api/admin/productos/plantilla"}
+            className={buttonClassName("secondary", "shrink-0")}
+          >
+            <Download className="size-4" aria-hidden="true" strokeWidth={2} />
+            Descargar plantilla
+          </a>
+        </div>
 
         {mode === "update" ? (
           <p className="font-sans text-sm text-brand-slate">
