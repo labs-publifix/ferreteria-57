@@ -11,6 +11,19 @@ import type { FulfillmentType } from "@/lib/orders/status";
 
 const INTERNAL_NOTIFICATION_EMAILS = ["labs.publifix@gmail.com", "ferreteria57qro@hotmail.com"];
 
+// Lista adicional configurable por entorno (coma-separada) para no tener que
+// tocar código cada vez que el negocio quiera sumar/quitar una bandeja de
+// aviso de pedidos — ver ORDER_NOTIFICATION_EXTRA_RECIPIENTS en .env.example.
+// Se combina (Set) con INTERNAL_NOTIFICATION_EMAILS en vez de reemplazarlo:
+// ningún destinatario actual se pierde.
+function getInternalNotificationRecipients(): string[] {
+  const extra = (process.env.ORDER_NOTIFICATION_EXTRA_RECIPIENTS ?? "ferreteria57qro@gmail.com")
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+  return Array.from(new Set([...INTERNAL_NOTIFICATION_EMAILS, ...extra]));
+}
+
 interface MpPaymentResource {
   id: number;
   status: string;
@@ -170,7 +183,11 @@ async function sendOrderConfirmationEmails(
     const customerEmailContent = buildCustomerConfirmationEmail(emailData);
 
     const [internalResult, customerResult] = await Promise.all([
-      sendEmail({ to: INTERNAL_NOTIFICATION_EMAILS, subject: internalEmail.subject, html: internalEmail.html }),
+      sendEmail({
+        to: getInternalNotificationRecipients(),
+        subject: internalEmail.subject,
+        html: internalEmail.html,
+      }),
       sendEmail({ to: emailData.customerEmail, subject: customerEmailContent.subject, html: customerEmailContent.html }),
     ]);
     if (internalResult.error) console.error("[mercadopago/webhook] correo interno:", internalResult.error);
