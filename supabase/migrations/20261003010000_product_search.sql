@@ -8,17 +8,26 @@ create extension if not exists pg_trgm;
 
 -- unaccent() de la extensión es STABLE, no IMMUTABLE (depende de la
 -- configuración de diccionario) — Postgres no deja usar una función
--- STABLE dentro de un índice de expresión. Este wrapper fija el
--- diccionario 'unaccent' explícitamente y se declara IMMUTABLE, que es
--- seguro aquí porque el resultado nunca depende de configuración de
--- sesión (siempre el mismo diccionario, pasado a mano).
+-- STABLE dentro de un índice de expresión. Este wrapper se declara
+-- IMMUTABLE, que es seguro aquí porque el resultado nunca depende de
+-- configuración de sesión (siempre el mismo diccionario por default).
+-- Usa la forma de un solo argumento (diccionario 'unaccent' implícito)
+-- en vez de unaccent('unaccent', texto): esa segunda forma requiere que
+-- Postgres resuelva el literal 'unaccent' contra el tipo regdictionary,
+-- lo cual falla con "function unaccent(unknown, text) does not exist"
+-- si el search_path de la función no ve el esquema donde vive la
+-- extensión. Supabase instala unaccent/pg_trgm en el esquema
+-- `extensions` (no en `public`) — de ahí el search_path explícito que
+-- cubre ambos esquemas, sin depender de dónde haya quedado instalada la
+-- extensión en cada proyecto.
 create or replace function public.f57_unaccent(text)
 returns text
 language sql
 immutable
 parallel safe
+set search_path = public, extensions
 as $$
-  select unaccent('unaccent', coalesce($1, ''));
+  select unaccent(coalesce($1, ''));
 $$;
 
 -- Minúsculas + sin acentos — la normalización base para comparar nombre,
