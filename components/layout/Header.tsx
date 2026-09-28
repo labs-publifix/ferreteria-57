@@ -7,10 +7,10 @@ import { useEffect, useId, useState } from "react";
 import type { Category } from "@/lib/navigation/categories";
 import type { TopBannerConfig } from "@/types/marketing";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useCart } from "@/components/cart/CartProvider";
+import { useResolvedCart } from "@/components/cart/useResolvedCart";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { CategoryNavRail } from "./CategoryNavRail";
-import { SearchForm } from "./SearchForm";
+import { SearchLiveBox } from "./SearchLiveBox";
 import { ICON_PROPS, SearchIcon, UserIcon, CartIcon, IconLink } from "./header-icons";
 
 function MenuIcon() {
@@ -36,7 +36,7 @@ export function Header({
   categories: Category[];
   topBanner: TopBannerConfig | null;
 }) {
-  const { totalQuantity } = useCart();
+  const { totalQuantity } = useResolvedCart();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -83,7 +83,7 @@ export function Header({
           </Link>
 
           {/* Búsqueda: visible siempre desde sm, icono expandible antes de sm */}
-          <SearchForm className="hidden flex-1 sm:block" />
+          <SearchLiveBox className="hidden flex-1 sm:block" />
 
           <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:gap-2">
             <button
@@ -109,7 +109,13 @@ export function Header({
         </div>
 
         {/* Búsqueda colapsada: solo antes de sm, cuando el ícono se activa */}
-        {searchOpen && <SearchForm autoFocus className="mx-auto mt-3 max-w-6xl sm:hidden" />}
+        {searchOpen && (
+          <SearchLiveBox
+            autoFocus
+            className="mx-auto mt-3 max-w-6xl sm:hidden"
+            onNavigate={() => setSearchOpen(false)}
+          />
+        )}
       </div>
 
       {/* Mega-menú: riel horizontal desde md, oculto en móvil. El riel se

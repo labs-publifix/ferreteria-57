@@ -82,60 +82,47 @@ export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
 }
 
 // Busca por nombre de producto, por Clave (a nivel producto) o por SKU de
-// alguna de sus variantes — PostgREST no deja filtrar el recurso principal
-// por una columna de una relación anidada (product_variants.sku) directo,
-// así que la coincidencia por SKU se resuelve con una segunda consulta;
-// Clave sí vive en products, pero se deja como consulta separada (en vez de
-// un solo .or("name.ilike...,clave.ilike...")) para no tener que escapar
-// comas u otros caracteres especiales de PostgREST si el término de
-// búsqueda los trae. Los tres resultados se combinan sin duplicar productos.
+// alguna de sus variantes, marca o categoría — antes esto eran 3 consultas
+// ilike separadas (una por columna) combinadas a mano; ahora search_products()
+// (RPC de Postgres, ver supabase/migrations/20261003010000_product_search.sql)
+// ya resuelve nombre/marca/clave/sku/categoría con normalización de
+// acentos/mayúsculas y códigos sin separadores en una sola llamada, con el
+// mismo ranking que usa el desplegable en vivo del Header — así /buscar
+// nunca puede mostrar un orden distinto al que ya vio el cliente ahí.
+// El RPC regresa la fila "compacta" de resultado (un producto, su mejor
+// variante); esta función la usa solo para obtener el ORDEN de relevancia
+// y después trae el Product completo (todas sus variantes, imágenes,
+// specs, reseñas) por id — CategoryProductBrowser/ProductCard necesitan esa
+// forma completa, no la compacta.
 export async function searchProducts(query: string): Promise<Product[]> {
   const normalized = query.trim();
   if (!normalized) return [];
 
   const supabase = await createClient();
-  const pattern = `%${normalized}%`;
+  const { data: ranked, error: rankedError } = await supabase.rpc("search_products", {
+    p_query: normalized,
+    p_limit: 50,
+  });
+  logCatalogError("searchProducts (search_products)", rankedError);
+  const rankedRows = (ranked ?? []) as { id: string }[];
+  if (rankedRows.length === 0) return [];
 
-  const { data: byName, error: byNameError } = await supabase
+  const orderedIds = rankedRows.map((row) => row.id);
+  const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("active", true)
-    .ilike("name", pattern);
-  logCatalogError("searchProducts (byName)", byNameError);
+    .in("id", orderedIds);
+  logCatalogError("searchProducts (hydrate)", error);
 
-  const { data: byClave, error: byClaveError } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("active", true)
-    .ilike("clave", pattern);
-  logCatalogError("searchProducts (byClave)", byClaveError);
-
-  const { data: variantMatches, error: variantError } = await supabase
-    .from("product_variants")
-    .select("product_id")
-    .ilike("sku", pattern);
-  logCatalogError("searchProducts (variantMatches)", variantError);
-
-  const idsFromSku = [...new Set((variantMatches ?? []).map((row) => row.product_id))];
-
-  let bySku: Product[] = [];
-  if (idsFromSku.length > 0) {
-    const { data, error } = await supabase
-      .from("products")
-      .select(PRODUCT_SELECT)
-      .eq("active", true)
-      .in("id", idsFromSku);
-    logCatalogError("searchProducts (bySku)", error);
-    bySku = (data ?? []).map(mapRowToProduct);
+  const byId = new Map<string, Product>((data ?? []).map((row) => [row.id, mapRowToProduct(row)]));
+  // .in() no conserva el orden que mandamos — se reordena aquí contra
+  // orderedIds para que el ranking de search_products() sea el que de
+  // verdad se muestra.
+  const results: Product[] = [];
+  for (const id of orderedIds) {
+    const product = byId.get(id);
+    if (product) results.push(product);
   }
-
-  const merged = new Map<string, Product>();
-  for (const product of [
-    ...(byName ?? []).map(mapRowToProduct),
-    ...(byClave ?? []).map(mapRowToProduct),
-    ...bySku,
-  ]) {
-    merged.set(product.id, product);
-  }
-  return Array.from(merged.values());
+  return results;
 }
