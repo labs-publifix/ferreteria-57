@@ -1,3 +1,6 @@
+import { buildMerchantReturnPolicy, buildShippingDetails, SITE_LAUNCH_DATE } from "@/lib/seoPolicies";
+import type { Product } from "@/types/catalog";
+
 // Fuente única de la URL base del sitio para todo lo relacionado con SEO
 // (canonical, sitemap, robots, metadataBase, JSON-LD "url") — el dominio
 // final ferreteria57.com todavía no resuelve, así que esto lee
@@ -127,5 +130,60 @@ export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]) {
       name: item.name,
       item: item.url,
     })),
+  };
+}
+
+const PRODUCT_DESCRIPTION_MAX_LENGTH = 5000;
+
+// Texto plano, sin HTML (shortDescription ya sale de un <textarea> simple
+// en ProductForm.tsx, nunca de un editor enriquecido — esto solo limpia
+// por si algún día llega marcado de otra vía) y recortado a ~5,000
+// caracteres en un espacio, nunca a la mitad de una palabra.
+function sanitizeProductDescription(text: string): string {
+  const plain = text.replace(/<[^>]*>/g, "").trim();
+  if (plain.length <= PRODUCT_DESCRIPTION_MAX_LENGTH) return plain;
+  const truncated = plain.slice(0, PRODUCT_DESCRIPTION_MAX_LENGTH);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return truncated.slice(0, lastSpace > 0 ? lastSpace : PRODUCT_DESCRIPTION_MAX_LENGTH);
+}
+
+// Respaldo cuando el producto no tiene shortDescription capturada — solo
+// nombre, marca y categoría (los únicos datos que sí conocemos con
+// certeza), nunca especificaciones inventadas.
+function buildFallbackProductDescription(product: Product, categoryLabel?: string): string {
+  return [product.name, product.brand, categoryLabel].filter(Boolean).join(" — ");
+}
+
+// JSON-LD Product completo para /producto/[slug] — única función que arma
+// este objeto, así el sitio nunca tiene dos productos con Offer.offers
+// construido con reglas ligeramente distintas. hasMerchantReturnPolicy y
+// shippingDetails salen de lib/seoPolicies.ts (fuente única de verdad de
+// esas políticas, ver los comentarios ahí); categoryLabel es opcional
+// porque solo se usa para la descripción de respaldo, nunca para nada que
+// bloquee el JSON-LD si la categoría no se pudo resolver.
+export function buildProductJsonLd(product: Product, categoryLabel?: string) {
+  const firstVariant = product.variants[0];
+  const price = firstVariant?.price ?? 0;
+  const inStock = (firstVariant?.stock ?? 0) > 0;
+  const rawDescription = product.shortDescription.trim() || buildFallbackProductDescription(product, categoryLabel);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    ...(product.images.length > 0 ? { image: product.images } : {}),
+    description: sanitizeProductDescription(rawDescription),
+    brand: { "@type": "Brand", name: product.brand },
+    ...(firstVariant?.sku ? { sku: firstVariant.sku } : {}),
+    offers: {
+      "@type": "Offer",
+      url: `${SITE_URL}/producto/${product.slug}`,
+      price,
+      priceCurrency: "MXN",
+      availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      validFrom: product.createdAt || SITE_LAUNCH_DATE,
+      hasMerchantReturnPolicy: buildMerchantReturnPolicy(SITE_URL),
+      shippingDetails: buildShippingDetails(price),
+    },
   };
 }

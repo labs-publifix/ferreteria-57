@@ -18,6 +18,7 @@ const previewProducts: Product[] = [
     images: [],
     variants: [{ id: "v1", sku: "PREV-1", label: "Único", price: 299, stock: 24 }],
     rating: 4.3,
+    createdAt: "2026-09-10T00:00:00-06:00",
   },
   {
     id: "preview-taladro",
@@ -32,6 +33,7 @@ const previewProducts: Product[] = [
       { id: "v2", sku: "PREV-2", label: "1 batería 2Ah", price: 1299, compareAtPrice: 1799, stock: 7 },
     ],
     rating: 4.7,
+    createdAt: "2026-09-10T00:00:00-06:00",
   },
   {
     id: "preview-candado",
@@ -43,6 +45,7 @@ const previewProducts: Product[] = [
     technicalSpecs: [],
     images: [],
     variants: [{ id: "v3", sku: "PREV-3", label: "Único", price: 129, stock: 0 }],
+    createdAt: "2026-09-10T00:00:00-06:00",
   },
 ];
 

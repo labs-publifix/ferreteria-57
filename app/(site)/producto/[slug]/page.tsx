@@ -9,7 +9,7 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductGrid } from "@/components/product/ProductGrid";
-import { buildBreadcrumbJsonLd, SITE_URL } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildProductJsonLd, SITE_URL } from "@/lib/seo";
 
 interface ProductoPageProps {
   params: { slug: string };
@@ -65,8 +65,6 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
   const category = categories.find((item) => item.slug === product.categoryId);
   const relatedProducts = await getRelatedProducts(product.categoryId, product.id);
   const approvedReviews = await getApprovedReviews(product.id);
-  const firstVariant = product.variants[0];
-  const inStock = (firstVariant?.stock ?? 0) > 0;
 
   // JSON-LD Product: dangerouslySetInnerHTML es el patrón recomendado por
   // Next.js para esto. JSON.stringify ya escapa comillas/backslashes —
@@ -74,24 +72,14 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
   // mockProducts, dato propio del proyecto), pero sigue siendo texto
   // dentro de un <script type="application/ld+json">, no HTML/JS
   // ejecutable, así que no hay inyección posible por esta vía.
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    ...(product.images.length > 0 ? { image: product.images } : {}),
-    description: product.shortDescription,
-    brand: { "@type": "Brand", name: product.brand },
-    ...(firstVariant?.sku ? { sku: firstVariant.sku } : {}),
-    offers: {
-      "@type": "Offer",
-      url: `${SITE_URL}/producto/${product.slug}`,
-      price: firstVariant?.price ?? 0,
-      priceCurrency: "MXN",
-      availability: inStock
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-    },
-  };
+  //
+  // buildProductJsonLd (lib/seo.ts) es la única función que arma este
+  // objeto — incluye hasMerchantReturnPolicy/shippingDetails/validFrom
+  // (avisos no críticos de Search Console) usando lib/seoPolicies.ts como
+  // fuente única de verdad de esas políticas. category.label solo se usa
+  // para la descripción de respaldo si el producto no tiene
+  // shortDescription capturada.
+  const jsonLd = buildProductJsonLd(product, category?.label);
 
   // Misma ruta que el <nav> de abajo (Inicio > Categoría > Producto) —
   // sin categoría resuelta (no debería pasar, pero product.categoryId

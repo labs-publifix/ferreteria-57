@@ -35,6 +35,7 @@ interface ProductRow {
   categories: { slug: string } | null;
   product_variants: ProductVariantRow[] | null;
   reviews: { rating: number }[] | null;
+  created_at: string;
 }
 
 // numeric de Postgres llega serializado como string vía PostgREST (evita
@@ -81,5 +82,6 @@ export function mapRowToProduct(row: ProductRow): Product {
       .sort((a, b) => a.position - b.position)
       .map(mapVariant),
     ...computeRating(row.reviews ?? []),
+    createdAt: row.created_at,
   };
 }
