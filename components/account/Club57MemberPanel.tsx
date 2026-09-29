@@ -262,7 +262,7 @@ export function Club57MemberPanel({
             <p className="font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
             {puntosPendientes > 0 && (
               <p className="mt-1 font-sans text-sm text-brand-slate">
-                {puntosPendientes} pendientes
+                +{puntosPendientes} pts pendientes
                 {proximaFechaDisponible && (
                   <> · disponibles el {dateFormatter.format(new Date(`${proximaFechaDisponible}T00:00:00`))}</>
                 )}
@@ -298,6 +298,30 @@ export function Club57MemberPanel({
           {success}
         </p>
       )}
+
+      {/* #12 adelanto visual de 2 promociones — sin ruta, tabla ni lógica
+          real detrás, solo comunica que vienen más beneficios. Botón
+          disabled (no solo con estilos): bloquea clic y foco por teclado
+          sin necesitar manejo extra, y el borde punteado + opacidad
+          reducida lo leen claramente como inactivo, nunca como un CTA
+          real. Va fuera de las pestañas (como la franja de saldo) para no
+          empujar el contenido de ninguna pestaña — solo agrega una fila
+          compacta antes de ellas. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {[{ label: "Promo Truper" }, { label: "Liquidaciones del Mes" }].map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            disabled
+            className="flex flex-col items-start gap-1.5 rounded-lg border border-dashed border-brand-slate/25 bg-white p-4 text-left opacity-70 disabled:pointer-events-none"
+          >
+            <span className="font-display text-sm uppercase tracking-wide text-brand-black">{item.label}</span>
+            <span className="inline-flex items-center rounded-full bg-brand-gray px-2.5 py-1 font-sans text-xs font-semibold text-brand-slate">
+              Próximamente
+            </span>
+          </button>
+        ))}
+      </div>
 
       <Tabs idPrefix="cuenta" tabs={TABS} activeId={activeTab} onChange={setActiveTab} />
 
