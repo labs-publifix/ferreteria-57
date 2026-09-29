@@ -500,11 +500,20 @@ export function PopUpBannerForm({
           (PopupBannerCardContent), no interactivo — mismo criterio que
           PromoBannerForm/PromoCard. Escritorio y móvil lado a lado para
           cumplir "en versión escritorio y móvil" sin depender de que el
-          admin achique la ventana del navegador. */}
+          admin achique la ventana del navegador.
+
+          min-h en vez de una altura fija: con h-40 (160px) + overflow-hidden
+          + items-end, un título de dos líneas empujaba la tarjeta hacia
+          arriba y la mitad de arriba (esquina redondeada, primera línea del
+          título) quedaba recortada fuera de la caja — bug reportado por el
+          cliente. Con solo min-h el contenedor crece con el contenido
+          (nunca recorta) y de paso se ve una franja de "piso" que refuerza
+          la idea de "esquina de la pantalla", en vez de una caja pegada al
+          borde de la tarjeta. */}
       <div className="flex flex-col gap-4 xl:sticky xl:top-6 xl:w-[420px] xl:shrink-0">
         <div className="flex flex-col gap-1.5">
           <span className={labelClass}>Vista previa — escritorio</span>
-          <div className="relative flex h-40 items-end justify-start overflow-hidden rounded-lg bg-brand-gray p-4">
+          <div className="relative flex min-h-60 items-end justify-start rounded-lg border border-brand-slate/10 bg-brand-gray p-4">
             <div className="w-[320px]">
               <PopupBannerCardContent banner={previewData} interactive={false} />
             </div>
@@ -512,7 +521,7 @@ export function PopUpBannerForm({
         </div>
         <div className="flex flex-col gap-1.5">
           <span className={labelClass}>Vista previa — móvil (375px)</span>
-          <div className="relative mx-auto flex h-40 w-[375px] items-end justify-start overflow-hidden rounded-lg bg-brand-gray p-3">
+          <div className="relative mx-auto flex min-h-60 w-[375px] items-end justify-start rounded-lg border border-brand-slate/10 bg-brand-gray p-3">
             <div className="w-[85vw] max-w-[320px]">
               <PopupBannerCardContent banner={previewData} interactive={false} />
             </div>
