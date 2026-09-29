@@ -57,4 +57,8 @@ export interface Product {
   variants: ProductVariant[];
   rating?: number;
   reviewCount?: number;
+  /** ISO 8601 con huso horario, tal como lo devuelve Postgres — fecha en
+   *  que el producto se creó en el catálogo. Usada como validFrom en el
+   *  JSON-LD de la ficha (ver lib/seoPolicies.ts). */
+  createdAt: string;
 }
