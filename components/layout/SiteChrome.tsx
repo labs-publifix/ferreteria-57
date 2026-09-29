@@ -1,5 +1,6 @@
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { PopupBannerGate } from "@/components/layout/PopupBannerGate";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
@@ -7,6 +8,7 @@ import { ProductCatalogProvider } from "@/components/cart/ProductCatalogProvider
 import { ToastProvider } from "@/components/ui";
 import { getVisibleTopBanner } from "@/lib/marketing/queries";
 import { getActiveCategories } from "@/lib/navigation/categories";
+import { getVisiblePopupBanner } from "@/lib/popup/queries";
 
 // Envoltura compartida entre app/(site)/layout.tsx y app/not-found.tsx (el
 // 404 real para rutas que no matchean nada del sitio, ver ese archivo) —
@@ -19,6 +21,7 @@ import { getActiveCategories } from "@/lib/navigation/categories";
 export async function SiteChrome({ children }: { children: React.ReactNode }) {
   const categories = await getActiveCategories();
   const topBanner = await getVisibleTopBanner();
+  const popupBanner = await getVisiblePopupBanner();
 
   return (
     // ToastProvider por fuera de CartProvider: el carrito dispara el toast
@@ -37,6 +40,7 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
             {children}
             <Footer categories={categories} />
             <WhatsAppButton />
+            <PopupBannerGate banner={popupBanner} />
           </CartProvider>
         </ProductCatalogProvider>
       </AuthProvider>

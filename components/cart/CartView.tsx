@@ -39,12 +39,13 @@ export function CartView() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:gap-10">
       <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
-        {items.map(({ product, variant, quantity }) => (
+        {items.map(({ product, variant, quantity, wasReduced }) => (
           <CartLineItem
             key={`${product.id}-${variant.id}`}
             product={product}
             variant={variant}
             quantity={quantity}
+            wasReduced={wasReduced}
           />
         ))}
       </div>

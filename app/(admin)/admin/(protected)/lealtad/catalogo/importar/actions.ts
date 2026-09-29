@@ -2,6 +2,8 @@
 
 import ExcelJS from "exceljs";
 import { Readable } from "node:stream";
+import { findExampleColumnIndex, isExampleMarkerRow } from "@/lib/importTemplates/buildTemplate";
+import { CLUB57_CATALOG_COLUMNS } from "@/lib/importTemplates/columnDefs";
 import { normalizeText } from "@/lib/normalizeText";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,8 +20,12 @@ async function requireAdmin() {
   return supabase;
 }
 
-const COLUMNS = ["codigos", "clave", "descripcion", "costos"] as const;
-type ColumnKey = (typeof COLUMNS)[number];
+// La definición completa (required/formato/ejemplo) vive en
+// lib/importTemplates/columnDefs.ts, compartida con el generador de la
+// plantilla descargable — aquí solo se usan las keys para matchear
+// encabezados.
+const COLUMNS = CLUB57_CATALOG_COLUMNS.map((column) => column.key);
+type ColumnKey = (typeof CLUB57_CATALOG_COLUMNS)[number]["key"];
 
 function cellToString(value: ExcelJS.CellValue): string {
   if (value === null || value === undefined) return "";
@@ -52,7 +58,10 @@ async function loadWorkbook(file: File): Promise<ExcelJS.Workbook> {
 // 1), el archivo real de este catálogo trae una fila 1 vacía y el
 // encabezado en la fila 2 — se busca entre las primeras filas en vez de
 // asumir una posición fija, así cualquiera de los dos formatos funciona.
-function findHeaderRow(sheet: ExcelJS.Worksheet, maxRowsToScan = 5): { rowNumber: number; columnIndex: Map<ColumnKey, number> } | null {
+function findHeaderRow(
+  sheet: ExcelJS.Worksheet,
+  maxRowsToScan = 5
+): { rowNumber: number; columnIndex: Map<ColumnKey, number>; exampleColumnIndex: number | undefined } | null {
   for (let rowNumber = 1; rowNumber <= Math.min(maxRowsToScan, sheet.rowCount); rowNumber++) {
     const row = sheet.getRow(rowNumber);
     const columnIndex = new Map<ColumnKey, number>();
@@ -63,7 +72,7 @@ function findHeaderRow(sheet: ExcelJS.Worksheet, maxRowsToScan = 5): { rowNumber
       }
     });
     if (COLUMNS.every((key) => columnIndex.has(key))) {
-      return { rowNumber, columnIndex };
+      return { rowNumber, columnIndex, exampleColumnIndex: findExampleColumnIndex(row, normalizeText, cellToString) };
     }
   }
   return null;
@@ -134,6 +143,7 @@ export async function parseAndValidateCatalogImportFile(formData: FormData): Pro
   const rows: CatalogImportPreviewRow[] = [];
   for (let rowNumber = header.rowNumber + 1; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber);
+    if (isExampleMarkerRow(row, header.exampleColumnIndex)) continue;
     const codigo = cellToString(row.getCell(header.columnIndex.get("codigos")!).value).trim();
     const clave = cellToString(row.getCell(header.columnIndex.get("clave")!).value).trim();
     const descripcion = cellToString(row.getCell(header.columnIndex.get("descripcion")!).value).trim();

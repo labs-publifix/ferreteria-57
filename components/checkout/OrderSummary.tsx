@@ -42,7 +42,7 @@ export function OrderSummary({
       </h2>
 
       <div className="flex flex-col gap-3">
-        {items.map(({ product, variant, quantity }) => (
+        {items.map(({ product, variant, quantity, wasReduced }) => (
           <div key={`${product.id}-${variant.id}`} className="flex gap-3">
             <ProductThumbnail product={product} className="size-14 shrink-0" />
             <div className="flex flex-1 flex-col">
@@ -52,7 +52,18 @@ export function OrderSummary({
               {product.variants.length > 1 && (
                 <p className="font-sans text-xs text-brand-slate/70">{variant.label}</p>
               )}
-              <p className="font-sans text-xs text-brand-slate">Cantidad: {quantity}</p>
+              <p className="font-sans text-xs text-brand-slate">
+                {quantity === 0 ? "Ya no disponible" : `Cantidad: ${quantity}`}
+              </p>
+              {/* Mismo ajuste automático que ya muestra /carrito (ver
+                  CartLineItem) — aquí sin el botón de WhatsApp, checkout es
+                  de solo lectura; el lugar para actuar sobre esto es el
+                  carrito, un paso atrás. */}
+              {wasReduced && (
+                <p className="font-sans text-xs text-amber-700">
+                  Ajustado por disponibilidad — quítalo o edítalo desde tu carrito.
+                </p>
+              )}
             </div>
             <p className="shrink-0 font-sans text-sm font-semibold text-brand-black">
               {formatPrice(variant.price * quantity)}

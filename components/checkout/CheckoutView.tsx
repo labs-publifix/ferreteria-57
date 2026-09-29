@@ -33,6 +33,11 @@ export function CheckoutView() {
   const { isHydrated, clearCart } = useCart();
   const { items, subtotal } = useResolvedCart();
   const { zonas } = useZonasEnvio();
+  // quantity 0 = se agotó por completo mientras estaba en el carrito
+  // (useResolvedCart ya lo topó ahí, no aquí) — OrderSummary sigue
+  // mostrando la línea (con su aviso) para que quede claro qué pasó, pero
+  // nunca se manda a create_order ni cuenta como "hay algo que pagar".
+  const purchasableItems = items.filter((item) => item.quantity > 0);
 
   const [contact, setContact] = useState<ContactForm>(emptyContact);
   // "retiro" preseleccionado por default — cambio explícito respecto al
@@ -61,12 +66,12 @@ export function CheckoutView() {
   // esté (ver CartProvider.isHydrated).
   useEffect(() => {
     if (hasSubmittedRef.current) return;
-    if (isHydrated && items.length === 0) {
+    if (isHydrated && purchasableItems.length === 0) {
       router.replace("/carrito?empty=checkout");
     }
-  }, [isHydrated, items.length, router]);
+  }, [isHydrated, purchasableItems.length, router]);
 
-  if (!isHydrated || items.length === 0) return null;
+  if (!isHydrated || purchasableItems.length === 0) return null;
 
   const foraneoOverLimit = deliveryMethod === "envio_foraneo" && computeForaneoOverLimit(subtotal);
 
@@ -98,7 +103,7 @@ export function CheckoutView() {
         : isForaneoAddressValid(foraneoAddress) && !foraneoOverLimit);
 
   const whatsappUrl = buildForaneoWhatsAppUrl(
-    items.map(({ product, variant, quantity }) => ({
+    purchasableItems.map(({ product, variant, quantity }) => ({
       name: product.name,
       variantLabel: product.variants.length > 1 ? variant.label : null,
       quantity,
@@ -112,7 +117,7 @@ export function CheckoutView() {
     setSubmitError(null);
     setIsSubmitting(true);
 
-    const orderItems = items.map(({ product, variant, quantity }) => ({
+    const orderItems = purchasableItems.map(({ product, variant, quantity }) => ({
       productName: product.name,
       variantLabel: product.variants.length > 1 ? variant.label : null,
       sku: variant.sku,
@@ -187,7 +192,7 @@ export function CheckoutView() {
                 references: foraneoAddress.references,
               }
             : undefined,
-      items: items.map(({ product, variant, quantity }) => ({
+      items: purchasableItems.map(({ product, variant, quantity }) => ({
         name: product.name,
         variantLabel: product.variants.length > 1 ? variant.label : null,
         quantity,

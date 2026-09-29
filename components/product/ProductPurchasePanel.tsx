@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
 import { Button, PriceTag, RatingStars } from "@/components/ui";
+import { StockLimitNotice } from "@/components/product/StockLimitNotice";
 import type { Product } from "@/types/catalog";
 
 export function ProductPurchasePanel({ product }: { product: Product }) {
@@ -124,35 +125,59 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         </span>
       </p>
 
-      <div className="flex items-center gap-3">
-        <span className="font-sans text-sm text-brand-black">Cantidad:</span>
-        <div className="flex items-center rounded-md border border-brand-slate/30">
-          <button
-            type="button"
-            onClick={() => handleQuantityChange(-1)}
-            disabled={quantity <= 1}
-            aria-label="Disminuir cantidad"
-            className="flex size-11 items-center justify-center text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:pointer-events-none disabled:opacity-40"
-          >
-            <Minus className="size-4" aria-hidden="true" strokeWidth={1.75} />
-          </button>
-          <span
-            className="flex min-w-11 items-center justify-center font-sans text-sm font-semibold text-brand-black"
-            aria-live="polite"
-          >
-            {quantity}
-          </span>
-          <button
-            type="button"
-            onClick={() => handleQuantityChange(1)}
-            disabled={quantity >= stock}
-            aria-label="Aumentar cantidad"
-            className="flex size-11 items-center justify-center text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:pointer-events-none disabled:opacity-40"
-          >
-            <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} />
-          </button>
+      {inStock && (
+        <div className="flex items-center gap-3">
+          <span className="font-sans text-sm text-brand-black">Cantidad:</span>
+          <div className="flex items-center rounded-md border border-brand-slate/30">
+            <button
+              type="button"
+              onClick={() => handleQuantityChange(-1)}
+              disabled={quantity <= 1}
+              aria-label="Disminuir cantidad"
+              className="flex size-11 items-center justify-center text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:pointer-events-none disabled:opacity-40"
+            >
+              <Minus className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            </button>
+            <span
+              className="flex min-w-11 items-center justify-center font-sans text-sm font-semibold text-brand-black"
+              aria-live="polite"
+            >
+              {quantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleQuantityChange(1)}
+              disabled={quantity >= stock}
+              aria-label="Aumentar cantidad"
+              className="flex size-11 items-center justify-center text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:pointer-events-none disabled:opacity-40"
+            >
+              <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Mismo aviso para dos casos distintos: tope de stock alcanzado
+          (available = stock, quantity ya topado) y agotado del todo
+          (available = null, no hay stepper que mostrar arriba). */}
+      {inStock && quantity >= stock && (
+        <StockLimitNotice
+          productName={product.name}
+          sku={variant?.sku}
+          clave={product.clave}
+          available={stock}
+          desiredQuantity={quantity + 1}
+        />
+      )}
+      {!inStock && (
+        <StockLimitNotice
+          productName={product.name}
+          sku={variant?.sku}
+          clave={product.clave}
+          available={null}
+          desiredQuantity={1}
+        />
+      )}
 
       <Button
         type="button"

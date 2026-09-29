@@ -11,6 +11,8 @@ import {
   type ProductWriteInput,
 } from "@/lib/catalog/productWrite";
 import { findTakenSkus } from "@/lib/catalog/skuAvailability";
+import { findExampleColumnIndex, isExampleMarkerRow } from "@/lib/importTemplates/buildTemplate";
+import { PRODUCT_CREATE_COLUMNS, PRODUCT_UPDATE_COLUMNS } from "@/lib/importTemplates/columnDefs";
 import { normalizeText } from "@/lib/normalizeText";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
@@ -52,12 +54,15 @@ export interface ParseImportResult {
   rows?: ImportPreviewRow[];
 }
 
-// Las 5 columnas reales del archivo del cliente, identificadas por nombre
-// de encabezado normalizado (sin acentos/espacios/mayúsculas) — el archivo
-// real trae "Categoria " con espacio de más, por eso se compara ya
-// normalizado en vez de por texto exacto o por posición fija de columna.
-const COLUMNS = ["categoria", "codigo", "nombre", "precio", "url"] as const;
-type ColumnKey = (typeof COLUMNS)[number];
+// Columnas identificadas por nombre de encabezado normalizado (sin
+// acentos/espacios/mayúsculas) — el archivo real trae "Categoria " con
+// espacio de más, por eso se compara ya normalizado en vez de por texto
+// exacto o por posición fija de columna. La definición completa (con
+// required/formato/ejemplo) vive en lib/importTemplates/columnDefs.ts,
+// compartida con el generador de la plantilla descargable — aquí solo se
+// usan las keys para matchear encabezados.
+const COLUMNS = PRODUCT_CREATE_COLUMNS.map((column) => column.key);
+type ColumnKey = (typeof PRODUCT_CREATE_COLUMNS)[number]["key"];
 
 // Una celda de ExcelJS puede traer un string/número plano, pero también un
 // objeto de fórmula ({ result }) o de hipervínculo ({ text, hyperlink }) —
@@ -127,6 +132,7 @@ export async function parseAndValidateImportFile(formData: FormData): Promise<Pa
       columnIndex.set(normalized as ColumnKey, colNumber);
     }
   });
+  const exampleColumnIndex = findExampleColumnIndex(headerRow, normalizeText, cellToString);
 
   const missingColumns = COLUMNS.filter((key) => !columnIndex.has(key));
   if (missingColumns.length > 0) {
@@ -147,6 +153,10 @@ export async function parseAndValidateImportFile(formData: FormData): Promise<Pa
   const rawRows: RawRow[] = [];
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber);
+    // Fila de ejemplo de la plantilla descargable, dejada sin borrar por
+    // el usuario: se ignora igual que una fila vacía (#8, punto 5).
+    if (isExampleMarkerRow(row, exampleColumnIndex)) continue;
+
     const categoria = cellToString(row.getCell(columnIndex.get("categoria")!).value).trim();
     const codigo = cellToString(row.getCell(columnIndex.get("codigo")!).value).trim();
     const nombre = cellToString(row.getCell(columnIndex.get("nombre")!).value).trim();
@@ -365,8 +375,8 @@ export async function commitImportRows(rows: ImportCommitRow[]): Promise<CommitI
 // el resto de esas columnas.
 // ---------------------------------------------------------------------------
 
-const UPDATE_COLUMNS = ["codigo", "clave"] as const;
-type UpdateColumnKey = (typeof UPDATE_COLUMNS)[number];
+const UPDATE_COLUMNS = PRODUCT_UPDATE_COLUMNS.map((column) => column.key);
+type UpdateColumnKey = (typeof PRODUCT_UPDATE_COLUMNS)[number]["key"];
 
 export type UpdateRowStatus = "ready" | "unchanged" | "error";
 
@@ -421,6 +431,7 @@ export async function parseAndValidateUpdateFile(formData: FormData): Promise<Pa
       columnIndex.set(normalized as UpdateColumnKey, colNumber);
     }
   });
+  const exampleColumnIndex = findExampleColumnIndex(headerRow, normalizeText, cellToString);
 
   const missingColumns = UPDATE_COLUMNS.filter((key) => !columnIndex.has(key));
   if (missingColumns.length > 0) {
@@ -438,6 +449,8 @@ export async function parseAndValidateUpdateFile(formData: FormData): Promise<Pa
   const rawRows: RawUpdateRow[] = [];
   for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber);
+    if (isExampleMarkerRow(row, exampleColumnIndex)) continue;
+
     const codigo = cellToString(row.getCell(columnIndex.get("codigo")!).value).trim();
     const claveRaw = cellToString(row.getCell(columnIndex.get("clave")!).value).trim();
 
