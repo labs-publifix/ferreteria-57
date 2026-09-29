@@ -3,7 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, DateTimePicker } from "@/components/ui";
 import { PopupBannerCardContent, type PopupCardContentData } from "@/components/layout/PopupBannerCard";
 import { PopupImageUploader } from "./PopupImageUploader";
 import { contrastRatio } from "@/lib/popup/contrast";
@@ -238,13 +238,27 @@ export function PopUpBannerForm({
     formData.set("endsAt", values.endsAtInput);
     if (values.activo) formData.set("activo", "on");
 
-    const result: PopupBannerActionResult =
-      mode === "create" ? await createPopupBanner(formData) : await updatePopupBanner(bannerId!, formData);
+    // Un try/catch aquí es indispensable: si algo del lado del servidor
+    // truena de forma inesperada (p. ej. un error real de red, no uno de
+    // validación que ya vuelve como { error }), sin este catch el botón se
+    // queda en "Guardando…" para siempre sin ningún aviso — el problema
+    // reportado por el cliente. La navegación de vuelta al listado la hace
+    // este componente (no un redirect() dentro de la Server Action) para
+    // que cualquier falla real caiga siempre aquí, nunca en un throw sin
+    // capturar.
+    try {
+      const result: PopupBannerActionResult =
+        mode === "create" ? await createPopupBanner(formData) : await updatePopupBanner(bannerId!, formData);
 
-    // En éxito, la Server Action redirige a /admin/pop-up-banner — solo se
-    // llega aquí de vuelta si hubo un error.
-    if (result.error) {
-      setError(result.error);
+      if (result.error) {
+        setError(result.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      router.push("/admin/pop-up-banner");
+    } catch {
+      setError("Ocurrió un error inesperado al guardar. Intenta de nuevo.");
       setIsSubmitting(false);
     }
   }
@@ -253,15 +267,20 @@ export function PopUpBannerForm({
     if (!bannerId) return;
     setIsRetiring(true);
     setError(null);
-    const result = await setPopupBannerActive(bannerId, false);
-    setIsRetiring(false);
-    if (result.error) {
-      setError(result.error);
-      return;
+    try {
+      const result = await setPopupBannerActive(bannerId, false);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setCurrentlyActive(false);
+      setValues((current) => ({ ...current, activo: false }));
+      router.refresh();
+    } catch {
+      setError("Ocurrió un error inesperado. Intenta de nuevo.");
+    } finally {
+      setIsRetiring(false);
     }
-    setCurrentlyActive(false);
-    setValues((current) => ({ ...current, activo: false }));
-    router.refresh();
   }
 
   return (
@@ -427,28 +446,22 @@ export function PopUpBannerForm({
             <label htmlFor={startsAtId} className={`mb-1.5 block ${labelClass}`}>
               Inicio (hora de Ciudad de México)
             </label>
-            <input
+            <DateTimePicker
               id={startsAtId}
-              type="datetime-local"
-              required
+              label="Inicio (hora de Ciudad de México)"
               value={values.startsAtInput}
-              onChange={(event) =>
-                setValues((current) => ({ ...current, startsAtInput: event.target.value }))
-              }
-              className={inputClass}
+              onChange={(startsAtInput) => setValues((current) => ({ ...current, startsAtInput }))}
             />
           </div>
           <div>
             <label htmlFor={endsAtId} className={`mb-1.5 block ${labelClass}`}>
               Fin (hora de Ciudad de México)
             </label>
-            <input
+            <DateTimePicker
               id={endsAtId}
-              type="datetime-local"
-              required
+              label="Fin (hora de Ciudad de México)"
               value={values.endsAtInput}
-              onChange={(event) => setValues((current) => ({ ...current, endsAtInput: event.target.value }))}
-              className={inputClass}
+              onChange={(endsAtInput) => setValues((current) => ({ ...current, endsAtInput }))}
             />
           </div>
         </div>

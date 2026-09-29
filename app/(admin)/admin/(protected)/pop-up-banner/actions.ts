@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { findOverlappingBanner } from "@/lib/popup/schedule";
 import { mexicoCityInputValueToUtcIso } from "@/lib/popup/timezone";
@@ -190,7 +189,19 @@ export async function createPopupBanner(formData: FormData): Promise<PopupBanner
   // criterio que top-banner/actions.ts usa para AnnouncementBar.
   revalidatePath("/", "layout");
   revalidatePath("/admin/pop-up-banner");
-  redirect("/admin/pop-up-banner");
+  // A diferencia de un <form action={...}>, aquí el formulario invoca esta
+  // Server Action como una función normal (ver PopUpBannerForm.tsx) para
+  // poder leer `result.error` en el mismo lugar. redirect() dentro de una
+  // Server Action funciona lanzando una excepción especial que Next.js
+  // reconoce del lado del cliente — pero si esa llamada directa alguna vez
+  // lanza ANTES de llegar aquí (p. ej. un error de red real de
+  // supabase-js), esa excepción real y la de redirect() son indistinguibles
+  // para quien llama sin importar next/dist (ruta interna, no pública). Para
+  // no depender de esa distinción, la redirección la hace el cliente
+  // (router.push) una vez que ve `{}` de vuelta — así una falla real
+  // siempre cae en el catch del formulario en vez de dejar el botón
+  // "Guardando…" colgado para siempre sin aviso.
+  return {};
 }
 
 export async function updatePopupBanner(
@@ -233,7 +244,7 @@ export async function updatePopupBanner(
 
   revalidatePath("/", "layout");
   revalidatePath("/admin/pop-up-banner");
-  redirect("/admin/pop-up-banner");
+  return {};
 }
 
 // "Retirar ahora" (botón dedicado en el editor) y el toggle del listado

@@ -12,6 +12,8 @@ export { RatingStars, Star } from "./RatingStars";
 export type { RatingStarsProps } from "./RatingStars";
 export { Select } from "./Select";
 export type { SelectProps, SelectOption } from "./Select";
+export { DateTimePicker } from "./DateTimePicker";
+export type { DateTimePickerProps } from "./DateTimePicker";
 export { Combobox } from "./Combobox";
 export type { ComboboxProps, ComboboxOption } from "./Combobox";
 export { ProductImagePlaceholder } from "./ProductImagePlaceholder";
