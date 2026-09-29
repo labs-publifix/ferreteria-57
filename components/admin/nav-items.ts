@@ -4,6 +4,7 @@ import {
   Home,
   Images,
   LayoutGrid,
+  MessageSquareMore,
   Package,
   Image as ImageIcon,
   Settings,
@@ -29,6 +30,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/resenas", label: "Reseñas", icon: Star },
   { href: "/admin/top-banner", label: "Top Banner", icon: ImageIcon },
   { href: "/admin/promo-banners", label: "Promo Banners", icon: Images },
+  { href: "/admin/pop-up-banner", label: "Pop-Up Banner", icon: MessageSquareMore },
   { href: "/admin/lealtad", label: "Club 57", icon: Gift },
   // Las últimas dos: a diferencia de las 7 anteriores (gestión de
   // contenido de la tienda), estas son administración del propio panel —
