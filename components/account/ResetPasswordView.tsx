@@ -10,13 +10,17 @@ import { translateAuthError } from "@/lib/supabase/authErrors";
 
 type Stage = "verificando" | "listo" | "invalido" | "guardando" | "exito";
 
-// El enlace que manda resetPasswordForEmail() (ver cuenta/actions.ts) trae
-// un ?code= de un solo uso en la URL (flujo PKCE — createBrowserClient usa
-// PKCE por default con sesiones en cookie, a diferencia del flujo implícito
-// con el token en el fragmento #). exchangeCodeForSession() es lo que
-// valida ese code y recién ahí abre una sesión real — hasta que eso no
-// resuelve con éxito, no hay "sesión de recuperación" que confiar, así que
-// el formulario de nueva contraseña no se muestra todavía.
+// La plantilla de correo "Reset Password" en Supabase apunta directo a esta
+// página con ?token_hash=...&type=recovery (en vez de {{ .ConfirmationURL }},
+// que primero pasa por el endpoint GET /auth/v1/verify de Supabase). Ese
+// endpoint consume el token de un solo uso con solo visitarlo — y Gmail (y
+// varios antivirus/filtros corporativos) "pre-visitan" los enlaces de un
+// correo para escanearlos antes de que la persona le dé clic, así que el
+// enlace ya llegaba gastado al clic real. Al apuntar al token_hash directo a
+// esta página, un prefetch que no ejecuta JS no consume nada: solo
+// verifyOtp() —desde el navegador de la persona— lo hace. Se deja el
+// fallback a ?code= (exchangeCodeForSession) por si queda algún correo de
+// recuperación en tránsito con la plantilla vieja.
 export function ResetPasswordView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,18 +32,29 @@ export function ResetPasswordView() {
   const confirmId = useId();
 
   useEffect(() => {
+    const tokenHash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
     const code = searchParams.get("code");
-    if (!code) {
-      setStage("invalido");
+    const supabase = createClient();
+
+    if (tokenHash && type === "recovery") {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" }).then(({ error: verifyError }) => {
+        setStage(verifyError ? "invalido" : "listo");
+      });
       return;
     }
 
-    const supabase = createClient();
-    supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
-      setStage(exchangeError ? "invalido" : "listo");
-    });
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
+        setStage(exchangeError ? "invalido" : "listo");
+      });
+      return;
+    }
+
+    setStage("invalido");
     // Solo debe correr una vez, al montar — searchParams es estable dentro
-    // de esta misma carga de página (el code no cambia sin recargar).
+    // de esta misma carga de página (ni el token_hash ni el code cambian
+    // sin recargar).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
