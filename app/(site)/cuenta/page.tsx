@@ -12,6 +12,9 @@ import {
 } from "@/components/account/Club57MemberPanel";
 import type { Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
 import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
+import { todayInStoreTimezone } from "@/lib/marketing/visibility";
+import type { PromoTipo } from "@/lib/club57/promociones/config";
+import { buildMemberPromoCards, type MemberPromoCard } from "@/lib/club57/promociones/vigencia";
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
 // app/layout.tsx.
@@ -66,6 +69,8 @@ export default async function CuentaPage({
   let pedidos: Club57OrderRow[] = [];
   let montoPorPunto = 50;
   let bonoReferidoPendientePts: number | null = null;
+  const hoy = todayInStoreTimezone();
+  let promociones: MemberPromoCard[] = buildMemberPromoCards([], hoy);
 
   if (user) {
     // Los puntos 'pendiente' cuya fecha_disponible ya llegó se pasan a
@@ -75,8 +80,16 @@ export default async function CuentaPage({
     // el ledger para que el saldo mostrado ya refleje la transición.
     await supabase.rpc("promote_due_club57_points");
 
-    const [profileResult, memberResult, ledgerResult, catalogResult, redemptionsResult, ordersResult, configResult] =
-      await Promise.all([
+    const [
+      profileResult,
+      memberResult,
+      ledgerResult,
+      catalogResult,
+      redemptionsResult,
+      ordersResult,
+      configResult,
+      promocionesResult,
+    ] = await Promise.all([
         supabase.from("profiles").select("full_name, referral_code").eq("id", user.id).single(),
         supabase.from("club57_members").select("referred_by").eq("id", user.id).maybeSingle(),
         supabase
@@ -102,9 +115,21 @@ export default async function CuentaPage({
           .eq("customer_email", user.email ?? "")
           .order("created_at", { ascending: false }),
         supabase.from("club57_config").select("monto_por_punto, puntos_referido").maybeSingle(),
+        // Solo id, tipo y fechas — la tabla base no es legible para el
+        // miembro (ver migración 20261006010000).
+        supabase.from("club57_promociones_vigentes").select("id, tipo, vigencia_inicio, vigencia_fin"),
       ]);
 
     profile = profileResult.data;
+    promociones = buildMemberPromoCards(
+      (promocionesResult.data ?? []).map((row) => ({
+        id: row.id as string,
+        tipo: row.tipo as PromoTipo,
+        inicio: row.vigencia_inicio as string,
+        fin: row.vigencia_fin as string,
+      })),
+      hoy
+    );
 
     const ledgerRows = ledgerResult.data ?? [];
     historial = ledgerRows;
@@ -199,6 +224,8 @@ export default async function CuentaPage({
             catalogo={catalogo}
             misCanjes={misCanjes}
             pedidos={pedidos}
+            promociones={promociones}
+            hoy={hoy}
           />
         </>
       ) : (

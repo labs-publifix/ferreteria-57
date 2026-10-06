@@ -109,3 +109,52 @@ export const CLUB57_CATALOG_COLUMNS = [
       "Número — costo en pesos del artículo. Se usa para calcular los puntos requeridos según la configuración vigente de Club 57 (editable fila por fila antes de importar).",
   },
 ] as const satisfies readonly ImportColumnDef[];
+
+// Liquidaciones del Mes (Club 57): el Excel es la fuente de verdad del PDF
+// que descargan los miembros. Mismo formato que el archivo que ya usa el
+// equipo; "Existencias" y "Costo sin impuesto" se aceptan pero no se
+// imprimen en el PDF.
+export const LIQUIDACIONES_COLUMNS = [
+  {
+    key: "codigos",
+    header: "Codigos",
+    required: true,
+    example: "26400",
+    format: "Texto o número — código del producto. Se imprime en el PDF.",
+  },
+  {
+    key: "descripcion",
+    header: "Descripcion",
+    required: true,
+    example: "Pulidora 10' 110W, PRETUL",
+    format: "Texto — se imprime tal cual en el PDF.",
+  },
+  {
+    key: "cantidad",
+    header: "Cantidad",
+    required: true,
+    example: "2",
+    format: "Número entero (0 o más) — piezas disponibles. Se imprime en el PDF como \"Piezas\".",
+  },
+  {
+    key: "existencias",
+    header: "Existencias",
+    required: false,
+    example: "Default",
+    format: "Texto libre, uso interno. No se imprime en el PDF.",
+  },
+  {
+    key: "costo sin impuesto",
+    header: "Costo sin impuesto",
+    required: false,
+    example: "517.24",
+    format: "Número, uso interno. No se imprime en el PDF.",
+  },
+  {
+    key: "costo con impuesto",
+    header: "Costo con impuesto",
+    required: true,
+    example: "600",
+    format: "Número mayor a 0 — precio de liquidación con impuestos. Es el precio que se imprime en el PDF.",
+  },
+] as const satisfies readonly ImportColumnDef[];

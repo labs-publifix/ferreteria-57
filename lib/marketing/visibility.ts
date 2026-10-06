@@ -5,13 +5,13 @@
 // directo. en-CA formatea como YYYY-MM-DD, igual que los inputs type=date
 // y las columnas `date` de Postgres — comparables como texto sin
 // convertir nada más.
-export function todayInStoreTimezone(): string {
+export function todayInStoreTimezone(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Mexico_City",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date());
+  }).format(now);
 }
 
 // Suma días de calendario a una fecha "YYYY-MM-DD" ya resuelta en huso de
