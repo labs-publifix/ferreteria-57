@@ -1,0 +1,53 @@
+/* react-day-picker con tokens de marca. Texto negro sobre naranja (5.93:1,
+   pasa AA) — el blanco por defecto de la librería da 2.94:1. */
+.promo-calendar .rdp-root {
+  --rdp-accent-color: #ff6600;
+  --rdp-accent-background-color: #ffe3cf;
+  --rdp-day-height: 42px;
+  --rdp-day-width: 42px;
+  --rdp-day_button-height: 40px;
+  --rdp-day_button-width: 40px;
+  --rdp-range_start-color: #1a1a1a;
+  --rdp-range_end-color: #1a1a1a;
+  --rdp-range_middle-color: #1a1a1a;
+  --rdp-today-color: #1a1a1a;
+  --rdp-disabled-opacity: 0.35;
+  --rdp-nav_button-height: 2.75rem;
+  --rdp-nav_button-width: 2.75rem;
+  color: #1a1a1a;
+  font-size: 0.875rem;
+}
+
+.promo-calendar .rdp-month_caption {
+  font-family: var(--font-russo-one), sans-serif;
+  text-transform: uppercase;
+  color: #3f515a;
+}
+
+.promo-calendar .rdp-chevron {
+  fill: #3f515a;
+}
+
+.promo-calendar .rdp-today:not(.rdp-outside) .rdp-day_button {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.promo-calendar .rdp-day_button:focus-visible,
+.promo-calendar .rdp-button_previous:focus-visible,
+.promo-calendar .rdp-button_next:focus-visible {
+  outline: 2px solid #3f515a;
+  outline-offset: 2px;
+}
+
+/* Días ya ocupados por otra promoción publicada del mismo tipo. */
+.promo-calendar .rdp-ocupado:not(.rdp-selected) .rdp-day_button {
+  background: repeating-linear-gradient(135deg, #f2f1ef 0 4px, #e2e0dc 4px 8px);
+  color: #3f515a;
+  text-decoration: line-through;
+}
+
+.promo-calendar .rdp-ocupado.rdp-selected .rdp-day_button {
+  border-color: #b91c1c;
+}

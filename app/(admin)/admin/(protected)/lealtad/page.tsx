@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gift, RefreshCw, Settings, Users } from "lucide-react";
+import { Gift, Megaphone, RefreshCw, Settings, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "Club 57 — Panel de administración" };
 
@@ -28,6 +28,12 @@ const SECTIONS = [
     label: "Canjes",
     description: "Solicitudes de canje pendientes de entrega en tienda.",
     icon: RefreshCw,
+  },
+  {
+    href: "/admin/lealtad/promociones",
+    label: "Promociones",
+    description: "PDFs de Promo Truper y de temporada con vigencia, que los miembros descargan.",
+    icon: Megaphone,
   },
 ];
 
