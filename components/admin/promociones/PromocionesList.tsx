@@ -25,6 +25,7 @@ import {
   type PromoPublicadaRef,
   type PromoRangoParcial,
 } from "./PromoRangePicker";
+import { describeActionFailure } from "@/lib/admin/describeActionFailure";
 
 export interface PromoListRow {
   id: string;
@@ -81,8 +82,13 @@ export function PromocionesList({
   async function runRowAction(id: string, action: () => Promise<{ error?: string }>) {
     setPendingId(id);
     setRowErrors((current) => ({ ...current, [id]: "" }));
-    const result = await action();
-    if (result.error) setRowErrors((current) => ({ ...current, [id]: result.error! }));
+    let message: string | undefined;
+    try {
+      message = (await action()).error;
+    } catch (actionError) {
+      message = (await describeActionFailure(actionError, "completar la acción")).message;
+    }
+    if (message) setRowErrors((current) => ({ ...current, [id]: message! }));
     setPendingId(null);
     router.refresh();
   }
@@ -110,9 +116,14 @@ export function PromocionesList({
     if (!editTarget || !editRango.inicio || !editRango.fin) return;
     setIsSaving(true);
     setEditError(null);
-    const result = await setPromoVigencia(editTarget.id, editRango.inicio, editRango.fin);
+    let message: string | undefined;
+    try {
+      message = (await setPromoVigencia(editTarget.id, editRango.inicio, editRango.fin)).error;
+    } catch (saveError) {
+      message = (await describeActionFailure(saveError, "guardar las fechas")).message;
+    }
     setIsSaving(false);
-    if (result.error) return setEditError(result.error);
+    if (message) return setEditError(message);
     setEditTarget(null);
     router.refresh();
   }
