@@ -18,10 +18,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   const { data: promo } = await staff.supabase
     .from("club57_promociones")
-    .select("archivo_path")
+    .select("archivo_path, archivo_eliminado_at")
     .eq("id", params.id)
     .maybeSingle();
   if (!promo) return new NextResponse("Promoción no encontrada.", { status: 404 });
+  if (promo.archivo_eliminado_at) return new NextResponse("El PDF de esta promoción ya se eliminó.", { status: 410 });
 
   const { data, error } = await createAdminClient()
     .storage.from(PROMO_BUCKET)

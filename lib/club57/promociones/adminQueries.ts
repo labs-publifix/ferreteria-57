@@ -14,6 +14,7 @@ export interface PromoAdminRow {
   bytes: number;
   descargasUnicas: number;
   descargasTotales: number;
+  archivoEliminado: boolean;
 }
 
 // Lectura del panel admin (RLS: solo is_admin()). Las descargas únicas
@@ -24,7 +25,7 @@ export async function loadPromocionesAdmin(
 ): Promise<{ rows: PromoAdminRow[]; error: string | null }> {
   let query = supabase
     .from("club57_promociones")
-    .select("id, tipo, titulo, estado, vigencia_inicio, vigencia_fin, archivo_nombre_original, archivo_bytes, created_at")
+    .select("id, tipo, titulo, estado, vigencia_inicio, vigencia_fin, archivo_nombre_original, archivo_bytes, archivo_eliminado_at, created_at")
     .order("created_at", { ascending: false });
   if (tipo) query = query.eq("tipo", tipo);
 
@@ -47,6 +48,7 @@ export async function loadPromocionesAdmin(
     bytes: Number(row.archivo_bytes),
     descargasUnicas: resumen.get(row.id as string)?.unicas ?? 0,
     descargasTotales: resumen.get(row.id as string)?.totales ?? 0,
+    archivoEliminado: Boolean(row.archivo_eliminado_at),
   }));
   return { rows, error: null };
 }

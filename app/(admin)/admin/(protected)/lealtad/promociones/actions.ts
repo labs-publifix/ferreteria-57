@@ -304,6 +304,51 @@ export async function archivePromo(id: string): Promise<PromoActionResult> {
   return {};
 }
 
+// Libera espacio en Storage. Archivada sin descargas: se borra completa.
+// Archivada con descargas: se borra solo el PDF y la fila queda como
+// historial (fechas y descargas únicas) con archivo_eliminado_at.
+export async function deleteArchivedPromo(id: string): Promise<PromoActionResult & { conservada?: boolean }> {
+  const session = await requireAdmin();
+  if (!session) return { error: "No autorizado." };
+  if (!UUID_PATTERN.test(id)) return { error: "Promoción no encontrada." };
+
+  const { data: promo, error: fetchError } = await session.supabase
+    .from("club57_promociones")
+    .select("id, estado, archivo_path, archivo_eliminado_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (fetchError) return { error: `No se pudo leer la promoción: ${fetchError.message}` };
+  if (!promo) return { error: "Promoción no encontrada." };
+  if (promo.estado !== "archivada") return { error: "Archiva la promoción antes de eliminarla." };
+  if (promo.archivo_eliminado_at) return { error: "El PDF de esta promoción ya se eliminó." };
+
+  const { count, error: countError } = await session.supabase
+    .from("club57_promo_descargas")
+    .select("id", { count: "exact", head: true })
+    .eq("promocion_id", id);
+  if (countError) return { error: `No se pudieron revisar las descargas: ${countError.message}` };
+
+  const { error: removeError } = await createAdminClient()
+    .storage.from(PROMO_BUCKET)
+    .remove([promo.archivo_path as string]);
+  if (removeError) return { error: "No se pudo eliminar el PDF. Intenta de nuevo." };
+
+  if (!count) {
+    const { error } = await session.supabase.from("club57_promociones").delete().eq("id", id);
+    if (error) return { error: translateDbError(error, "No se pudo eliminar la promoción") };
+    revalidatePromociones();
+    return {};
+  }
+
+  const { error } = await session.supabase
+    .from("club57_promociones")
+    .update({ archivo_eliminado_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { error: translateDbError(error, "No se pudo registrar la eliminación del PDF") };
+  revalidatePromociones();
+  return { conservada: true };
+}
+
 export async function deletePromoDraft(id: string): Promise<PromoActionResult> {
   const session = await requireAdmin();
   if (!session) return { error: "No autorizado." };

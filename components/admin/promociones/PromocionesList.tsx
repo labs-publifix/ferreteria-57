@@ -15,6 +15,7 @@ import {
 } from "@/lib/club57/promociones/vigencia";
 import {
   archivePromo,
+  deleteArchivedPromo,
   deletePromoDraft,
   setPromoVigencia,
 } from "@/app/(admin)/admin/(protected)/lealtad/promociones/actions";
@@ -35,10 +36,25 @@ export interface PromoListRow {
   bytes: number;
   descargasUnicas: number;
   descargasTotales: number;
+  archivoEliminado: boolean;
 }
 
 const linkActionClass =
   "inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 font-sans text-sm font-medium text-brand-slate hover:bg-brand-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate disabled:opacity-50";
+
+function confirmDescription(kind: "archivar" | "eliminar" | "eliminar-archivada", row: PromoListRow): string {
+  if (kind === "archivar") {
+    return `"${row.titulo}" quedará inactiva de inmediato: los miembros ya no podrán descargarla. Esta acción no se puede deshacer.`;
+  }
+  if (kind === "eliminar") {
+    return `¿Eliminar el borrador "${row.titulo}" y su archivo? Esta acción no se puede deshacer.`;
+  }
+  if (row.descargasTotales === 0) {
+    return `Se eliminará "${row.titulo}" por completo, junto con su PDF (${formatBytes(row.bytes)}). Nadie la descargó. Esta acción no se puede deshacer.`;
+  }
+  const unicas = `${row.descargasUnicas} ${row.descargasUnicas === 1 ? "descarga única" : "descargas únicas"}`;
+  return `Se eliminará el PDF de "${row.titulo}" (${formatBytes(row.bytes)}) para liberar espacio. Se conserva el registro con sus fechas y ${unicas}. Esta acción no se puede deshacer.`;
+}
 
 export function PromocionesList({
   rows,
@@ -55,7 +71,7 @@ export function PromocionesList({
   const editTitleId = useId();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
-  const [confirm, setConfirm] = useState<{ kind: "archivar" | "eliminar"; row: PromoListRow } | null>(null);
+  const [confirm, setConfirm] = useState<{ kind: "archivar" | "eliminar" | "eliminar-archivada"; row: PromoListRow } | null>(null);
   const [editTarget, setEditTarget] = useState<PromoListRow | null>(null);
   const [editRango, setEditRango] = useState<PromoRangoParcial>({});
   const [editError, setEditError] = useState<string | null>(null);
@@ -74,7 +90,13 @@ export function PromocionesList({
     if (!confirm) return;
     const { kind, row } = confirm;
     setConfirm(null);
-    void runRowAction(row.id, () => (kind === "archivar" ? archivePromo(row.id) : deletePromoDraft(row.id)));
+    void runRowAction(row.id, () =>
+      kind === "archivar"
+        ? archivePromo(row.id)
+        : kind === "eliminar-archivada"
+          ? deleteArchivedPromo(row.id)
+          : deletePromoDraft(row.id)
+    );
   }
 
   function openEdit(row: PromoListRow) {
@@ -128,7 +150,7 @@ export function PromocionesList({
                   {row.inicio && row.fin ? formatRangoLegible({ inicio: row.inicio, fin: row.fin }) : "Sin fechas todavía"}
                 </p>
                 <p className="mt-0.5 break-words font-sans text-xs text-brand-slate">
-                  {row.nombre} · {formatBytes(row.bytes)}
+                  {row.archivoEliminado ? "PDF eliminado para liberar espacio" : `${row.nombre} · ${formatBytes(row.bytes)}`}
                   {row.estado !== "borrador" && (
                     <>
                       {" "}
@@ -158,7 +180,7 @@ export function PromocionesList({
                       Eliminar
                     </button>
                   </>
-                ) : (
+                ) : row.archivoEliminado ? null : (
                   <>
                     <a
                       href={`/api/admin/lealtad/promociones/${row.id}/vista-previa`}
@@ -184,6 +206,16 @@ export function PromocionesList({
                         </button>
                       </>
                     )}
+                    {row.estado === "archivada" && (
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => setConfirm({ kind: "eliminar-archivada", row })}
+                        className={`${linkActionClass} text-red-700`}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -194,14 +226,14 @@ export function PromocionesList({
 
       <ConfirmDialog
         open={confirm !== null}
-        title={confirm?.kind === "archivar" ? "Archivar promoción" : "Eliminar borrador"}
-        description={
+        title={
           confirm?.kind === "archivar"
-            ? `"${confirm.row.titulo}" quedará inactiva de inmediato: los miembros ya no podrán descargarla. Esta acción no se puede deshacer.`
-            : confirm
-              ? `¿Eliminar el borrador "${confirm.row.titulo}" y su archivo? Esta acción no se puede deshacer.`
-              : undefined
+            ? "Archivar promoción"
+            : confirm?.kind === "eliminar-archivada"
+              ? "Eliminar promoción archivada"
+              : "Eliminar borrador"
         }
+        description={confirm ? confirmDescription(confirm.kind, confirm.row) : undefined}
         confirmLabel={confirm?.kind === "archivar" ? "Archivar" : "Eliminar"}
         tone="danger"
         onConfirm={handleConfirm}
