@@ -16,6 +16,7 @@ import {
   finalizePromoUpload,
   type FinalizePromoUploadResult,
 } from "@/app/(admin)/admin/(protected)/lealtad/promociones/actions";
+import { describeActionFailure } from "@/lib/admin/describeActionFailure";
 
 export interface UploadedPromoFuente {
   nombre: string;
@@ -62,6 +63,12 @@ const FORMATOS = {
   },
 } as const;
 
+// Errores con mensaje propio (ya listo para mostrar), a diferencia de una
+// excepción del framework al llamar a una Server Action.
+class UploadError extends Error {
+  name = "UploadError";
+}
+
 const moneyFormatter = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
 // PUT directo a Storage con la URL firmada (nunca pasa por Vercel, así que
@@ -90,11 +97,11 @@ function uploadWithProgress(
       // Storage responde el exceso de tamaño como HTTP 400 con
       // statusCode "413" / EntityTooLarge en el cuerpo.
       if (xhr.status === 413 || /EntityTooLarge|"statusCode":"413"/.test(xhr.responseText)) {
-        return reject(new Error(`El archivo supera el máximo de ${formatBytes(maxBytes)}.`));
+        return reject(new UploadError(`El archivo supera el máximo de ${formatBytes(maxBytes)}.`));
       }
-      reject(new Error("No se pudo subir el archivo. Intenta de nuevo."));
+      reject(new UploadError("No se pudo subir el archivo. Intenta de nuevo."));
     };
-    xhr.onerror = () => reject(new Error("Se perdió la conexión durante la subida. Intenta de nuevo."));
+    xhr.onerror = () => reject(new UploadError("Se perdió la conexión durante la subida. Intenta de nuevo."));
     xhr.send(file);
   });
 }
@@ -151,7 +158,7 @@ export function PromoFileDropzone({
       if (draft) await onBeforeReplace();
 
       const prepared = await createPromoUploadUrl({ tipo, fileSize: file.size });
-      if (prepared.error || !prepared.signedUrl || !prepared.path) throw new Error(prepared.error ?? "No se pudo preparar la subida.");
+      if (prepared.error || !prepared.signedUrl || !prepared.path) throw new UploadError(prepared.error ?? "No se pudo preparar la subida.");
 
       await uploadWithProgress(prepared.signedUrl, file, config.contentType, config.maxBytes, (percent) =>
         setPhase({ kind: "uploading", fileName: file.name, fileSize: file.size, percent })
@@ -167,11 +174,18 @@ export function PromoFileDropzone({
         }
       } else {
         const result = await finalizePromoUpload({ tipo, path: prepared.path, originalName: file.name });
-        if (result.error || !result.promo) throw new Error(result.error ?? "No se pudo verificar el archivo.");
+        if (result.error || !result.promo) throw new UploadError(result.error ?? "No se pudo verificar el archivo.");
         onUploaded(result.promo);
       }
     } catch (uploadError) {
-      setError({ message: uploadError instanceof Error ? uploadError.message : "No se pudo subir el archivo." });
+      // Los errores propios (validación, Storage) ya traen un mensaje en
+      // español; una excepción del framework se diagnostica (sesión, red).
+      setError({
+        message:
+          uploadError instanceof UploadError
+            ? uploadError.message
+            : (await describeActionFailure(uploadError, "subir el archivo")).message,
+      });
     }
     setPhase({ kind: "idle" });
   }

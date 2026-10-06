@@ -15,6 +15,7 @@ import {
   type PopupBannerActionResult,
 } from "@/app/(admin)/admin/(protected)/pop-up-banner/actions";
 import type { PopupBackgroundType } from "@/types/popup";
+import { describeActionFailure } from "@/lib/admin/describeActionFailure";
 
 const MAX_LENGTHS = { nombre: 60, titulo: 35, texto: 100, ctaLabel: 20 };
 
@@ -187,6 +188,7 @@ export function PopUpBannerForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRetiring, setIsRetiring] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionLost, setSessionLost] = useState(false);
   const [currentlyActive, setCurrentlyActive] = useState(initialActivo ?? false);
 
   const previewData: PopupCardContentData = {
@@ -220,6 +222,7 @@ export function PopUpBannerForm({
     event.preventDefault();
     setIsSubmitting(true);
     setError(null);
+    setSessionLost(false);
 
     const formData = new FormData();
     formData.set("nombre", values.nombre);
@@ -257,8 +260,10 @@ export function PopUpBannerForm({
       }
 
       router.push("/admin/pop-up-banner");
-    } catch {
-      setError("Ocurrió un error inesperado al guardar. Intenta de nuevo.");
+    } catch (submitError) {
+      const failure = await describeActionFailure(submitError, "guardar el banner");
+      setError(failure.message);
+      setSessionLost(failure.sessionLost);
       setIsSubmitting(false);
     }
   }
@@ -276,8 +281,10 @@ export function PopUpBannerForm({
       setCurrentlyActive(false);
       setValues((current) => ({ ...current, activo: false }));
       router.refresh();
-    } catch {
-      setError("Ocurrió un error inesperado. Intenta de nuevo.");
+    } catch (retireError) {
+      const failure = await describeActionFailure(retireError, "retirar el banner");
+      setError(failure.message);
+      setSessionLost(failure.sessionLost);
     } finally {
       setIsRetiring(false);
     }
@@ -291,9 +298,19 @@ export function PopUpBannerForm({
         noValidate
       >
         {error && (
-          <p role="alert" className="rounded-md bg-red-50 px-4 py-2.5 font-sans text-sm text-red-700">
-            {error}
-          </p>
+          <div role="alert" className="rounded-md bg-red-50 px-4 py-2.5 font-sans text-sm text-red-700">
+            <p>{error}</p>
+            {sessionLost && (
+              <a
+                href="/admin/login"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1.5 inline-flex min-h-11 items-center font-semibold text-red-800 underline underline-offset-2"
+              >
+                Iniciar sesión en otra pestaña
+              </a>
+            )}
+          </div>
         )}
 
         <CharLimitedField

@@ -27,6 +27,7 @@ import {
   type PromoRangoParcial,
 } from "./PromoRangePicker";
 import { PromoPublishedConfirmation, type PromoPublishedSummary } from "./PromoPublishedConfirmation";
+import { describeActionFailure } from "@/lib/admin/describeActionFailure";
 
 const STEPS = ["Archivo", "Vigencia", "Revisión", "Confirmación"] as const;
 
@@ -77,8 +78,8 @@ export function PromoWizard({
       const result = await action();
       if (result && result.error) setError(result.error);
       else next?.();
-    } catch {
-      setError("Algo salió mal. Revisa tu conexión e intenta de nuevo.");
+    } catch (actionError) {
+      setError((await describeActionFailure(actionError, "guardar el cambio")).message);
     }
     setBusy(false);
   }
