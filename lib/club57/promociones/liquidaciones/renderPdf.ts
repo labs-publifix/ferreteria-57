@@ -20,7 +20,7 @@ const PAGE_WIDTH = 612;
 const PAGE_HEIGHT = 792;
 const MARGIN = 40;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
-const FOOTER_HEIGHT = 46;
+const FOOTER_HEIGHT = 58;
 
 const COLUMNS = [
   { key: "codigo", label: "CÓDIGO", width: 72, align: "left" },
@@ -205,13 +205,15 @@ export async function renderLiquidacionPdf(input: {
   pages.forEach((current, index) => {
     current.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: FOOTER_HEIGHT - 8, color: SLATE });
     const legal = "Válidos únicamente con pago de contado.";
-    current.drawText(legal, { x: MARGIN, y: 22, font: fonts.bold, size: 8.5, color: WHITE });
+    current.drawText(legal, { x: MARGIN, y: 34, font: fonts.bold, size: 8.5, color: WHITE });
+    const disclaimer = "Las existencias están sujetas a cambio sin previo aviso.";
+    current.drawText(disclaimer, { x: MARGIN, y: 22, font: fonts.regular, size: 8, color: WHITE });
     const store = `Ferretería 57 · ${STORE_ADDRESS} · Tel. ${STORE_PHONE_DISPLAY}`;
     current.drawText(store, { x: MARGIN, y: 10, font: fonts.regular, size: 7, color: WHITE });
     const pageLabel = `Página ${index + 1} de ${pages.length}`;
     current.drawText(pageLabel, {
       x: PAGE_WIDTH - MARGIN - fonts.regular.widthOfTextAtSize(pageLabel, 8),
-      y: 22,
+      y: 34,
       font: fonts.regular,
       size: 8,
       color: WHITE,
