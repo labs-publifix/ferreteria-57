@@ -15,6 +15,8 @@ export interface PromoAdminRow {
   descargasUnicas: number;
   descargasTotales: number;
   archivoEliminado: boolean;
+  /** Solo Liquidaciones: Excel de origen. */
+  fuente: { nombre: string; productos: number } | null;
 }
 
 // Lectura del panel admin (RLS: solo is_admin()). Las descargas únicas
@@ -25,7 +27,7 @@ export async function loadPromocionesAdmin(
 ): Promise<{ rows: PromoAdminRow[]; error: string | null }> {
   let query = supabase
     .from("club57_promociones")
-    .select("id, tipo, titulo, estado, vigencia_inicio, vigencia_fin, archivo_nombre_original, archivo_bytes, archivo_eliminado_at, created_at")
+    .select("id, tipo, titulo, estado, vigencia_inicio, vigencia_fin, archivo_nombre_original, archivo_bytes, archivo_eliminado_at, fuente_excel_nombre, fuente_productos, created_at")
     .order("created_at", { ascending: false });
   if (tipo) query = query.eq("tipo", tipo);
 
@@ -49,6 +51,9 @@ export async function loadPromocionesAdmin(
     descargasUnicas: resumen.get(row.id as string)?.unicas ?? 0,
     descargasTotales: resumen.get(row.id as string)?.totales ?? 0,
     archivoEliminado: Boolean(row.archivo_eliminado_at),
+    fuente: row.fuente_excel_nombre
+      ? { nombre: row.fuente_excel_nombre as string, productos: Number(row.fuente_productos ?? 0) }
+      : null,
   }));
   return { rows, error: null };
 }

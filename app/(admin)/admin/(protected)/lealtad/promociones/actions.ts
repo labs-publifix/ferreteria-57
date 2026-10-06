@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/supabase/requireStaff";
 import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 import {
+  LIQUIDACION_EXCEL_MAX_BYTES,
   PROMO_BUCKET,
   PROMO_MAX_BYTES,
   isPromoTipoHabilitado,
@@ -20,7 +21,10 @@ import {
   isIsoDate,
   promoEstadoVisible,
   type PromoEstadoVisible,
+  type PromoRango,
 } from "@/lib/club57/promociones/vigencia";
+import { parseLiquidacionExcel, type LiquidacionProducto } from "@/lib/club57/promociones/liquidaciones/parseExcel";
+import { renderLiquidacionPdf } from "@/lib/club57/promociones/liquidaciones/renderPdf";
 
 // Promociones es exclusivo de admin (un vendedor no publica contenido).
 // Cada acción lo verifica por su cuenta, igual que el resto del panel.
@@ -90,19 +94,24 @@ export interface CreatePromoUploadUrlResult {
   path?: string;
 }
 
-// El PDF NO pasa por Vercel (límite de ~4.5 MB por request): el navegador
-// lo sube directo a Storage con esta URL firmada de un solo uso, y después
-// llama a finalizePromoUpload para validarlo y registrarlo.
+// El archivo NO pasa por Vercel (límite de ~4.5 MB por request): el
+// navegador lo sube directo a Storage con esta URL firmada de un solo uso,
+// y después llama a finalizePromoUpload (PDF) o finalizeLiquidacionUpload
+// (Excel de Liquidaciones) para validarlo y registrarlo.
 export async function createPromoUploadUrl(input: { tipo: string; fileSize: number }): Promise<CreatePromoUploadUrlResult> {
   const session = await requireAdmin();
   if (!session) return { error: "No autorizado." };
   if (!isPromoTipoHabilitado(input.tipo)) return { error: "Tipo de promoción no válido." };
+  const esExcel = promoTipoInfo(input.tipo).formato === "excel";
+  const maxBytes = esExcel ? LIQUIDACION_EXCEL_MAX_BYTES : PROMO_MAX_BYTES;
   if (!Number.isFinite(input.fileSize) || input.fileSize <= 0) return { error: "El archivo está vacío." };
-  if (input.fileSize > PROMO_MAX_BYTES) {
-    return { error: `El PDF pesa ${formatBytes(input.fileSize)}; el máximo permitido es ${MAX_MB_LABEL}.` };
+  if (input.fileSize > maxBytes) {
+    return {
+      error: `${esExcel ? "El Excel" : "El PDF"} pesa ${formatBytes(input.fileSize)}; el máximo permitido es ${formatBytes(maxBytes)}.`,
+    };
   }
 
-  const path = `${input.tipo}/${randomUUID()}.pdf`;
+  const path = esExcel ? `${input.tipo}/excel/${randomUUID()}.xlsx` : `${input.tipo}/${randomUUID()}.pdf`;
   const { data, error } = await createAdminClient().storage.from(PROMO_BUCKET).createSignedUploadUrl(path);
   if (error || !data) return { error: "No se pudo preparar la subida. Intenta de nuevo." };
   return { signedUrl: data.signedUrl, path };
@@ -122,6 +131,7 @@ export async function finalizePromoUpload(input: {
   if (!session) return { error: "No autorizado." };
   if (!isPromoTipoHabilitado(input.tipo)) return { error: "Tipo de promoción no válido." };
   const tipo = input.tipo;
+  if (promoTipoInfo(tipo).formato !== "pdf") return { error: "Este tipo de promoción se carga con Excel." };
 
   // Solo rutas con la forma exacta que genera createPromoUploadUrl.
   const pathPattern = new RegExp(`^${tipo}/[0-9a-f-]{36}\\.pdf$`);
@@ -183,6 +193,125 @@ export interface PromoActionResult {
   error?: string;
 }
 
+// ---------------------------------------------------------------------
+// Liquidaciones del Mes: Excel (fuente de verdad) -> PDF de marca
+// ---------------------------------------------------------------------
+
+const ZIP_SIGNATURE = [0x50, 0x4b, 0x03, 0x04];
+
+function liquidacionPdfNombre(rango: PromoRango | null): string {
+  if (!rango) return "Liquidaciones del Mes - Ferreteria 57.pdf";
+  return `Liquidaciones del Mes - ${formatRangoLegible(rango).replace(/^Del /, "del ").replace(/^El /, "el ")}.pdf`;
+}
+
+type GeneratedPdf = { path: string; nombre: string; bytes: number; sha256: string };
+
+// Lee el Excel guardado, genera el PDF con la vigencia dada y lo sube al
+// bucket privado. Quien llama decide qué hacer con el PDF anterior.
+async function generateLiquidacionPdf(
+  excelPath: string,
+  rango: PromoRango | null
+): Promise<{ error: string; detalles?: string[] } | { pdf: GeneratedPdf; productos: LiquidacionProducto[]; sinPiezas: number }> {
+  const storage = createAdminClient().storage.from(PROMO_BUCKET);
+  const { data: blob, error: downloadError } = await storage.download(excelPath);
+  if (downloadError || !blob) return { error: "No se pudo leer el Excel de la liquidación. Intenta de nuevo." };
+
+  const parsed = await parseLiquidacionExcel(new Uint8Array(await blob.arrayBuffer()));
+  if (!parsed.ok) return { error: parsed.error, detalles: parsed.detalles };
+
+  const pdfBytes = await renderLiquidacionPdf({ productos: parsed.productos, rango });
+  const path = `liquidaciones/${randomUUID()}.pdf`;
+  const { error: uploadError } = await storage.upload(path, pdfBytes, { contentType: "application/pdf", upsert: false });
+  if (uploadError) return { error: "No se pudo guardar el PDF generado. Intenta de nuevo." };
+
+  return {
+    pdf: {
+      path,
+      nombre: liquidacionPdfNombre(rango),
+      bytes: pdfBytes.byteLength,
+      sha256: createHash("sha256").update(pdfBytes).digest("hex"),
+    },
+    productos: parsed.productos,
+    sinPiezas: parsed.sinPiezas,
+  };
+}
+
+export interface FinalizeLiquidacionResult {
+  error?: string;
+  detalles?: string[];
+  promo?: NonNullable<FinalizePromoUploadResult["promo"]> & {
+    fuente: { nombre: string; productos: number; sinPiezas: number; preview: LiquidacionProducto[] };
+  };
+}
+
+export async function finalizeLiquidacionUpload(input: { path: string; originalName: string }): Promise<FinalizeLiquidacionResult> {
+  const session = await requireAdmin();
+  if (!session) return { error: "No autorizado." };
+  if (!/^liquidaciones\/excel\/[0-9a-f-]{36}\.xlsx$/.test(input.path)) return { error: "Ruta de archivo no válida." };
+
+  const storage = createAdminClient().storage.from(PROMO_BUCKET);
+  const reject = async (message: string, detalles?: string[]): Promise<FinalizeLiquidacionResult> => {
+    await storage.remove([input.path]);
+    return { error: message, detalles };
+  };
+
+  const { data: blob, error: downloadError } = await storage.download(input.path);
+  if (downloadError || !blob) return { error: "No encontramos el archivo subido. Vuelve a intentarlo." };
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  if (bytes.byteLength > LIQUIDACION_EXCEL_MAX_BYTES) {
+    return reject(`El Excel pesa ${formatBytes(bytes.byteLength)}; el máximo permitido es ${formatBytes(LIQUIDACION_EXCEL_MAX_BYTES)}.`);
+  }
+  // Un .xlsx es un ZIP: firma "PK\x03\x04". Nunca se confía en la extensión.
+  if (!ZIP_SIGNATURE.every((byte, index) => bytes[index] === byte)) {
+    return reject("El archivo no es un Excel .xlsx válido. Guárdalo como \"Libro de Excel (.xlsx)\" y vuelve a subirlo.");
+  }
+
+  const generated = await generateLiquidacionPdf(input.path, null);
+  if ("error" in generated) return reject(generated.error, generated.detalles);
+
+  const nombreExcel = input.originalName.trim().slice(0, 255) || "liquidacion.xlsx";
+  const titulo = defaultTituloFromFilename(nombreExcel, `Liquidaciones ${todayInStoreTimezone()}`);
+  const { data: inserted, error: insertError } = await session.supabase
+    .from("club57_promociones")
+    .insert({
+      tipo: "liquidaciones",
+      titulo,
+      archivo_path: generated.pdf.path,
+      archivo_nombre_original: generated.pdf.nombre,
+      archivo_bytes: generated.pdf.bytes,
+      archivo_sha256: generated.pdf.sha256,
+      archivo_mime: "application/pdf",
+      fuente_excel_path: input.path,
+      fuente_excel_nombre: nombreExcel,
+      fuente_productos: generated.productos.length,
+      estado: "borrador",
+      created_by: session.userId,
+    })
+    .select("id")
+    .single();
+  if (insertError || !inserted) {
+    await storage.remove([generated.pdf.path]);
+    return reject(translateDbError(insertError ?? { message: "sin respuesta" }, "No se pudo registrar la liquidación"));
+  }
+
+  revalidatePromociones();
+  return {
+    promo: {
+      id: inserted.id,
+      titulo,
+      nombre: generated.pdf.nombre,
+      bytes: generated.pdf.bytes,
+      sha256: generated.pdf.sha256,
+      fuente: {
+        nombre: nombreExcel,
+        productos: generated.productos.length,
+        sinPiezas: generated.sinPiezas,
+        preview: generated.productos,
+      },
+    },
+  };
+}
+
 export async function updatePromoTitulo(id: string, titulo: string): Promise<PromoActionResult> {
   const session = await requireAdmin();
   if (!session) return { error: "No autorizado." };
@@ -200,7 +329,11 @@ export async function updatePromoTitulo(id: string, titulo: string): Promise<Pro
 // Paso 2 — Vigencia (también "Editar fechas" del listado)
 // ---------------------------------------------------------------------
 
-export async function setPromoVigencia(id: string, inicio: string, fin: string): Promise<PromoActionResult> {
+export async function setPromoVigencia(
+  id: string,
+  inicio: string,
+  fin: string
+): Promise<PromoActionResult & { archivo?: { nombre: string; bytes: number; sha256: string } }> {
   const session = await requireAdmin();
   if (!session) return { error: "No autorizado." };
   if (!UUID_PATTERN.test(id)) return { error: "Promoción no encontrada." };
@@ -209,7 +342,7 @@ export async function setPromoVigencia(id: string, inicio: string, fin: string):
 
   const { data: promo, error: fetchError } = await session.supabase
     .from("club57_promociones")
-    .select("id, tipo, estado, vigencia_inicio")
+    .select("id, tipo, estado, vigencia_inicio, archivo_path, fuente_excel_path")
     .eq("id", id)
     .maybeSingle();
   if (fetchError) return { error: `No se pudo leer la promoción: ${fetchError.message}` };
@@ -226,6 +359,33 @@ export async function setPromoVigencia(id: string, inicio: string, fin: string):
 
   const overlap = await findOverlapMessage(session, promo.tipo, { inicio, fin }, id);
   if (overlap) return { error: overlap };
+
+  // Liquidaciones: el PDF lleva la vigencia impresa, así que se vuelve a
+  // generar desde el mismo Excel con las fechas nuevas.
+  if (promo.tipo === "liquidaciones" && promo.fuente_excel_path) {
+    const generated = await generateLiquidacionPdf(promo.fuente_excel_path as string, { inicio, fin });
+    if ("error" in generated) return { error: generated.error };
+
+    const storage = createAdminClient().storage.from(PROMO_BUCKET);
+    const { error } = await session.supabase
+      .from("club57_promociones")
+      .update({
+        vigencia_inicio: inicio,
+        vigencia_fin: fin,
+        archivo_path: generated.pdf.path,
+        archivo_nombre_original: generated.pdf.nombre,
+        archivo_bytes: generated.pdf.bytes,
+        archivo_sha256: generated.pdf.sha256,
+      })
+      .eq("id", id);
+    if (error) {
+      await storage.remove([generated.pdf.path]);
+      return { error: translateDbError(error, "No se pudieron guardar las fechas") };
+    }
+    await storage.remove([promo.archivo_path as string]);
+    revalidatePromociones();
+    return { archivo: { nombre: generated.pdf.nombre, bytes: generated.pdf.bytes, sha256: generated.pdf.sha256 } };
+  }
 
   const { error } = await session.supabase
     .from("club57_promociones")
@@ -314,7 +474,7 @@ export async function deleteArchivedPromo(id: string): Promise<PromoActionResult
 
   const { data: promo, error: fetchError } = await session.supabase
     .from("club57_promociones")
-    .select("id, estado, archivo_path, archivo_eliminado_at")
+    .select("id, estado, archivo_path, fuente_excel_path, archivo_eliminado_at")
     .eq("id", id)
     .maybeSingle();
   if (fetchError) return { error: `No se pudo leer la promoción: ${fetchError.message}` };
@@ -330,7 +490,7 @@ export async function deleteArchivedPromo(id: string): Promise<PromoActionResult
 
   const { error: removeError } = await createAdminClient()
     .storage.from(PROMO_BUCKET)
-    .remove([promo.archivo_path as string]);
+    .remove([promo.archivo_path as string, promo.fuente_excel_path as string | null].filter((path): path is string => Boolean(path)));
   if (removeError) return { error: "No se pudo eliminar el PDF. Intenta de nuevo." };
 
   if (!count) {
@@ -359,13 +519,15 @@ export async function deletePromoDraft(id: string): Promise<PromoActionResult> {
     .delete()
     .eq("id", id)
     .eq("estado", "borrador")
-    .select("archivo_path");
+    .select("archivo_path, fuente_excel_path");
   if (error) return { error: translateDbError(error, "No se pudo eliminar") };
   if (!data || data.length === 0) return { error: "Solo se pueden eliminar borradores." };
 
   const { error: removeError } = await createAdminClient()
     .storage.from(PROMO_BUCKET)
-    .remove(data.map((row) => row.archivo_path as string));
+    .remove(
+      data.flatMap((row) => [row.archivo_path as string, row.fuente_excel_path as string | null]).filter((path): path is string => Boolean(path))
+    );
   if (removeError) console.error("[deletePromoDraft] no se pudo borrar el archivo:", removeError.message);
 
   revalidatePromociones();

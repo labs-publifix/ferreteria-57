@@ -37,6 +37,7 @@ export interface PromoListRow {
   descargasUnicas: number;
   descargasTotales: number;
   archivoEliminado: boolean;
+  fuente: { nombre: string; productos: number } | null;
 }
 
 const linkActionClass =
@@ -150,7 +151,11 @@ export function PromocionesList({
                   {row.inicio && row.fin ? formatRangoLegible({ inicio: row.inicio, fin: row.fin }) : "Sin fechas todavía"}
                 </p>
                 <p className="mt-0.5 break-words font-sans text-xs text-brand-slate">
-                  {row.archivoEliminado ? "PDF eliminado para liberar espacio" : `${row.nombre} · ${formatBytes(row.bytes)}`}
+                  {row.archivoEliminado
+                    ? "PDF eliminado para liberar espacio"
+                    : row.fuente
+                      ? `${row.fuente.nombre} · ${row.fuente.productos} ${row.fuente.productos === 1 ? "producto" : "productos"} · PDF ${formatBytes(row.bytes)}`
+                      : `${row.nombre} · ${formatBytes(row.bytes)}`}
                   {row.estado !== "borrador" && (
                     <>
                       {" "}
@@ -245,7 +250,12 @@ export function PromocionesList({
           <h2 id={editTitleId} className="pr-10 font-display text-base uppercase text-brand-slate">
             Editar fechas
           </h2>
-          <p className="mb-4 mt-1 break-words font-sans text-sm text-brand-slate">{editTarget.titulo}</p>
+          <p className="mb-4 mt-1 break-words font-sans text-sm text-brand-slate">
+            {editTarget.titulo}
+            {editTarget.fuente && (
+              <span className="mt-1 block text-xs">Al guardar se vuelve a generar el PDF con las nuevas fechas.</span>
+            )}
+          </p>
           <PromoRangePicker
             hoy={hoy}
             minDate={editMin}
@@ -268,7 +278,7 @@ export function PromocionesList({
               disabled={!editRango.inicio || !editRango.fin || Boolean(editConflict) || isSaving}
               onClick={handleSaveDates}
             >
-              {isSaving ? "Guardando…" : "Guardar fechas"}
+              {isSaving ? (editTarget.fuente ? "Generando PDF…" : "Guardando…") : "Guardar fechas"}
             </Button>
           </div>
         </Modal>

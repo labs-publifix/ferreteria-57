@@ -37,6 +37,7 @@ export interface PromoWizardDraft extends UploadedPromoDraft {
 
 export function PromoWizard({
   tipo,
+  formato,
   tipoLabel,
   listHref,
   hoy,
@@ -44,6 +45,7 @@ export function PromoWizard({
   initialDraft,
 }: {
   tipo: PromoTipo;
+  formato: "pdf" | "excel";
   tipoLabel: string;
   listHref: string;
   hoy: string;
@@ -108,7 +110,16 @@ export function PromoWizard({
 
   function handleContinueFromDates() {
     if (!draft || !rangoCompleto || conflict) return;
-    void run(() => setPromoVigencia(draft.id, rangoCompleto.inicio, rangoCompleto.fin), () => goToStep(3));
+    void run(
+      async () => {
+        const result = await setPromoVigencia(draft.id, rangoCompleto.inicio, rangoCompleto.fin);
+        // Liquidaciones: el PDF se regeneró con las fechas — la revisión
+        // debe mostrar el archivo nuevo.
+        if (result.archivo) setDraft({ ...draft, ...result.archivo });
+        return result;
+      },
+      () => goToStep(3)
+    );
   }
 
   function handlePublish() {
@@ -160,13 +171,15 @@ export function PromoWizard({
             <div>
               <h2 className="font-display text-base uppercase text-brand-slate">Archivo</h2>
               <p className="mt-1 font-sans text-sm text-brand-slate">
-                Sube el PDF tal cual lo van a recibir los miembros: se guarda sin cambios y ya no se puede
-                reemplazar una vez publicado.
+                {formato === "excel"
+                  ? "Sube el Excel de la liquidación: es la fuente de verdad. La plataforma genera el PDF de marca que descargan los miembros, con el precio con impuestos y en el mismo orden del Excel."
+                  : "Sube el PDF tal cual lo van a recibir los miembros: se guarda sin cambios y ya no se puede reemplazar una vez publicado."}
               </p>
             </div>
 
             <PromoFileDropzone
               tipo={tipo}
+              formato={formato}
               draft={draft}
               onUploaded={(uploaded) => {
                 setDraft(uploaded);
@@ -205,6 +218,7 @@ export function PromoWizard({
               <p className="mt-1 font-sans text-sm text-brand-slate">
                 Los miembros pueden descargarla desde las 00:00 del primer día hasta las 23:59 del último (hora
                 del centro de México).
+                {formato === "excel" && " Al continuar se genera el PDF con estas fechas impresas."}
               </p>
             </div>
             <PromoRangePicker
@@ -226,7 +240,16 @@ export function PromoWizard({
               <dd className="text-brand-black">{tipoLabel}</dd>
               <dt className="font-semibold text-brand-slate">Nombre interno</dt>
               <dd className="break-words text-brand-black">{draft.titulo}</dd>
-              <dt className="font-semibold text-brand-slate">Archivo</dt>
+              {draft.fuente && (
+                <>
+                  <dt className="font-semibold text-brand-slate">Excel</dt>
+                  <dd className="break-words text-brand-black">
+                    {draft.fuente.nombre} · {draft.fuente.productos}{" "}
+                    {draft.fuente.productos === 1 ? "producto" : "productos"}
+                  </dd>
+                </>
+              )}
+              <dt className="font-semibold text-brand-slate">{draft.fuente ? "PDF generado" : "Archivo"}</dt>
               <dd className="break-words text-brand-black">
                 {draft.nombre} · {formatBytes(draft.bytes)}
               </dd>
@@ -247,12 +270,12 @@ export function PromoWizard({
 
             <div className="flex flex-col gap-2">
               <iframe
-                src={`/api/admin/lealtad/promociones/${draft.id}/vista-previa`}
+                src={`/api/admin/lealtad/promociones/${draft.id}/vista-previa?v=${draft.sha256.slice(0, 12)}`}
                 title={`Vista previa de ${draft.nombre}`}
                 className="h-[420px] w-full rounded-md border border-brand-slate/15 bg-brand-gray sm:h-[560px]"
               />
               <a
-                href={`/api/admin/lealtad/promociones/${draft.id}/vista-previa`}
+                href={`/api/admin/lealtad/promociones/${draft.id}/vista-previa?v=${draft.sha256.slice(0, 12)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex min-h-11 items-center gap-1.5 self-start font-sans text-sm text-brand-slate underline underline-offset-2 hover:text-brand-black"
@@ -296,7 +319,7 @@ export function PromoWizard({
               disabled={!rangoCompleto || Boolean(conflict) || busy}
               onClick={handleContinueFromDates}
             >
-              {busy ? "Validando…" : "Continuar"}
+              {busy ? (formato === "excel" ? "Generando PDF…" : "Validando…") : "Continuar"}
             </Button>
           )}
           {step === 3 && (

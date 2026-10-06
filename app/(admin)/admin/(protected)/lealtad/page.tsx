@@ -32,7 +32,7 @@ const SECTIONS = [
   {
     href: "/admin/lealtad/promociones",
     label: "Promociones",
-    description: "PDFs de Promo Truper y de temporada con vigencia, que los miembros descargan.",
+    description: "Promo Truper, Temporada y Liquidaciones del Mes: PDFs con vigencia que los miembros descargan.",
     icon: Megaphone,
   },
 ];

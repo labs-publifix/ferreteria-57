@@ -28,7 +28,9 @@ export default async function AdminNuevaPromocionPage({
   if (searchParams.borrador) {
     const { data } = await supabase
       .from("club57_promociones")
-      .select("id, titulo, archivo_nombre_original, archivo_bytes, archivo_sha256, vigencia_inicio, vigencia_fin")
+      .select(
+        "id, titulo, archivo_nombre_original, archivo_bytes, archivo_sha256, vigencia_inicio, vigencia_fin, fuente_excel_nombre, fuente_productos"
+      )
       .eq("id", searchParams.borrador)
       .eq("tipo", info.tipo)
       .eq("estado", "borrador")
@@ -42,6 +44,9 @@ export default async function AdminNuevaPromocionPage({
         sha256: data.archivo_sha256,
         inicio: data.vigencia_inicio,
         fin: data.vigencia_fin,
+        fuente: data.fuente_excel_nombre
+          ? { nombre: data.fuente_excel_nombre, productos: Number(data.fuente_productos ?? 0) }
+          : undefined,
       };
     }
   }
@@ -60,6 +65,7 @@ export default async function AdminNuevaPromocionPage({
 
       <PromoWizard
         tipo={info.tipo}
+        formato={info.formato}
         tipoLabel={info.label}
         listHref={listHref}
         hoy={hoy}

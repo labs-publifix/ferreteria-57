@@ -18,18 +18,30 @@ export const PROMO_FINALIZADA_DIAS = 7;
 // A partir de cuántos días restantes (inclusive) se muestra "Últimos N días".
 export const PROMO_ULTIMOS_DIAS = 5;
 
+// Liquidaciones: el equipo sube el Excel (fuente de verdad) y la
+// plataforma genera el PDF. Límite holgado: el archivo real pesa ~15 KB.
+export const LIQUIDACION_EXCEL_MAX_BYTES = 5 * 1024 * 1024;
+
 export interface PromoTipoInfo {
   tipo: PromoTipo;
   slug: string;
   label: string;
-  /** false = el flujo llega en una fase posterior (hoy solo Liquidaciones). */
+  /** false = el flujo todavía no está disponible para este tipo. */
   habilitado: boolean;
+  /** "pdf": se sube el PDF final. "excel": se sube el Excel y se genera el PDF. */
+  formato: "pdf" | "excel";
 }
 
 export const PROMO_TIPOS: PromoTipoInfo[] = [
-  { tipo: "promo_truper", slug: "promo-truper", label: "Promo Truper", habilitado: true },
-  { tipo: "promo_temporada", slug: "promociones-de-temporada", label: "Promociones de Temporada", habilitado: true },
-  { tipo: "liquidaciones", slug: "liquidaciones-del-mes", label: "Liquidaciones del Mes", habilitado: false },
+  { tipo: "promo_truper", slug: "promo-truper", label: "Promo Truper", habilitado: true, formato: "pdf" },
+  {
+    tipo: "promo_temporada",
+    slug: "promociones-de-temporada",
+    label: "Promociones de Temporada",
+    habilitado: true,
+    formato: "pdf",
+  },
+  { tipo: "liquidaciones", slug: "liquidaciones-del-mes", label: "Liquidaciones del Mes", habilitado: true, formato: "excel" },
 ];
 
 export function promoTipoInfo(tipo: PromoTipo): PromoTipoInfo {
