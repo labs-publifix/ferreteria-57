@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { useCallback, useEffect, useId, useState } from "react";
+import { ExternalLink, Mail } from "lucide-react";
 import { Button, ConfirmDialog, Modal } from "@/components/ui";
 import type { PromoEstado } from "@/lib/club57/promociones/config";
 import { formatBytes } from "@/lib/club57/promociones/archivo";
@@ -26,6 +26,13 @@ import {
   type PromoRangoParcial,
 } from "./PromoRangePicker";
 import { describeActionFailure } from "@/lib/admin/describeActionFailure";
+import type { AvisosListaData } from "@/lib/club57/avisos/tipos";
+import { cargarAvisosLista } from "@/app/(admin)/admin/(protected)/lealtad/promociones/avisos-actions";
+import { AvisoProgreso } from "./avisos/AvisoProgreso";
+import { PromoEmailNotice } from "./avisos/PromoEmailNotice";
+import { esActiva, formatFechaInstante } from "./avisos/formato";
+
+const AVISOS_REFRESCO_MS = 20_000;
 
 export interface PromoListRow {
   id: string;
@@ -63,11 +70,14 @@ export function PromocionesList({
   hoy,
   publicadas,
   nuevaHref,
+  avisos = null,
 }: {
   rows: PromoListRow[];
   hoy: string;
   publicadas: PromoPublicadaRef[];
   nuevaHref: string;
+  /** Aviso por email (null = función apagada: la lista queda como siempre). */
+  avisos?: AvisosListaData | null;
 }) {
   const router = useRouter();
   const editTitleId = useId();
@@ -78,6 +88,30 @@ export function PromocionesList({
   const [editRango, setEditRango] = useState<PromoRangoParcial>({});
   const [editError, setEditError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const avisoTitleId = useId();
+  const [avisosData, setAvisosData] = useState<AvisosListaData | null>(avisos);
+  const [avisoTarget, setAvisoTarget] = useState<PromoListRow | null>(null);
+
+  useEffect(() => setAvisosData(avisos), [avisos]);
+
+  const recargarAvisos = useCallback(async () => {
+    if (!avisos) return;
+    try {
+      const r = await cargarAvisosLista(Object.keys(avisos.porPromo));
+      if (r.data) setAvisosData(r.data);
+    } catch {
+      // Se reintenta en el siguiente ciclo; la lista sigue utilizable.
+    }
+  }, [avisos]);
+
+  const hayAvisoActivo = avisosData ? Object.values(avisosData.porPromo).some((a) => esActiva(a.ultima)) : false;
+  useEffect(() => {
+    if (!hayAvisoActivo) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void recargarAvisos();
+    }, AVISOS_REFRESCO_MS);
+    return () => window.clearInterval(timer);
+  }, [hayAvisoActivo, recargarAvisos]);
 
   async function runRowAction(id: string, action: () => Promise<{ error?: string }>) {
     setPendingId(id);
@@ -149,6 +183,9 @@ export function PromocionesList({
           const chip = promoEstadoParaChip(row.estado, { inicio: row.inicio ?? undefined, fin: row.fin ?? undefined }, hoy);
           const isPending = pendingId === row.id;
           const rowError = rowErrors[row.id];
+          const aviso = avisosData?.porPromo[row.id];
+          const puedeAvisar =
+            Boolean(avisosData) && row.estado === "publicada" && !row.archivoEliminado && (chip === "vigente" || chip === "programada");
           return (
             <li key={row.id} className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
@@ -179,6 +216,26 @@ export function PromocionesList({
                     {rowError}
                   </p>
                 )}
+                {avisosData && aviso?.metricas && (
+                  <p className="mt-0.5 font-sans text-xs tabular-nums text-brand-slate">
+                    Aviso{aviso.metricas.ultimoEnvio ? ` del ${formatFechaInstante(aviso.metricas.ultimoEnvio)}` : ""}:{" "}
+                    {aviso.metricas.descargaron} de {aviso.metricas.enviados}{" "}
+                    {aviso.metricas.enviados === 1 ? "destinatario descargó" : "destinatarios descargaron"}
+                  </p>
+                )}
+                {avisosData && aviso?.ultima && (esActiva(aviso.ultima) || aviso.ultima.fallidos > 0) && (
+                  <div className="mt-3">
+                    <AvisoProgreso
+                      campana={aviso.ultima}
+                      capacidad={avisosData.capacidad}
+                      hoy={hoy}
+                      onCambio={() => {
+                        void recargarAvisos();
+                        router.refresh();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="-ml-3 flex flex-wrap items-center gap-1 sm:ml-0 sm:justify-end">
@@ -207,6 +264,12 @@ export function PromocionesList({
                       <ExternalLink className="size-4" aria-hidden="true" strokeWidth={1.75} />
                       Ver PDF
                     </a>
+                    {puedeAvisar && (
+                      <button type="button" disabled={isPending} onClick={() => setAvisoTarget(row)} className={linkActionClass}>
+                        <Mail className="size-4" aria-hidden="true" strokeWidth={1.75} />
+                        Enviar aviso
+                      </button>
+                    )}
                     {row.estado === "publicada" && (
                       <>
                         <button type="button" disabled={isPending} onClick={() => openEdit(row)} className={linkActionClass}>
@@ -255,6 +318,23 @@ export function PromocionesList({
         onConfirm={handleConfirm}
         onCancel={() => setConfirm(null)}
       />
+
+      {avisoTarget && (
+        <Modal titleId={avisoTitleId} onClose={() => setAvisoTarget(null)} maxWidthClassName="max-w-lg">
+          <h2 id={avisoTitleId} className="pr-10 font-display text-base uppercase text-brand-slate">
+            Enviar aviso
+          </h2>
+          <p className="mb-4 mt-1 break-words font-sans text-sm text-brand-slate">{avisoTarget.titulo}</p>
+          <PromoEmailNotice
+            promocionId={avisoTarget.id}
+            onCerrar={() => setAvisoTarget(null)}
+            onCambio={() => {
+              void recargarAvisos();
+              router.refresh();
+            }}
+          />
+        </Modal>
+      )}
 
       {editTarget && (
         <Modal titleId={editTitleId} onClose={() => setEditTarget(null)} maxWidthClassName="max-w-lg">
