@@ -28,6 +28,7 @@ import {
 } from "./PromoRangePicker";
 import { PromoPublishedConfirmation, type PromoPublishedSummary } from "./PromoPublishedConfirmation";
 import { describeActionFailure } from "@/lib/admin/describeActionFailure";
+import { PromoEmailNotice } from "./avisos/PromoEmailNotice";
 
 const STEPS = ["Archivo", "Vigencia", "Revisión", "Confirmación"] as const;
 
@@ -44,6 +45,7 @@ export function PromoWizard({
   hoy,
   publicadas,
   initialDraft,
+  avisosHabilitado = false,
 }: {
   tipo: PromoTipo;
   formato: "pdf" | "excel";
@@ -52,6 +54,8 @@ export function PromoWizard({
   hoy: string;
   publicadas: PromoPublicadaRef[];
   initialDraft: PromoWizardDraft | null;
+  /** Paso "Aviso por email" tras publicar (CLUB57_PROMO_EMAILS_ENABLED). */
+  avisosHabilitado?: boolean;
 }) {
   const router = useRouter();
   const tituloId = useId();
@@ -288,7 +292,15 @@ export function PromoWizard({
           </div>
         )}
 
-        {step === 4 && published && <PromoPublishedConfirmation summary={published} listHref={listHref} />}
+        {step === 4 && published && (
+          <PromoPublishedConfirmation summary={published} listHref={listHref}>
+            {avisosHabilitado && draft && (
+              <div className="w-full max-w-md">
+                <PromoEmailNotice promocionId={draft.id} />
+              </div>
+            )}
+          </PromoPublishedConfirmation>
+        )}
 
         {error && (
           <p role="alert" className="mt-5 rounded-md bg-red-50 px-4 py-2.5 font-sans text-sm text-red-700">

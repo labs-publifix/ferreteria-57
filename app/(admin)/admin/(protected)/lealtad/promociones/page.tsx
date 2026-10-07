@@ -11,6 +11,9 @@ import {
   resumenPorTipo,
 } from "@/lib/club57/promociones/vigencia";
 import { PROMO_TIPO_ICON } from "@/components/club57/promoTipoIcons";
+import { isAvisosEnabled } from "@/lib/club57/avisos/config";
+import { loadMetricasAvisos } from "@/lib/club57/avisos/consultas";
+import { formatFechaInstante } from "@/components/admin/promociones/avisos/formato";
 
 export const metadata: Metadata = { title: "Promociones Club 57 — Panel de administración" };
 
@@ -19,6 +22,9 @@ export default async function AdminPromocionesPage() {
   const hoy = todayInStoreTimezone();
   const { rows, error } = await loadPromocionesAdmin(supabase);
   const publicadas = publicadasDe(rows);
+  // Aviso por email: métrica de descargas de quienes recibieron el último
+  // aviso. Solo con el interruptor encendido; si falla, no se muestra.
+  const metricasAvisos = isAvisosEnabled() ? await loadMetricasAvisos().catch(() => null) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,6 +88,16 @@ export default async function AdminPromocionesPage() {
                     <span className="font-semibold text-brand-black">{vigente.descargasUnicas}</span>{" "}
                     {vigente.descargasUnicas === 1 ? "descarga única" : "descargas únicas"}
                   </p>
+                  {metricasAvisos?.get(vigente.id) && (
+                    <p className="font-sans text-xs tabular-nums text-brand-slate">
+                      Último aviso
+                      {metricasAvisos.get(vigente.id)!.ultimoEnvio
+                        ? ` (${formatFechaInstante(metricasAvisos.get(vigente.id)!.ultimoEnvio!)})`
+                        : ""}
+                      : {metricasAvisos.get(vigente.id)!.descargaron} de {metricasAvisos.get(vigente.id)!.enviados} destinatarios
+                      descargaron
+                    </p>
+                  )}
                   {proxima && (
                     <p className="font-sans text-xs text-brand-slate">Siguiente: {formatRangoLegible(proxima)}</p>
                   )}

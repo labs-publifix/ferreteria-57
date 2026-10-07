@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 import { promoTipoFromSlug } from "@/lib/club57/promociones/config";
 import { loadPromocionesAdmin, publicadasDe } from "@/lib/club57/promociones/adminQueries";
+import { isAvisosEnabled } from "@/lib/club57/avisos/config";
 
 export const metadata: Metadata = { title: "Nueva promoción Club 57 — Panel de administración" };
 
@@ -71,6 +72,7 @@ export default async function AdminNuevaPromocionPage({
         hoy={hoy}
         publicadas={publicadasDe(rows)}
         initialDraft={initialDraft}
+        avisosHabilitado={isAvisosEnabled()}
       />
     </div>
   );

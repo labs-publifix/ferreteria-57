@@ -9,6 +9,8 @@ import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 import { promoTipoFromSlug } from "@/lib/club57/promociones/config";
 import { loadPromocionesAdmin, publicadasDe } from "@/lib/club57/promociones/adminQueries";
 import { promoEstadoParaChip } from "@/lib/club57/promociones/vigencia";
+import { isAvisosEnabled } from "@/lib/club57/avisos/config";
+import { loadAvisosLista } from "@/lib/club57/avisos/consultas";
 
 export const metadata: Metadata = { title: "Promociones Club 57 — Panel de administración" };
 
@@ -32,6 +34,11 @@ export default async function AdminPromocionesTipoPage({ params }: { params: { t
     return 0;
   });
   const nuevaHref = `/admin/lealtad/promociones/${info.slug}/nueva`;
+  // Aviso por email: solo con el interruptor encendido; si falla la
+  // lectura, la lista se muestra igual que siempre (sin avisos).
+  const avisos = isAvisosEnabled()
+    ? await loadAvisosLista(rows.filter((row) => row.estado !== "borrador").map((row) => row.id)).catch(() => null)
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,7 +63,7 @@ export default async function AdminPromocionesTipoPage({ params }: { params: { t
           No se pudieron cargar las promociones: {error}
         </p>
       ) : (
-        <PromocionesList rows={sorted} hoy={hoy} publicadas={publicadasDe(rows)} nuevaHref={nuevaHref} />
+        <PromocionesList rows={sorted} hoy={hoy} publicadas={publicadasDe(rows)} nuevaHref={nuevaHref} avisos={avisos} />
       )}
     </div>
   );
