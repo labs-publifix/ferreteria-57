@@ -11,7 +11,11 @@ desarrollo todavía. Actualizado: 7 de octubre de 2026.
 - **Fase 2 — blog público.** /blog, categorías, artículo con índice y CTA
   de la guía (Club 57), SEO completo (JSON-LD, sitemap, RSS, OG), sección
   en el home y artículo piloto B03 (programado; fecha real en Fase 5).
-- Fases 3–5: validador de calidad + cron, guías PDF, artículos de lanzamiento.
+- **Fase 3 — publicación programada y calidad.** Reloj inyectable
+  (`BLOG_NOW_OVERRIDE`, solo fuera de producción), RSS dinámico, noindex sin
+  publicados, `blog:check` (prebuild + CI), `blog:links` con el mapa de
+  enlaces, `blog:new` y enlaces reales al catálogo. Sin cron ni avisos.
+- Fases 4–5: guías PDF, artículos de lanzamiento.
 
 ## Pendientes del cliente
 

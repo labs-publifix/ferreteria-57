@@ -1,0 +1,329 @@
+id_enlace,origen,destino,ancla,tipo,cuando,fecha,estado
+EN001,B01,B02,herramientas básicas para el hogar,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN002,B02,B01,marcas truper,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN003,B01,B03,tipos de brocas,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN004,B02,B03,tipos de brocas,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN005,B03,B01,marcas truper,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN006,B03,B02,herramientas básicas para el hogar,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN007,B01,B05,calibre de cable para casa,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN008,B05,B01,marcas truper,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN009,B04,B07,instalar tinaco,Pilar de clúster ↔ satélite,Lanzamiento (mismo día),2026-10-09,pendiente
+EN010,B07,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Lanzamiento (mismo día),2026-10-09,pendiente
+EN011,B01,B08,brocha o rodillo,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN012,B06,B08,brocha o rodillo,Pilar de clúster ↔ satélite,Lanzamiento (mismo día),2026-10-09,pendiente
+EN013,B08,B01,marcas truper,Relacionado,Lanzamiento (mismo día),2026-10-09,pendiente
+EN014,B08,B06,salitre en paredes,Pilar de clúster ↔ satélite,Lanzamiento (mismo día),2026-10-09,pendiente
+EN015,B02,B09,tipos de taquetes,Relacionado,Al publicar B09: actualizar B02,2026-10-13,pendiente
+EN016,B03,B09,tipos de taquetes,Pilar de clúster ↔ satélite,Al publicar B09: actualizar B03,2026-10-13,pendiente
+EN017,B09,B02,herramientas básicas para el hogar,Relacionado,Al redactar B09,2026-10-13,pendiente
+EN018,B09,B03,tipos de brocas,Pilar de clúster ↔ satélite,Al redactar B09,2026-10-13,pendiente
+EN019,B01,B10,club 57 ferretería 57,Pilar de clúster ↔ satélite,Al publicar B10: actualizar B01,2026-10-15,pendiente
+EN020,B02,B10,club 57 ferretería 57,Relacionado,Al publicar B10: actualizar B02,2026-10-15,pendiente
+EN021,B04,B10,club 57 ferretería 57,Relacionado,Al publicar B10: actualizar B04,2026-10-15,pendiente
+EN022,B05,B10,club 57 ferretería 57,Relacionado,Al publicar B10: actualizar B05,2026-10-15,pendiente
+EN023,B10,B01,marcas truper,Pilar de clúster ↔ satélite,Al redactar B10,2026-10-15,pendiente
+EN024,B10,B02,herramientas básicas para el hogar,Relacionado,Al redactar B10,2026-10-15,pendiente
+EN025,B10,B04,diferencia entre tubería ppr y pvc,Relacionado,Al redactar B10,2026-10-15,pendiente
+EN026,B10,B05,calibre de cable para casa,Relacionado,Al redactar B10,2026-10-15,pendiente
+EN027,B04,B11,cómo destapar un lavabo,Pilar de clúster ↔ satélite,Al publicar B11: actualizar B04,2026-10-17,pendiente
+EN028,B11,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B11,2026-10-17,pendiente
+EN029,B04,B13,cinta teflón,Pilar de clúster ↔ satélite,Al publicar B13: actualizar B04,2026-10-22,pendiente
+EN030,B07,B13,cinta teflón,Relacionado,Al publicar B13: actualizar B07,2026-10-22,pendiente
+EN031,B11,B13,cinta teflón,Relacionado,Al publicar B13: actualizar B11,2026-10-22,pendiente
+EN032,B13,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B13,2026-10-22,pendiente
+EN033,B13,B07,instalar tinaco,Relacionado,Al redactar B13,2026-10-22,pendiente
+EN034,B13,B11,cómo destapar un lavabo,Relacionado,Al redactar B13,2026-10-22,pendiente
+EN035,B04,B14,mantenimiento calentador solar,Pilar de clúster ↔ satélite,Al publicar B14: actualizar B04,2026-10-24,pendiente
+EN036,B14,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B14,2026-10-24,pendiente
+EN037,B05,B15,diablito eléctrico peligro,Pilar de clúster ↔ satélite,Al publicar B15: actualizar B05,2026-10-27,pendiente
+EN038,B15,B05,calibre de cable para casa,Pilar de clúster ↔ satélite,Al redactar B15,2026-10-27,pendiente
+EN039,B05,B16,conectores eléctricos,Pilar de clúster ↔ satélite,Al publicar B16: actualizar B05,2026-10-29,pendiente
+EN040,B15,B16,conectores eléctricos,Relacionado,Al publicar B16: actualizar B15,2026-10-29,pendiente
+EN041,B16,B05,calibre de cable para casa,Pilar de clúster ↔ satélite,Al redactar B16,2026-10-29,pendiente
+EN042,B16,B15,diablito eléctrico peligro,Relacionado,Al redactar B16,2026-10-29,pendiente
+EN043,B04,B17,purgar boiler,Pilar de clúster ↔ satélite,Al publicar B17: actualizar B04,2026-10-31,pendiente
+EN044,B13,B17,purgar boiler,Relacionado,Al publicar B17: actualizar B13,2026-10-31,pendiente
+EN045,B14,B17,purgar boiler,Relacionado,Al publicar B17: actualizar B14,2026-10-31,pendiente
+EN046,B17,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B17,2026-10-31,pendiente
+EN047,B17,B13,cinta teflón,Relacionado,Al redactar B17,2026-10-31,pendiente
+EN048,B17,B14,mantenimiento calentador solar,Relacionado,Al redactar B17,2026-10-31,pendiente
+EN049,B04,B18,bomba de agua para casa,Pilar de clúster ↔ satélite,Al publicar B18: actualizar B04,2026-11-03,pendiente
+EN050,B07,B18,bomba de agua para casa,Relacionado,Al publicar B18: actualizar B07,2026-11-03,pendiente
+EN051,B18,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B18,2026-11-03,pendiente
+EN052,B18,B07,instalar tinaco,Relacionado,Al redactar B18,2026-11-03,pendiente
+EN053,B04,B19,herramientas de plomero,Relacionado,Al publicar B19: actualizar B04,2026-11-05,pendiente
+EN054,B11,B19,herramientas de plomero,Relacionado,Al publicar B19: actualizar B11,2026-11-05,pendiente
+EN055,B13,B19,herramientas de plomero,Relacionado,Al publicar B19: actualizar B13,2026-11-05,pendiente
+EN056,B19,B04,diferencia entre tubería ppr y pvc,Relacionado,Al redactar B19,2026-11-05,pendiente
+EN057,B19,B11,cómo destapar un lavabo,Relacionado,Al redactar B19,2026-11-05,pendiente
+EN058,B19,B13,cinta teflón,Relacionado,Al redactar B19,2026-11-05,pendiente
+EN059,B02,B20,cómo instalar soporte de tv,Relacionado,Al publicar B20: actualizar B02,2026-11-07,pendiente
+EN060,B03,B20,cómo instalar soporte de tv,Pilar de clúster ↔ satélite,Al publicar B20: actualizar B03,2026-11-07,pendiente
+EN061,B09,B20,cómo instalar soporte de tv,Relacionado,Al publicar B20: actualizar B09,2026-11-07,pendiente
+EN062,B20,B02,herramientas básicas para el hogar,Relacionado,Al redactar B20,2026-11-07,pendiente
+EN063,B20,B03,tipos de brocas,Pilar de clúster ↔ satélite,Al redactar B20,2026-11-07,pendiente
+EN064,B20,B09,tipos de taquetes,Relacionado,Al redactar B20,2026-11-07,pendiente
+EN065,B05,B21,focos led vs ahorradores,Pilar de clúster ↔ satélite,Al publicar B21: actualizar B05,2026-11-10,pendiente
+EN066,B15,B21,focos led vs ahorradores,Relacionado,Al publicar B21: actualizar B15,2026-11-10,pendiente
+EN067,B21,B05,calibre de cable para casa,Pilar de clúster ↔ satélite,Al redactar B21,2026-11-10,pendiente
+EN068,B21,B15,diablito eléctrico peligro,Relacionado,Al redactar B21,2026-11-10,pendiente
+EN069,B12,B22,fuga de gas qué hacer,Pilar de clúster ↔ satélite,Al publicar B22: actualizar B12,2026-11-12,pendiente
+EN070,B13,B22,fuga de gas qué hacer,Relacionado,Al publicar B22: actualizar B13,2026-11-12,pendiente
+EN071,B14,B22,fuga de gas qué hacer,Relacionado,Al publicar B22: actualizar B14,2026-11-12,pendiente
+EN072,B17,B22,fuga de gas qué hacer,Relacionado,Al publicar B22: actualizar B17,2026-11-12,pendiente
+EN073,B22,B12,candado anticizalla,Pilar de clúster ↔ satélite,Al redactar B22,2026-11-12,pendiente
+EN074,B22,B13,cinta teflón,Relacionado,Al redactar B22,2026-11-12,pendiente
+EN075,B22,B14,mantenimiento calentador solar,Relacionado,Al redactar B22,2026-11-12,pendiente
+EN076,B22,B17,purgar boiler,Relacionado,Al redactar B22,2026-11-12,pendiente
+EN077,B04,B23,poca presión de agua en la regadera,Pilar de clúster ↔ satélite,Al publicar B23: actualizar B04,2026-11-14,pendiente
+EN078,B07,B23,poca presión de agua en la regadera,Relacionado,Al publicar B23: actualizar B07,2026-11-14,pendiente
+EN079,B13,B23,poca presión de agua en la regadera,Relacionado,Al publicar B23: actualizar B13,2026-11-14,pendiente
+EN080,B14,B23,poca presión de agua en la regadera,Relacionado,Al publicar B23: actualizar B14,2026-11-14,pendiente
+EN081,B17,B23,poca presión de agua en la regadera,Relacionado,Al publicar B23: actualizar B17,2026-11-14,pendiente
+EN082,B18,B23,poca presión de agua en la regadera,Relacionado,Al publicar B23: actualizar B18,2026-11-14,pendiente
+EN083,B23,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B23,2026-11-14,pendiente
+EN084,B23,B07,instalar tinaco,Relacionado,Al redactar B23,2026-11-14,pendiente
+EN085,B23,B13,cinta teflón,Relacionado,Al redactar B23,2026-11-14,pendiente
+EN086,B23,B14,mantenimiento calentador solar,Relacionado,Al redactar B23,2026-11-14,pendiente
+EN087,B23,B17,purgar boiler,Relacionado,Al redactar B23,2026-11-14,pendiente
+EN088,B23,B18,bomba de agua para casa,Relacionado,Al redactar B23,2026-11-14,pendiente
+EN089,B06,B24,cómo calcular pintura,Relacionado,Al publicar B24: actualizar B06,2026-11-17,pendiente
+EN090,B08,B24,cómo calcular pintura,Pilar de clúster ↔ satélite,Al publicar B24: actualizar B08,2026-11-17,pendiente
+EN091,B24,B06,salitre en paredes,Relacionado,Al redactar B24,2026-11-17,pendiente
+EN092,B24,B08,brocha o rodillo,Pilar de clúster ↔ satélite,Al redactar B24,2026-11-17,pendiente
+EN093,B02,B25,tipos de pinzas,Pilar de clúster ↔ satélite,Al publicar B25: actualizar B02,2026-11-19,pendiente
+EN094,B16,B25,tipos de pinzas,Relacionado,Al publicar B25: actualizar B16,2026-11-19,pendiente
+EN095,B19,B25,tipos de pinzas,Relacionado,Al publicar B25: actualizar B19,2026-11-19,pendiente
+EN096,B25,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B25,2026-11-19,pendiente
+EN097,B25,B16,conectores eléctricos,Relacionado,Al redactar B25,2026-11-19,pendiente
+EN098,B25,B19,herramientas de plomero,Relacionado,Al redactar B25,2026-11-19,pendiente
+EN099,B02,B26,cómo quitar el óxido,Pilar de clúster ↔ satélite,Al publicar B26: actualizar B02,2026-11-21,pendiente
+EN100,B12,B26,cómo quitar el óxido,Relacionado,Al publicar B26: actualizar B12,2026-11-21,pendiente
+EN101,B26,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B26,2026-11-21,pendiente
+EN102,B26,B12,candado anticizalla,Relacionado,Al redactar B26,2026-11-21,pendiente
+EN103,B10,B27,control de inventarios ferretería,Relacionado,Al publicar B27: actualizar B10,2026-11-24,pendiente
+EN104,B19,B27,control de inventarios ferretería,Pilar de clúster ↔ satélite,Al publicar B27: actualizar B19,2026-11-24,pendiente
+EN105,B27,B10,club 57 ferretería 57,Relacionado,Al redactar B27,2026-11-24,pendiente
+EN106,B27,B19,herramientas de plomero,Pilar de clúster ↔ satélite,Al redactar B27,2026-11-24,pendiente
+EN107,B02,B28,tipos de pegamentos,Relacionado,Al publicar B28: actualizar B02,2026-11-26,pendiente
+EN108,B03,B28,tipos de pegamentos,Pilar de clúster ↔ satélite,Al publicar B28: actualizar B03,2026-11-26,pendiente
+EN109,B04,B28,tipos de pegamentos,Relacionado,Al publicar B28: actualizar B04,2026-11-26,pendiente
+EN110,B28,B02,herramientas básicas para el hogar,Relacionado,Al redactar B28,2026-11-26,pendiente
+EN111,B28,B03,tipos de brocas,Pilar de clúster ↔ satélite,Al redactar B28,2026-11-26,pendiente
+EN112,B28,B04,diferencia entre tubería ppr y pvc,Relacionado,Al redactar B28,2026-11-26,pendiente
+EN113,B02,B29,cambiar sapo del tanque del escusado,Relacionado,Al publicar B29: actualizar B02,2026-11-28,pendiente
+EN114,B04,B29,cambiar sapo del tanque del escusado,Pilar de clúster ↔ satélite,Al publicar B29: actualizar B04,2026-11-28,pendiente
+EN115,B11,B29,cambiar sapo del tanque del escusado,Relacionado,Al publicar B29: actualizar B11,2026-11-28,pendiente
+EN116,B13,B29,cambiar sapo del tanque del escusado,Relacionado,Al publicar B29: actualizar B13,2026-11-28,pendiente
+EN117,B29,B02,herramientas básicas para el hogar,Relacionado,Al redactar B29,2026-11-28,pendiente
+EN118,B29,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B29,2026-11-28,pendiente
+EN119,B29,B11,cómo destapar un lavabo,Relacionado,Al redactar B29,2026-11-28,pendiente
+EN120,B29,B13,cinta teflón,Relacionado,Al redactar B29,2026-11-28,pendiente
+EN121,B06,B30,diferencia entre silicón y sellador acrílico,Relacionado,Al publicar B30: actualizar B06,2026-12-01,pendiente
+EN122,B08,B30,diferencia entre silicón y sellador acrílico,Pilar de clúster ↔ satélite,Al publicar B30: actualizar B08,2026-12-01,pendiente
+EN123,B24,B30,diferencia entre silicón y sellador acrílico,Relacionado,Al publicar B30: actualizar B24,2026-12-01,pendiente
+EN124,B28,B30,diferencia entre silicón y sellador acrílico,Relacionado,Al publicar B30: actualizar B28,2026-12-01,pendiente
+EN125,B30,B06,salitre en paredes,Relacionado,Al redactar B30,2026-12-01,pendiente
+EN126,B30,B08,brocha o rodillo,Pilar de clúster ↔ satélite,Al redactar B30,2026-12-01,pendiente
+EN127,B30,B24,cómo calcular pintura,Relacionado,Al redactar B30,2026-12-01,pendiente
+EN128,B30,B28,tipos de pegamentos,Relacionado,Al redactar B30,2026-12-01,pendiente
+EN129,B08,B31,tipos de llanas,Relacionado,Al publicar B31: actualizar B08,2026-12-03,pendiente
+EN130,B19,B31,tipos de llanas,Pilar de clúster ↔ satélite,Al publicar B31: actualizar B19,2026-12-03,pendiente
+EN131,B31,B08,brocha o rodillo,Relacionado,Al redactar B31,2026-12-03,pendiente
+EN132,B31,B19,herramientas de plomero,Pilar de clúster ↔ satélite,Al redactar B31,2026-12-03,pendiente
+EN133,B04,B32,reparar llave mezcladora,Pilar de clúster ↔ satélite,Al publicar B32: actualizar B04,2026-12-05,pendiente
+EN134,B11,B32,reparar llave mezcladora,Relacionado,Al publicar B32: actualizar B11,2026-12-05,pendiente
+EN135,B13,B32,reparar llave mezcladora,Relacionado,Al publicar B32: actualizar B13,2026-12-05,pendiente
+EN136,B29,B32,reparar llave mezcladora,Relacionado,Al publicar B32: actualizar B29,2026-12-05,pendiente
+EN137,B32,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B32,2026-12-05,pendiente
+EN138,B32,B11,cómo destapar un lavabo,Relacionado,Al redactar B32,2026-12-05,pendiente
+EN139,B32,B13,cinta teflón,Relacionado,Al redactar B32,2026-12-05,pendiente
+EN140,B32,B29,cambiar sapo del tanque del escusado,Relacionado,Al redactar B32,2026-12-05,pendiente
+EN141,B01,B33,merchandising para ferreterías,Relacionado,Al publicar B33: actualizar B01,2026-12-08,pendiente
+EN142,B03,B33,merchandising para ferreterías,Relacionado,Al publicar B33: actualizar B03,2026-12-08,pendiente
+EN143,B19,B33,merchandising para ferreterías,Pilar de clúster ↔ satélite,Al publicar B33: actualizar B19,2026-12-08,pendiente
+EN144,B27,B33,merchandising para ferreterías,Relacionado,Al publicar B33: actualizar B27,2026-12-08,pendiente
+EN145,B33,B01,marcas truper,Relacionado,Al redactar B33,2026-12-08,pendiente
+EN146,B33,B03,tipos de brocas,Relacionado,Al redactar B33,2026-12-08,pendiente
+EN147,B33,B19,herramientas de plomero,Pilar de clúster ↔ satélite,Al redactar B33,2026-12-08,pendiente
+EN148,B33,B27,control de inventarios ferretería,Relacionado,Al redactar B33,2026-12-08,pendiente
+EN149,B12,B34,guantes de trabajo,Pilar de clúster ↔ satélite,Al publicar B34: actualizar B12,2026-12-10,pendiente
+EN150,B34,B12,candado anticizalla,Pilar de clúster ↔ satélite,Al redactar B34,2026-12-10,pendiente
+EN151,B02,B35,kit de emergencia para auto,Pilar de clúster ↔ satélite,Al publicar B35: actualizar B02,2026-12-12,pendiente
+EN152,B34,B35,kit de emergencia para auto,Relacionado,Al publicar B35: actualizar B34,2026-12-12,pendiente
+EN153,B35,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B35,2026-12-12,pendiente
+EN154,B35,B34,guantes de trabajo,Relacionado,Al redactar B35,2026-12-12,pendiente
+EN155,B12,B36,tipos de chapas para puerta,Pilar de clúster ↔ satélite,Al publicar B36: actualizar B12,2026-12-15,pendiente
+EN156,B34,B36,tipos de chapas para puerta,Relacionado,Al publicar B36: actualizar B34,2026-12-15,pendiente
+EN157,B36,B12,candado anticizalla,Pilar de clúster ↔ satélite,Al redactar B36,2026-12-15,pendiente
+EN158,B36,B34,guantes de trabajo,Relacionado,Al redactar B36,2026-12-15,pendiente
+EN159,B03,B37,remachadora manual,Relacionado,Al publicar B37: actualizar B03,2026-12-17,pendiente
+EN160,B19,B37,remachadora manual,Pilar de clúster ↔ satélite,Al publicar B37: actualizar B19,2026-12-17,pendiente
+EN161,B31,B37,remachadora manual,Relacionado,Al publicar B37: actualizar B31,2026-12-17,pendiente
+EN162,B37,B03,tipos de brocas,Relacionado,Al redactar B37,2026-12-17,pendiente
+EN163,B37,B19,herramientas de plomero,Pilar de clúster ↔ satélite,Al redactar B37,2026-12-17,pendiente
+EN164,B37,B31,tipos de llanas,Relacionado,Al redactar B37,2026-12-17,pendiente
+EN165,B05,B38,pastilla termomagnética,Pilar de clúster ↔ satélite,Al publicar B38: actualizar B05,2026-12-19,pendiente
+EN166,B15,B38,pastilla termomagnética,Relacionado,Al publicar B38: actualizar B15,2026-12-19,pendiente
+EN167,B16,B38,pastilla termomagnética,Relacionado,Al publicar B38: actualizar B16,2026-12-19,pendiente
+EN168,B21,B38,pastilla termomagnética,Relacionado,Al publicar B38: actualizar B21,2026-12-19,pendiente
+EN169,B38,B05,calibre de cable para casa,Pilar de clúster ↔ satélite,Al redactar B38,2026-12-19,pendiente
+EN170,B38,B15,diablito eléctrico peligro,Relacionado,Al redactar B38,2026-12-19,pendiente
+EN171,B38,B16,conectores eléctricos,Relacionado,Al redactar B38,2026-12-19,pendiente
+EN172,B38,B21,focos led vs ahorradores,Relacionado,Al redactar B38,2026-12-19,pendiente
+EN173,B04,B39,cédula 40 y 80 pvc,Pilar de clúster ↔ satélite,Al publicar B39: actualizar B04,2026-12-22,pendiente
+EN174,B13,B39,cédula 40 y 80 pvc,Relacionado,Al publicar B39: actualizar B13,2026-12-22,pendiente
+EN175,B19,B39,cédula 40 y 80 pvc,Relacionado,Al publicar B39: actualizar B19,2026-12-22,pendiente
+EN176,B39,B04,diferencia entre tubería ppr y pvc,Pilar de clúster ↔ satélite,Al redactar B39,2026-12-22,pendiente
+EN177,B39,B13,cinta teflón,Relacionado,Al redactar B39,2026-12-22,pendiente
+EN178,B39,B19,herramientas de plomero,Relacionado,Al redactar B39,2026-12-22,pendiente
+EN179,B01,B40,ferretería en querétaro,Pilar de clúster ↔ satélite,Al publicar B40: actualizar B01,2026-12-24,pendiente
+EN180,B10,B40,ferretería en querétaro,Relacionado,Al publicar B40: actualizar B10,2026-12-24,pendiente
+EN181,B27,B40,ferretería en querétaro,Relacionado,Al publicar B40: actualizar B27,2026-12-24,pendiente
+EN182,B33,B40,ferretería en querétaro,Relacionado,Al publicar B40: actualizar B33,2026-12-24,pendiente
+EN183,B40,B01,marcas truper,Pilar de clúster ↔ satélite,Al redactar B40,2026-12-24,pendiente
+EN184,B40,B10,club 57 ferretería 57,Relacionado,Al redactar B40,2026-12-24,pendiente
+EN185,B40,B27,control de inventarios ferretería,Relacionado,Al redactar B40,2026-12-24,pendiente
+EN186,B40,B33,merchandising para ferreterías,Relacionado,Al redactar B40,2026-12-24,pendiente
+EN187,B06,B41,cómo limpiar brochas,Relacionado,Al publicar B41: actualizar B06,2026-12-26,pendiente
+EN188,B08,B41,cómo limpiar brochas,Pilar de clúster ↔ satélite,Al publicar B41: actualizar B08,2026-12-26,pendiente
+EN189,B24,B41,cómo limpiar brochas,Relacionado,Al publicar B41: actualizar B24,2026-12-26,pendiente
+EN190,B41,B06,salitre en paredes,Relacionado,Al redactar B41,2026-12-26,pendiente
+EN191,B41,B08,brocha o rodillo,Pilar de clúster ↔ satélite,Al redactar B41,2026-12-26,pendiente
+EN192,B41,B24,cómo calcular pintura,Relacionado,Al redactar B41,2026-12-26,pendiente
+EN193,B03,B42,tornillería de acero inoxidable,Pilar de clúster ↔ satélite,Al publicar B42: actualizar B03,2026-12-29,pendiente
+EN194,B34,B42,tornillería de acero inoxidable,Relacionado,Al publicar B42: actualizar B34,2026-12-29,pendiente
+EN195,B37,B42,tornillería de acero inoxidable,Relacionado,Al publicar B42: actualizar B37,2026-12-29,pendiente
+EN196,B42,B03,tipos de brocas,Pilar de clúster ↔ satélite,Al redactar B42,2026-12-29,pendiente
+EN197,B42,B34,guantes de trabajo,Relacionado,Al redactar B42,2026-12-29,pendiente
+EN198,B42,B37,remachadora manual,Relacionado,Al redactar B42,2026-12-29,pendiente
+EN199,B06,B43,silicón de alta temperatura,Relacionado,Al publicar B43: actualizar B06,2026-12-31,pendiente
+EN200,B08,B43,silicón de alta temperatura,Pilar de clúster ↔ satélite,Al publicar B43: actualizar B08,2026-12-31,pendiente
+EN201,B28,B43,silicón de alta temperatura,Relacionado,Al publicar B43: actualizar B28,2026-12-31,pendiente
+EN202,B30,B43,silicón de alta temperatura,Relacionado,Al publicar B43: actualizar B30,2026-12-31,pendiente
+EN203,B43,B06,salitre en paredes,Relacionado,Al redactar B43,2026-12-31,pendiente
+EN204,B43,B08,brocha o rodillo,Pilar de clúster ↔ satélite,Al redactar B43,2026-12-31,pendiente
+EN205,B43,B28,tipos de pegamentos,Relacionado,Al redactar B43,2026-12-31,pendiente
+EN206,B43,B30,diferencia entre silicón y sellador acrílico,Relacionado,Al redactar B43,2026-12-31,pendiente
+EN207,B02,B44,organizar herramientas,Pilar de clúster ↔ satélite,Al publicar B44: actualizar B02,2027-01-02,pendiente
+EN208,B03,B44,organizar herramientas,Relacionado,Al publicar B44: actualizar B03,2027-01-02,pendiente
+EN209,B09,B44,organizar herramientas,Relacionado,Al publicar B44: actualizar B09,2027-01-02,pendiente
+EN210,B26,B44,organizar herramientas,Relacionado,Al publicar B44: actualizar B26,2027-01-02,pendiente
+EN211,B44,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B44,2027-01-02,pendiente
+EN212,B44,B03,tipos de brocas,Relacionado,Al redactar B44,2027-01-02,pendiente
+EN213,B44,B09,tipos de taquetes,Relacionado,Al redactar B44,2027-01-02,pendiente
+EN214,B44,B26,cómo quitar el óxido,Relacionado,Al redactar B44,2027-01-02,pendiente
+EN215,B06,B45,equipo de protección personal en obra,Relacionado,Al publicar B45: actualizar B06,2027-01-05,pendiente
+EN216,B12,B45,equipo de protección personal en obra,Pilar de clúster ↔ satélite,Al publicar B45: actualizar B12,2027-01-05,pendiente
+EN217,B34,B45,equipo de protección personal en obra,Relacionado,Al publicar B45: actualizar B34,2027-01-05,pendiente
+EN218,B45,B06,salitre en paredes,Relacionado,Al redactar B45,2027-01-05,pendiente
+EN219,B45,B12,candado anticizalla,Pilar de clúster ↔ satélite,Al redactar B45,2027-01-05,pendiente
+EN220,B45,B34,guantes de trabajo,Relacionado,Al redactar B45,2027-01-05,pendiente
+EN221,B02,B46,llaves milimétricas vs estándar,Pilar de clúster ↔ satélite,Al publicar B46: actualizar B02,2027-01-07,pendiente
+EN222,B25,B46,llaves milimétricas vs estándar,Relacionado,Al publicar B46: actualizar B25,2027-01-07,pendiente
+EN223,B35,B46,llaves milimétricas vs estándar,Relacionado,Al publicar B46: actualizar B35,2027-01-07,pendiente
+EN224,B46,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B46,2027-01-07,pendiente
+EN225,B46,B25,tipos de pinzas,Relacionado,Al redactar B46,2027-01-07,pendiente
+EN226,B46,B35,kit de emergencia para auto,Relacionado,Al redactar B46,2027-01-07,pendiente
+EN227,B03,B47,herramientas para tablaroca,Pilar de clúster ↔ satélite,Al publicar B47: actualizar B03,2027-01-09,pendiente
+EN228,B09,B47,herramientas para tablaroca,Relacionado,Al publicar B47: actualizar B09,2027-01-09,pendiente
+EN229,B20,B47,herramientas para tablaroca,Relacionado,Al publicar B47: actualizar B20,2027-01-09,pendiente
+EN230,B31,B47,herramientas para tablaroca,Relacionado,Al publicar B47: actualizar B31,2027-01-09,pendiente
+EN231,B47,B03,tipos de brocas,Pilar de clúster ↔ satélite,Al redactar B47,2027-01-09,pendiente
+EN232,B47,B09,tipos de taquetes,Relacionado,Al redactar B47,2027-01-09,pendiente
+EN233,B47,B20,cómo instalar soporte de tv,Relacionado,Al redactar B47,2027-01-09,pendiente
+EN234,B47,B31,tipos de llanas,Relacionado,Al redactar B47,2027-01-09,pendiente
+EN235,B03,B48,soldadura 6013 y 7018,Pilar de clúster ↔ satélite,Al publicar B48: actualizar B03,2027-01-12,pendiente
+EN236,B34,B48,soldadura 6013 y 7018,Relacionado,Al publicar B48: actualizar B34,2027-01-12,pendiente
+EN237,B42,B48,soldadura 6013 y 7018,Relacionado,Al publicar B48: actualizar B42,2027-01-12,pendiente
+EN238,B45,B48,soldadura 6013 y 7018,Relacionado,Al publicar B48: actualizar B45,2027-01-12,pendiente
+EN239,B48,B03,tipos de brocas,Pilar de clúster ↔ satélite,Al redactar B48,2027-01-12,pendiente
+EN240,B48,B34,guantes de trabajo,Relacionado,Al redactar B48,2027-01-12,pendiente
+EN241,B48,B42,tornillería de acero inoxidable,Relacionado,Al redactar B48,2027-01-12,pendiente
+EN242,B48,B45,equipo de protección personal en obra,Relacionado,Al redactar B48,2027-01-12,pendiente
+EN243,B12,B49,candado para moto,Pilar de clúster ↔ satélite,Al publicar B49: actualizar B12,2027-01-14,pendiente
+EN244,B36,B49,candado para moto,Relacionado,Al publicar B49: actualizar B36,2027-01-14,pendiente
+EN245,B45,B49,candado para moto,Relacionado,Al publicar B49: actualizar B45,2027-01-14,pendiente
+EN246,B49,B12,candado anticizalla,Pilar de clúster ↔ satélite,Al redactar B49,2027-01-14,pendiente
+EN247,B49,B36,tipos de chapas para puerta,Relacionado,Al redactar B49,2027-01-14,pendiente
+EN248,B49,B45,equipo de protección personal en obra,Relacionado,Al redactar B49,2027-01-14,pendiente
+EN249,B02,B50,cómo usar un multímetro,Relacionado,Al publicar B50: actualizar B02,2027-01-16,pendiente
+EN250,B05,B50,cómo usar un multímetro,Pilar de clúster ↔ satélite,Al publicar B50: actualizar B05,2027-01-16,pendiente
+EN251,B15,B50,cómo usar un multímetro,Relacionado,Al publicar B50: actualizar B15,2027-01-16,pendiente
+EN252,B16,B50,cómo usar un multímetro,Relacionado,Al publicar B50: actualizar B16,2027-01-16,pendiente
+EN253,B38,B50,cómo usar un multímetro,Relacionado,Al publicar B50: actualizar B38,2027-01-16,pendiente
+EN254,B50,B02,herramientas básicas para el hogar,Relacionado,Al redactar B50,2027-01-16,pendiente
+EN255,B50,B05,calibre de cable para casa,Pilar de clúster ↔ satélite,Al redactar B50,2027-01-16,pendiente
+EN256,B50,B15,diablito eléctrico peligro,Relacionado,Al redactar B50,2027-01-16,pendiente
+EN257,B50,B16,conectores eléctricos,Relacionado,Al redactar B50,2027-01-16,pendiente
+EN258,B50,B38,pastilla termomagnética,Relacionado,Al redactar B50,2027-01-16,pendiente
+EN259,B02,B51,tipos de discos de corte,Pilar de clúster ↔ satélite,Al publicar B51: actualizar B02,2027-01-19,pendiente
+EN260,B34,B51,tipos de discos de corte,Relacionado,Al publicar B51: actualizar B34,2027-01-19,pendiente
+EN261,B42,B51,tipos de discos de corte,Relacionado,Al publicar B51: actualizar B42,2027-01-19,pendiente
+EN262,B45,B51,tipos de discos de corte,Relacionado,Al publicar B51: actualizar B45,2027-01-19,pendiente
+EN263,B48,B51,tipos de discos de corte,Relacionado,Al publicar B51: actualizar B48,2027-01-19,pendiente
+EN264,B51,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B51,2027-01-19,pendiente
+EN265,B51,B34,guantes de trabajo,Relacionado,Al redactar B51,2027-01-19,pendiente
+EN266,B51,B42,tornillería de acero inoxidable,Relacionado,Al redactar B51,2027-01-19,pendiente
+EN267,B51,B45,equipo de protección personal en obra,Relacionado,Al redactar B51,2027-01-19,pendiente
+EN268,B51,B48,soldadura 6013 y 7018,Relacionado,Al redactar B51,2027-01-19,pendiente
+EN269,B18,B52,manguera industrial,Relacionado,Al publicar B52: actualizar B18,2027-01-21,pendiente
+EN270,B19,B52,manguera industrial,Pilar de clúster ↔ satélite,Al publicar B52: actualizar B19,2027-01-21,pendiente
+EN271,B42,B52,manguera industrial,Relacionado,Al publicar B52: actualizar B42,2027-01-21,pendiente
+EN272,B45,B52,manguera industrial,Relacionado,Al publicar B52: actualizar B45,2027-01-21,pendiente
+EN273,B52,B18,bomba de agua para casa,Relacionado,Al redactar B52,2027-01-21,pendiente
+EN274,B52,B19,herramientas de plomero,Pilar de clúster ↔ satélite,Al redactar B52,2027-01-21,pendiente
+EN275,B52,B42,tornillería de acero inoxidable,Relacionado,Al redactar B52,2027-01-21,pendiente
+EN276,B52,B45,equipo de protección personal en obra,Relacionado,Al redactar B52,2027-01-21,pendiente
+EN277,B02,B53,mantenimiento de herramientas eléctricas,Pilar de clúster ↔ satélite,Al publicar B53: actualizar B02,2027-01-23,pendiente
+EN278,B03,B53,mantenimiento de herramientas eléctricas,Relacionado,Al publicar B53: actualizar B03,2027-01-23,pendiente
+EN279,B26,B53,mantenimiento de herramientas eléctricas,Relacionado,Al publicar B53: actualizar B26,2027-01-23,pendiente
+EN280,B51,B53,mantenimiento de herramientas eléctricas,Relacionado,Al publicar B53: actualizar B51,2027-01-23,pendiente
+EN281,B53,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B53,2027-01-23,pendiente
+EN282,B53,B03,tipos de brocas,Relacionado,Al redactar B53,2027-01-23,pendiente
+EN283,B53,B26,cómo quitar el óxido,Relacionado,Al redactar B53,2027-01-23,pendiente
+EN284,B53,B51,tipos de discos de corte,Relacionado,Al redactar B53,2027-01-23,pendiente
+EN285,B03,B54,diferencia entre cemento y mortero,Pilar de clúster ↔ satélite,Al publicar B54: actualizar B03,2027-01-26,pendiente
+EN286,B06,B54,diferencia entre cemento y mortero,Relacionado,Al publicar B54: actualizar B06,2027-01-26,pendiente
+EN287,B31,B54,diferencia entre cemento y mortero,Relacionado,Al publicar B54: actualizar B31,2027-01-26,pendiente
+EN288,B47,B54,diferencia entre cemento y mortero,Relacionado,Al publicar B54: actualizar B47,2027-01-26,pendiente
+EN289,B54,B03,tipos de brocas,Pilar de clúster ↔ satélite,Al redactar B54,2027-01-26,pendiente
+EN290,B54,B06,salitre en paredes,Relacionado,Al redactar B54,2027-01-26,pendiente
+EN291,B54,B31,tipos de llanas,Relacionado,Al redactar B54,2027-01-26,pendiente
+EN292,B54,B47,herramientas para tablaroca,Relacionado,Al redactar B54,2027-01-26,pendiente
+EN293,B02,B55,cómo leer un flexómetro,Pilar de clúster ↔ satélite,Al publicar B55: actualizar B02,2027-01-28,pendiente
+EN294,B20,B55,cómo leer un flexómetro,Relacionado,Al publicar B55: actualizar B20,2027-01-28,pendiente
+EN295,B35,B55,cómo leer un flexómetro,Relacionado,Al publicar B55: actualizar B35,2027-01-28,pendiente
+EN296,B46,B55,cómo leer un flexómetro,Relacionado,Al publicar B55: actualizar B46,2027-01-28,pendiente
+EN297,B47,B55,cómo leer un flexómetro,Relacionado,Al publicar B55: actualizar B47,2027-01-28,pendiente
+EN298,B55,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B55,2027-01-28,pendiente
+EN299,B55,B20,cómo instalar soporte de tv,Relacionado,Al redactar B55,2027-01-28,pendiente
+EN300,B55,B35,kit de emergencia para auto,Relacionado,Al redactar B55,2027-01-28,pendiente
+EN301,B55,B46,llaves milimétricas vs estándar,Relacionado,Al redactar B55,2027-01-28,pendiente
+EN302,B55,B47,herramientas para tablaroca,Relacionado,Al redactar B55,2027-01-28,pendiente
+EN303,B02,B56,tipos de lijas,Pilar de clúster ↔ satélite,Al publicar B56: actualizar B02,2027-01-30,pendiente
+EN304,B03,B56,tipos de lijas,Relacionado,Al publicar B56: actualizar B03,2027-01-30,pendiente
+EN305,B08,B56,tipos de lijas,Relacionado,Al publicar B56: actualizar B08,2027-01-30,pendiente
+EN306,B26,B56,tipos de lijas,Relacionado,Al publicar B56: actualizar B26,2027-01-30,pendiente
+EN307,B28,B56,tipos de lijas,Relacionado,Al publicar B56: actualizar B28,2027-01-30,pendiente
+EN308,B53,B56,tipos de lijas,Relacionado,Al publicar B56: actualizar B53,2027-01-30,pendiente
+EN309,B56,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Al redactar B56,2027-01-30,pendiente
+EN310,B56,B03,tipos de brocas,Relacionado,Al redactar B56,2027-01-30,pendiente
+EN311,B56,B08,brocha o rodillo,Relacionado,Al redactar B56,2027-01-30,pendiente
+EN312,B56,B26,cómo quitar el óxido,Relacionado,Al redactar B56,2027-01-30,pendiente
+EN313,B56,B28,tipos de pegamentos,Relacionado,Al redactar B56,2027-01-30,pendiente
+EN314,B56,B53,mantenimiento de herramientas eléctricas,Relacionado,Al redactar B56,2027-01-30,pendiente
+EN315,B02,B57,herramientas de jardinería,Pilar de clúster ↔ satélite,Cuando se publique el artículo de Reserva,,pendiente
+EN316,B34,B57,herramientas de jardinería,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN317,B52,B57,herramientas de jardinería,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN318,B57,B02,herramientas básicas para el hogar,Pilar de clúster ↔ satélite,Cuando se publique el artículo de Reserva,,pendiente
+EN319,B57,B34,guantes de trabajo,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN320,B57,B52,manguera industrial,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN321,B06,B58,impermeabilizante acrílico vs manto,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN322,B08,B58,impermeabilizante acrílico vs manto,Pilar de clúster ↔ satélite,Cuando se publique el artículo de Reserva,,pendiente
+EN323,B24,B58,impermeabilizante acrílico vs manto,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN324,B30,B58,impermeabilizante acrílico vs manto,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN325,B58,B06,salitre en paredes,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN326,B58,B08,brocha o rodillo,Pilar de clúster ↔ satélite,Cuando se publique el artículo de Reserva,,pendiente
+EN327,B58,B24,cómo calcular pintura,Relacionado,Cuando se publique el artículo de Reserva,,pendiente
+EN328,B58,B30,diferencia entre silicón y sellador acrílico,Relacionado,Cuando se publique el artículo de Reserva,,pendiente

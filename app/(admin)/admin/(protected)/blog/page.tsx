@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { BlogTopic } from "@/lib/blog/types";
 import { resolveTopicStatus } from "@/lib/blog/topic-status";
+import { getNow } from "@/lib/blog/now";
 import { getRegistryEntry } from "@/lib/blog/registry";
 import {
   clustersDe,
@@ -39,7 +40,7 @@ export default async function AdminBlogPage({
   const supabase = await createClient();
   const { data, error } = await supabase.from("blog_topics").select(COLUMNAS);
 
-  const now = new Date();
+  const now = getNow();
   const temas: TopicView[] = ordenarTemas(
     ((data ?? []) as BlogTopic[]).map((topic) => {
       const entry = getRegistryEntry(topic.id);

@@ -14,7 +14,8 @@ import { InlineText } from "@/components/blog/InlineText";
 import { JsonLd } from "@/components/blog/JsonLd";
 import { ShareButtons } from "@/components/blog/ShareButtons";
 import { toCardData } from "@/lib/blog/card";
-import { getAllArticles, getArticleBySlug, getMoreInCluster, getRelatedArticles, getVisibleArticles } from "@/lib/blog/content";
+import { getArticleBySlug, getMoreInCluster, getRelatedArticles, getVisibleArticles } from "@/lib/blog/content";
+import { getNow } from "@/lib/blog/now";
 import { esOtroDia, formatFechaCorta, formatFechaLarga } from "@/lib/blog/dates";
 import { BLOG_ROBOTS, blogAlternates } from "@/lib/blog/metadata";
 import { buildBlogBreadcrumbJsonLd, buildBlogPostingJsonLd, buildFaqJsonLd, canonicalUrl, fitTitle } from "@/lib/blog/seo";
@@ -35,7 +36,7 @@ function visibleArticle(slug: string, now: Date) {
 }
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const now = new Date();
+  const now = getNow();
   const article = visibleArticle(params.slug, now);
   if (!article) return {};
   const path = `/blog/${article.slug}`;
@@ -47,7 +48,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     keywords: [article.keyword, ...article.secondaryKeywords],
     alternates: blogAlternates(path),
     // Vista previa de un programado (solo fuera de producción): nunca indexar.
-    robots: scheduled ? { index: false, follow: false } : BLOG_ROBOTS,
+    robots: scheduled ? { index: false, follow: true } : BLOG_ROBOTS,
     authors: [{ name: "Equipo Ferretería 57" }],
     openGraph: {
       type: "article",
@@ -67,13 +68,15 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 }
 
 export default function BlogArticlePage({ params }: { params: { slug: string } }) {
-  const now = new Date();
+  const now = getNow();
   const article = visibleArticle(params.slug, now);
   if (!article) notFound();
 
   const scheduled = !isPublished(article, now);
   const visible = getVisibleArticles(now);
-  const topicSlugs = Object.fromEntries(getAllArticles().map((item) => [item.topicId, item.slug]));
+  // Solo destinos ya visibles: un [[Bxx]] hacia uno que aún no sale se pinta
+  // como texto, nunca como enlace a un 404.
+  const topicSlugs = Object.fromEntries(visible.map((item) => [item.topicId, item.slug]));
   const related = getRelatedArticles(article, visible);
   const more = getMoreInCluster(article, visible, related);
   const theme = CLUSTER_THEME[article.clusterInfo.tema];

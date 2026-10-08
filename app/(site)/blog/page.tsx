@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { BlogIndexView } from "@/components/blog/BlogIndexView";
-import { getVisibleArticles } from "@/lib/blog/content";
-import { BLOG_DESCRIPTION, BLOG_ROBOTS, BLOG_ROBOTS_NOINDEX, BLOG_TITLE, blogAlternates } from "@/lib/blog/metadata";
+import { getAllArticles } from "@/lib/blog/content";
+import { BLOG_DESCRIPTION, BLOG_TITLE, blogAlternates, blogListingRobots } from "@/lib/blog/metadata";
+import { getNow } from "@/lib/blog/now";
+import { isPublished } from "@/lib/blog/visibility";
 import { canonicalUrl } from "@/lib/blog/seo";
 
 // Render por request (ver app/(site)/blog/[slug]/page.tsx): un artículo
@@ -9,13 +11,12 @@ import { canonicalUrl } from "@/lib/blog/seo";
 export const dynamic = "force-dynamic";
 
 export function generateMetadata(): Metadata {
-  const empty = getVisibleArticles().length === 0;
   return {
     title: { absolute: BLOG_TITLE },
     description: BLOG_DESCRIPTION,
     alternates: blogAlternates("/blog"),
-    // Sin artículos todavía: la página existe pero no se indexa vacía.
-    robots: empty ? BLOG_ROBOTS_NOINDEX : BLOG_ROBOTS,
+    // Sin artículos publicados: la página existe pero no se indexa vacía.
+    robots: blogListingRobots(getAllArticles().filter((article) => isPublished(article, getNow())).length),
     openGraph: {
       type: "website",
       title: BLOG_TITLE,

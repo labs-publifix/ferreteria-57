@@ -1,11 +1,15 @@
 import { getAllArticles, byPublishDesc } from "@/lib/blog/content";
 import { BLOG_DESCRIPTION } from "@/lib/blog/metadata";
 import { canonicalUrl } from "@/lib/blog/seo";
+import { getNow } from "@/lib/blog/now";
 import { isPublished } from "@/lib/blog/visibility";
 
 // Feed RSS 2.0 del blog: SOLO artículos publicados (nunca los programados,
-// ni con BLOG_SHOW_SCHEDULED). Se regenera cada hora.
-export const revalidate = 3600;
+// ni con BLOG_SHOW_SCHEDULED). Se arma en cada petición (el contenido va en
+// el bundle, no hay I/O): un artículo entra al feed justo al llegar su
+// publishAt, sin redeploy ni tarea programada. Antes era ISR de 1 hora y el
+// feed quedaba congelado con lo publicado al momento del build.
+export const dynamic = "force-dynamic";
 
 function xml(value: string): string {
   return value
@@ -17,7 +21,7 @@ function xml(value: string): string {
 }
 
 export function GET() {
-  const now = new Date();
+  const now = getNow();
   const published = getAllArticles()
     .filter((article) => isPublished(article, now))
     .sort(byPublishDesc);
@@ -54,7 +58,7 @@ ${items}
   return new Response(body, {
     headers: {
       "Content-Type": "application/rss+xml; charset=utf-8",
-      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "Cache-Control": "public, max-age=0, must-revalidate",
     },
   });
 }

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { BlogIndexView } from "@/components/blog/BlogIndexView";
-import { BLOG_DESCRIPTION, BLOG_ROBOTS, blogAlternates } from "@/lib/blog/metadata";
+import { getAllArticles } from "@/lib/blog/content";
+import { BLOG_DESCRIPTION, blogAlternates, blogListingRobots } from "@/lib/blog/metadata";
+import { getNow } from "@/lib/blog/now";
+import { isPublished } from "@/lib/blog/visibility";
 import { blogPagePath, canonicalUrl, fitTitle } from "@/lib/blog/seo";
 
 // Render por request (ver app/(site)/blog/[slug]/page.tsx).
@@ -20,7 +23,7 @@ export function generateMetadata({ params }: { params: { n: string } }): Metadat
     title: { absolute: title },
     description: BLOG_DESCRIPTION,
     alternates: blogAlternates(blogPagePath(page)),
-    robots: BLOG_ROBOTS,
+    robots: blogListingRobots(getAllArticles().filter((article) => isPublished(article, getNow())).length),
     openGraph: { type: "website", title, description: BLOG_DESCRIPTION, url: canonicalUrl(blogPagePath(page)), siteName: "Ferretería 57", locale: "es_MX" },
   };
 }

@@ -7,7 +7,8 @@ import { CategoryChips } from "@/components/blog/CategoryChips";
 import { JsonLd } from "@/components/blog/JsonLd";
 import { toCardData } from "@/lib/blog/card";
 import { clustersWithArticles, getVisibleArticles } from "@/lib/blog/content";
-import { BLOG_ROBOTS, blogAlternates } from "@/lib/blog/metadata";
+import { blogAlternates, blogListingRobots } from "@/lib/blog/metadata";
+import { getNow } from "@/lib/blog/now";
 import { buildBlogBreadcrumbJsonLd, buildCollectionJsonLd, canonicalUrl, fitDescription, fitTitle } from "@/lib/blog/seo";
 import { isPublished } from "@/lib/blog/visibility";
 
@@ -35,7 +36,7 @@ export function generateMetadata({ params }: { params: { cluster: string } }): M
     title: { absolute: title },
     description,
     alternates: blogAlternates(path),
-    robots: BLOG_ROBOTS,
+    robots: blogListingRobots(articlesOf(cluster.slug).filter((article) => isPublished(article, getNow())).length),
     openGraph: { type: "website", title, description, url: canonicalUrl(path), siteName: "Ferretería 57", locale: "es_MX" },
     twitter: { card: "summary_large_image", title, description },
   };
@@ -48,7 +49,7 @@ export default function BlogCategoriaPage({ params }: { params: { cluster: strin
   // Sin artículos publicados, la categoría no existe todavía.
   if (articles.length === 0) notFound();
 
-  const now = new Date();
+  const now = getNow();
   const path = `/blog/categoria/${cluster.slug}`;
   const crumbs = [
     { name: "Inicio", path: "/" },

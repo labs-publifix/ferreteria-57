@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/lib/supabase/requireStaff";
+import { getNow } from "@/lib/blog/now";
 import { getRegistryEntry } from "@/lib/blog/registry";
 import { resolveTopicStatus } from "@/lib/blog/topic-status";
 
@@ -24,7 +25,7 @@ export async function setTopicDescartado(id: string, descartado: boolean): Promi
   if (readError) return { error: `No se pudo leer el tema: ${readError.message}` };
   if (!topic) return { error: "Tema no encontrado." };
 
-  const { estado } = resolveTopicStatus(topic, getRegistryEntry(id), new Date());
+  const { estado } = resolveTopicStatus(topic, getRegistryEntry(id), getNow());
   if (estado === "publicado" || estado === "programado") {
     return { error: "Este tema ya tiene artículo publicado o programado; no se puede descartar." };
   }
