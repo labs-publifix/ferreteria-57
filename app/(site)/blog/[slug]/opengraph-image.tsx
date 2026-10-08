@@ -10,7 +10,7 @@ export const size = OG_SIZE;
 export const contentType = "image/png";
 export const revalidate = 3600;
 
-// Tarjeta del artículo: color del clúster, número del tema y título. Un
+// Tarjeta del artículo: color del clúster, categoría y título. Un
 // programado no tiene imagen en producción (misma regla que la página).
 export default function Image({ params }: { params: { slug: string } }) {
   const article = getArticleBySlug(params.slug);
@@ -19,6 +19,5 @@ export default function Image({ params }: { params: { slug: string } }) {
     tema: article.clusterInfo.tema,
     eyebrow: article.clusterInfo.nombre,
     title: article.title,
-    number: article.number,
   });
 }

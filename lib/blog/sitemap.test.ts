@@ -38,10 +38,14 @@ test("páginas /blog/pagina/n solo desde n = 2", () => {
     art(`B${String(i + 10)}`, `a${i}`, "plomeria-y-agua", `2026-10-${String((i % 9) + 10)}T08:00:00-06:00`)
   );
   const urls = buildBlogSitemapEntries(many, NOW, "https://ferreteria57.com").map((entry) => entry.url);
+  // /blog: destacado + 12 en la página 1 y 12 en la 2 (25 artículos = 2 páginas).
   expect(urls).toContain("https://ferreteria57.com/blog/pagina/2");
-  expect(urls).toContain("https://ferreteria57.com/blog/pagina/3");
   expect(urls).not.toContain("https://ferreteria57.com/blog/pagina/1");
-  expect(urls).not.toContain("https://ferreteria57.com/blog/pagina/4");
+  expect(urls).not.toContain("https://ferreteria57.com/blog/pagina/3");
+  // Categoría: 12 por página, sin destacado (25 = 3 páginas).
+  expect(urls).toContain("https://ferreteria57.com/blog/categoria/plomeria-y-agua/pagina/2");
+  expect(urls).toContain("https://ferreteria57.com/blog/categoria/plomeria-y-agua/pagina/3");
+  expect(urls).not.toContain("https://ferreteria57.com/blog/categoria/plomeria-y-agua/pagina/4");
 });
 
 test("lastmod = updatedAt del artículo", () => {

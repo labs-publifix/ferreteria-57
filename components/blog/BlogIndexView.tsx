@@ -1,38 +1,41 @@
 import { notFound } from "next/navigation";
-import { ARTICLES_PER_PAGE, clustersWithArticles, getVisibleArticles, pageSlice, totalPages } from "@/lib/blog/content";
+import { clustersWithArticles, getVisibleArticles } from "@/lib/blog/content";
 import { toCardData } from "@/lib/blog/card";
+import { hubListing, listingPagePath } from "@/lib/blog/listing";
 import { BLOG_DESCRIPTION } from "@/lib/blog/metadata";
-import { blogPagePath, buildBlogBreadcrumbJsonLd, buildCollectionJsonLd } from "@/lib/blog/seo";
+import { buildBlogBreadcrumbJsonLd, buildCollectionJsonLd } from "@/lib/blog/seo";
 import { getNow } from "@/lib/blog/now";
 import { isPublished } from "@/lib/blog/visibility";
 import { BlogCardGrid } from "./BlogCard";
 import { BlogHeroIntro } from "./BlogHero";
+import { BlogLeadCard } from "./BlogLeadCard";
 import { BlogPagination } from "./BlogPagination";
 import { BlogSearch } from "./BlogSearch";
 import { CategoryChips } from "./CategoryChips";
 import { JsonLd } from "./JsonLd";
 import { BlogEmptyState } from "./BlogEmptyState";
 
-// /blog y /blog/pagina/[n]: el mismo listado, 12 por página, del más
-// reciente al más antiguo. "Destacados" (artículos pilar) solo en la 1.
+// /blog y /blog/pagina/[n], del más reciente al más antiguo. La página 1
+// abre con el artículo más reciente en grande y debajo los siguientes 12;
+// las demás páginas, 12 cada una (lib/blog/listing.ts). Ningún artículo se
+// repite en la misma página.
 export function BlogIndexView({ page }: { page: number }) {
   const now = getNow();
   const visible = getVisibleArticles(now);
-  const pages = totalPages(visible.length, ARTICLES_PER_PAGE);
-  if (page > pages) notFound();
+  const listing = hubListing(visible, page);
+  if (page > listing.totalPages) notFound();
 
   const cards = visible.map(toCardData);
-  const onPage = pageSlice(cards, page);
-  const pillars = page === 1 ? cards.filter((_, i) => visible[i].pillar).slice(0, 3) : [];
   const clusters = clustersWithArticles(visible);
-  const path = blogPagePath(page);
+  const path = listingPagePath("/blog", page);
   const crumbs = [
     { name: "Inicio", path: "/" },
     { name: "Blog", path: "/blog" },
     ...(page > 1 ? [{ name: `Página ${page}`, path }] : []),
   ];
   // JSON-LD solo con publicados (nunca programados, ni en vista previa).
-  const published = pageSlice(visible, page).filter((article) => isPublished(article, now));
+  const onPage = [...(listing.lead ? [listing.lead] : []), ...listing.items];
+  const published = onPage.filter((article) => isPublished(article, now));
 
   return (
     <main id="contenido" className="pb-16 sm:pb-24">
@@ -58,25 +61,28 @@ export function BlogIndexView({ page }: { page: number }) {
           <BlogEmptyState />
         ) : (
           <>
-            {pillars.length > 0 && (
-              <section aria-labelledby="destacados" className="mt-10 sm:mt-12">
-                <h2 id="destacados" className="mb-5 font-display text-lg uppercase text-brand-slate sm:text-xl">
-                  Destacados
+            <div className="mt-8 sm:mt-10">
+              <CategoryChips clusters={clusters} />
+            </div>
+
+            {listing.lead && (
+              <section aria-labelledby="reciente" className="mt-8 sm:mt-10">
+                <h2 id="reciente" className="mb-5 font-display text-lg uppercase text-brand-slate sm:text-xl">
+                  Lo más reciente
                 </h2>
-                <BlogCardGrid cards={pillars} />
+                <BlogLeadCard card={toCardData(listing.lead)} />
               </section>
             )}
 
-            <section aria-labelledby="todos" className="mt-12 sm:mt-16">
-              <div className="mb-5 flex flex-col gap-4">
-                <h2 id="todos" className="font-display text-lg uppercase text-brand-slate sm:text-xl">
-                  {page > 1 ? `Todos los artículos · página ${page}` : "Todos los artículos"}
+            {listing.items.length > 0 && (
+              <section aria-labelledby="mas" className={listing.lead ? "mt-12 sm:mt-16" : "mt-8 sm:mt-10"}>
+                <h2 id="mas" className="mb-5 font-display text-lg uppercase text-brand-slate sm:text-xl">
+                  {page > 1 ? `Más artículos · página ${page}` : "Más artículos"}
                 </h2>
-                <CategoryChips clusters={clusters} />
-              </div>
-              <BlogCardGrid cards={onPage} />
-              <BlogPagination page={page} total={pages} />
-            </section>
+                <BlogCardGrid cards={listing.items.map(toCardData)} />
+              </section>
+            )}
+            <BlogPagination page={page} total={listing.totalPages} />
           </>
         )}
       </BlogSearch>
