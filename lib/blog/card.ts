@@ -11,6 +11,8 @@ export interface BlogCardData {
   topicId: string;
   number: string;
   title: string;
+  /** Resumen (la meta description del artículo), para la tarjeta destacada. */
+  excerpt: string;
   keyword: string;
   cluster: string;
   clusterNombre: string;
@@ -26,6 +28,7 @@ export function toCardData(article: BlogArticle): BlogCardData {
     topicId: article.topicId,
     number: article.number,
     title: article.title,
+    excerpt: article.metaDescription,
     keyword: article.keyword,
     cluster: article.cluster,
     clusterNombre: article.clusterInfo.nombre,

@@ -1,23 +1,12 @@
 import { BlogBreadcrumbs, type Crumb } from "./BlogBreadcrumbs";
 
-// Encabezado de las páginas de listado del blog: ruta, etiqueta BLOG, H1 y
-// subtítulo.
-export function BlogHeroIntro({
-  crumbs,
-  eyebrow = "Blog",
-  title,
-  subtitle,
-}: {
-  crumbs: Crumb[];
-  eyebrow?: string;
-  title: string;
-  subtitle: string;
-}) {
+// Encabezado de las páginas de listado del blog: ruta, H1 y subtítulo. Sin
+// etiqueta encima del título: la ruta (Inicio › Blog) ya dice dónde estás.
+export function BlogHeroIntro({ crumbs, title, subtitle }: { crumbs: Crumb[]; title: string; subtitle: string }) {
   return (
     <>
       <BlogBreadcrumbs items={crumbs} tone="muted" />
-      <p className="mt-8 font-sans text-xs font-bold uppercase tracking-[0.18em] text-brand-slate">{eyebrow}</p>
-      <h1 className="mt-2 font-display text-[2rem] uppercase leading-[1.05] text-brand-black [text-wrap:balance] sm:text-5xl">{title}</h1>
+      <h1 className="mt-8 font-display text-[2rem] uppercase leading-[1.05] text-brand-black [text-wrap:balance] sm:text-5xl">{title}</h1>
       <p className="mt-4 max-w-[60ch] font-sans text-base leading-relaxed text-brand-black/75 sm:text-lg">{subtitle}</p>
     </>
   );
