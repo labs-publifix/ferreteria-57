@@ -22,3 +22,10 @@ export const BLOG_ROBOTS: Metadata["robots"] = {
 };
 
 export const BLOG_ROBOTS_NOINDEX: Metadata["robots"] = { index: false, follow: true };
+
+// Listados del blog (/blog, páginas, categorías): indexables solo si ya hay
+// al menos un artículo PUBLICADO (los programados en vista previa no
+// cuentan). Sin contenido real: noindex,follow y fuera del sitemap.
+export function blogListingRobots(publishedCount: number): Metadata["robots"] {
+  return publishedCount > 0 ? BLOG_ROBOTS : BLOG_ROBOTS_NOINDEX;
+}

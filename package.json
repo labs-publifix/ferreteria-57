@@ -5,13 +5,16 @@
   "scripts": {
     "predev": "tsx scripts/blog-build-index.ts",
     "dev": "next dev",
-    "prebuild": "tsx scripts/blog-build-index.ts",
+    "prebuild": "npm run blog:check",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "seed:zonas-envio": "node --env-file=.env.local scripts/seed-zonas-envio.mjs",
     "test": "vitest run",
-    "blog:index": "tsx scripts/blog-build-index.ts"
+    "blog:index": "tsx scripts/blog-build-index.ts",
+    "blog:check": "tsx scripts/blog-check.ts",
+    "blog:links": "tsx scripts/blog-links.ts",
+    "blog:new": "tsx scripts/blog-new.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

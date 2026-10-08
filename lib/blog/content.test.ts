@@ -95,6 +95,14 @@ describe("buildArticles", () => {
       ).toThrow(/después que este artículo/);
     });
 
+    test("válido si el destino sale antes de la última actualización (ida y vuelta)", () => {
+      const articles = buildArticles([
+        source({ intro: "Lee [[B04|el otro]].", updatedAt: "2026-10-21T08:00:00-06:00" }),
+        destino("2026-10-20T08:00:00-06:00"),
+      ]);
+      expect(articles).toHaveLength(2);
+    });
+
     test("revisa también tablas, listas y FAQ", () => {
       expect(() =>
         buildArticles([source({ faq: [{ q: "¿?", a: "Ver [[B77|otro]]" }] })])

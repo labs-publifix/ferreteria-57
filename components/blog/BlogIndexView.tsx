@@ -3,6 +3,7 @@ import { ARTICLES_PER_PAGE, clustersWithArticles, getVisibleArticles, pageSlice,
 import { toCardData } from "@/lib/blog/card";
 import { BLOG_DESCRIPTION } from "@/lib/blog/metadata";
 import { blogPagePath, buildBlogBreadcrumbJsonLd, buildCollectionJsonLd } from "@/lib/blog/seo";
+import { getNow } from "@/lib/blog/now";
 import { isPublished } from "@/lib/blog/visibility";
 import { BlogCardGrid } from "./BlogCard";
 import { BlogHeroIntro } from "./BlogHero";
@@ -15,7 +16,7 @@ import { BlogEmptyState } from "./BlogEmptyState";
 // /blog y /blog/pagina/[n]: el mismo listado, 12 por página, del más
 // reciente al más antiguo. "Destacados" (artículos pilar) solo en la 1.
 export function BlogIndexView({ page }: { page: number }) {
-  const now = new Date();
+  const now = getNow();
   const visible = getVisibleArticles(now);
   const pages = totalPages(visible.length, ARTICLES_PER_PAGE);
   if (page > pages) notFound();

@@ -1,3 +1,4 @@
+import { catalogHref, catalogName } from "@/content/blog/catalog-links";
 import { defineArticle } from "@/lib/blog/article-schema";
 
 // B03 · Pilar · Construcción, fijación y materiales. Brief: hoja "Briefs
@@ -244,7 +245,10 @@ export default defineArticle({
     },
     {
       type: "p",
-      text: "Con la broca correcta, la técnica adecuada y el trío completo de [broca](/buscar?q=broca), [taquete](/buscar?q=taquete) y [tornillo](/buscar?q=tornillo), cualquier perforación en casa queda firme a la primera. Si todavía no tienes herramienta, revisa nuestros [taladros](/buscar?q=taladro) y [rotomartillos](/buscar?q=rotomartillo), y para agujeros grandes en madera, las [sierras copa](/buscar?q=sierra+copa). Y si tienes dudas, llévanos el taquete o una foto del muro: en el mostrador de Ferretería 57 te ayudamos a elegir.",
+      // Taquete y tornillo no tienen categoría propia en el catálogo: se
+      // quedan en la búsqueda. Brocas, taladros, rotomartillos y sierras copa
+      // viven en Herramienta (content/blog/catalog-links.ts).
+      text: `Con la broca correcta, la técnica adecuada y el trío completo de broca, [taquete](/buscar?q=taquete) y [tornillo](/buscar?q=tornillo), cualquier perforación en casa queda firme a la primera. Brocas, taladros, rotomartillos y sierras copa los encuentras en nuestra categoría de [${catalogName("herramienta")}](${catalogHref("herramienta")}). Y si tienes dudas, llévanos el taquete o una foto del muro: en el mostrador de Ferretería 57 te ayudamos a elegir.`,
     },
   ],
   faq: [

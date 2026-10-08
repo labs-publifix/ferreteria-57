@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/seo";
 import { getAllArticles } from "@/lib/blog/content";
+import { getNow } from "@/lib/blog/now";
 import { buildBlogSitemapEntries } from "@/lib/blog/sitemap";
 
 // /sitemap.xml generado en cada request (sin caché propia más allá de la
@@ -41,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Blog: /blog, sus páginas, categorías y artículos — solo publicados
   // (ver lib/blog/sitemap.ts).
-  const blogRoutes = buildBlogSitemapEntries(getAllArticles(), new Date());
+  const blogRoutes = buildBlogSitemapEntries(getAllArticles(), getNow());
 
   return [...staticRoutes, ...categoryRoutes, ...productRoutes, ...blogRoutes];
 }
