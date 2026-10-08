@@ -3,7 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { BlogTopic } from "@/lib/blog/types";
 import { resolveTopicStatus } from "@/lib/blog/topic-status";
-import { getRegistryEntry, isBlogAdminMockActive } from "@/lib/blog/registry";
+import { getNow } from "@/lib/blog/now";
+import { getRegistryEntry } from "@/lib/blog/registry";
 import {
   clustersDe,
   filtrarTemas,
@@ -39,12 +40,13 @@ export default async function AdminBlogPage({
   const supabase = await createClient();
   const { data, error } = await supabase.from("blog_topics").select(COLUMNAS);
 
-  const now = new Date();
+  const now = getNow();
   const temas: TopicView[] = ordenarTemas(
-    ((data ?? []) as BlogTopic[]).map((topic) => ({
-      ...topic,
-      ...resolveTopicStatus(topic, getRegistryEntry(topic.id, now), now),
-    }))
+    ((data ?? []) as BlogTopic[]).map((topic) => {
+      const entry = getRegistryEntry(topic.id);
+      // El enlace "Ver artículo" usa el slug real del archivo del artículo.
+      return { ...topic, slug: entry?.slug ?? topic.slug, ...resolveTopicStatus(topic, entry, now) };
+    })
   );
   const resumen = resumenBacklog(temas);
   const sinEstado = filtrarTemas(temas, { ...filtros, estado: "todos" });
@@ -71,7 +73,6 @@ export default async function AdminBlogPage({
     const query = params.toString();
     return query ? `/admin/blog?${query}` : "/admin/blog";
   }
-  const mock = isBlogAdminMockActive();
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,13 +83,6 @@ export default async function AdminBlogPage({
           publicado cuando tiene artículo. Aquí solo puedes descartar o restaurar temas pendientes.
         </p>
       </div>
-
-      {mock && (
-        <p role="status" className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2.5 font-sans text-sm text-amber-900">
-          Datos de ejemplo activos (BLOG_ADMIN_MOCK): B01–B03 aparecen publicados y B04–B05 programados. No aplica en
-          producción.
-        </p>
-      )}
 
       {error ? (
         <p role="alert" className="rounded-md bg-red-50 px-4 py-3 font-sans text-sm text-red-700">

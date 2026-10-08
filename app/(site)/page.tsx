@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { BlogHomeSection } from "@/components/blog/BlogHomeSection";
 import { BrandLogos } from "@/components/home/BrandLogos";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
@@ -21,6 +22,11 @@ import { buildWebSiteJsonLd, SITE_URL } from "@/lib/seo";
 export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },
 };
+
+// Revalida al menos cada hora (la sección Blog debe reflejar los artículos
+// que se van publicando). Hoy el home ya se pinta por request porque el
+// layout lee cookies; esto lo garantiza aunque eso cambie.
+export const revalidate = 3600;
 
 // Home real del e-commerce. Header y Footer no se repiten aquí: ya envuelven
 // esta página desde app/layout.tsx (layout global). Mobile-first: cada
@@ -120,6 +126,13 @@ export default async function HomePage() {
           </div>
           <Testimonials />
         </section>
+
+        {/* Blog entre reseñas y Club 57: después de la confianza (cifras y
+            reseñas) y justo antes de Club 57, porque las guías del blog se
+            descargan registrándose en Club 57 — lleva al visitante de "leer"
+            a "unirse" sin cortar el bloque de compra de arriba. Solo
+            aparece con 3 o más artículos publicados. */}
+        <BlogHomeSection />
 
         <section className="mt-14 sm:mt-20" aria-labelledby="club57-heading">
           <div className="mb-4 text-center sm:mb-6">

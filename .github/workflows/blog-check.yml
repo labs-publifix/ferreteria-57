@@ -1,0 +1,34 @@
+name: Blog check
+
+# Validador de calidad del blog y pruebas unitarias en cada PR que toque
+# contenido o código del blog. Mismo blog:check que corre en prebuild.
+on:
+  pull_request:
+    paths:
+      - "content/blog/**"
+      - "lib/blog/**"
+      - "lib/safeNext*"
+      - "scripts/blog-*"
+      - "scripts/lib/blog-*"
+      - "docs/blog/mapa-enlaces.csv"
+      - "supabase/seed/blog-backlog.csv"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  blog-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Validador de calidad (npm run blog:check)
+        run: npm run blog:check
+      - name: Pruebas unitarias (npm test)
+        run: npm test

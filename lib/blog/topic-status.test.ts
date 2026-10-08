@@ -1,11 +1,8 @@
-// Pruebas de lib/blog/topic-status.ts y lib/blog/format.ts con el runner
-// nativo de Node (sin dependencias):
-//
-//   node --experimental-strip-types --test lib/blog/*.test.mts
-import { test } from "node:test";
+// Pruebas de lib/blog/topic-status.ts y lib/blog/format.ts (npm test).
+import { test } from "vitest";
 import assert from "node:assert/strict";
-import { hoyNegocio, resolveTopicStatus } from "./topic-status.ts";
-import { diaDeLaSemana, formatFechaProgramada } from "./format.ts";
+import { hoyNegocio, resolveTopicStatus } from "./topic-status";
+import { diaDeLaSemana, formatFechaProgramada } from "./format";
 
 // 9 de octubre de 2026, 12:00 h en CDMX (UTC-6).
 const NOW = new Date("2026-10-09T18:00:00Z");
@@ -28,7 +25,7 @@ test("sin fecha (Reserva): pendiente y nunca atrasado", () => {
 });
 
 test("descartado gana aunque tenga registro publicado", () => {
-  const registro = { publishAt: "2026-10-01T15:00:00Z" };
+  const registro = { slug: "x", publishAt: "2026-10-01T15:00:00Z" };
   assert.deepEqual(resolveTopicStatus(tema("2026-10-01", true), registro, NOW), { estado: "descartado", atrasado: false });
 });
 
@@ -37,12 +34,12 @@ test("descartado con fecha vencida no se marca atrasado", () => {
 });
 
 test("registro con publishAt pasado o igual a ahora: publicado", () => {
-  assert.equal(resolveTopicStatus(tema("2026-10-09"), { publishAt: "2026-10-09T15:00:00Z" }, NOW).estado, "publicado");
-  assert.equal(resolveTopicStatus(tema("2026-10-09"), { publishAt: NOW.toISOString() }, NOW).estado, "publicado");
+  assert.equal(resolveTopicStatus(tema("2026-10-09"), { slug: "x", publishAt: "2026-10-09T15:00:00Z" }, NOW).estado, "publicado");
+  assert.equal(resolveTopicStatus(tema("2026-10-09"), { slug: "x", publishAt: NOW.toISOString() }, NOW).estado, "publicado");
 });
 
 test("registro con publishAt futuro: programado y no atrasado aunque la fecha ya pasó", () => {
-  assert.deepEqual(resolveTopicStatus(tema("2026-10-01"), { publishAt: "2026-10-20T15:00:00Z" }, NOW), {
+  assert.deepEqual(resolveTopicStatus(tema("2026-10-01"), { slug: "x", publishAt: "2026-10-20T15:00:00Z" }, NOW), {
     estado: "programado",
     atrasado: false,
   });
