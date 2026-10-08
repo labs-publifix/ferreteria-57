@@ -16,9 +16,12 @@ import {
 import { BlogSummary } from "@/components/admin/blog/BlogSummary";
 import { BlogFilters } from "@/components/admin/blog/BlogFilters";
 import { BlogTopicsList } from "@/components/admin/blog/BlogTopicsList";
+import { BlogPagination } from "@/components/admin/blog/BlogPagination";
 
 export const metadata: Metadata = { title: "Blog — Panel de administración" };
 export const dynamic = "force-dynamic";
+
+const TEMAS_POR_PAGINA = 20;
 
 const COLUMNAS =
   "id, orden, lote, etapa, fecha_programada, dia_semana, cluster, rol, tipo, titulo, slug, keyword, audiencia, guia_titulo, origen, descartado, descartado_at";
@@ -30,7 +33,7 @@ const COLUMNAS =
 export default async function AdminBlogPage({
   searchParams,
 }: {
-  searchParams: { estado?: string; cluster?: string; q?: string };
+  searchParams: { estado?: string; cluster?: string; q?: string; pagina?: string };
 }) {
   const filtros = parseFiltros(searchParams);
   const supabase = await createClient();
@@ -54,6 +57,20 @@ export default async function AdminBlogPage({
   };
   for (const tema of sinEstado) conteoPorEstado[tema.estado] += 1;
   const visibles = filtrarTemas(temas, filtros);
+  const totalPaginas = Math.max(1, Math.ceil(visibles.length / TEMAS_POR_PAGINA));
+  const pagina = Math.min(totalPaginas, Math.max(1, Number.parseInt(searchParams.pagina ?? "1", 10) || 1));
+  const desde = (pagina - 1) * TEMAS_POR_PAGINA;
+  const temasPagina = visibles.slice(desde, desde + TEMAS_POR_PAGINA);
+
+  function hrefPagina(n: number): string {
+    const params = new URLSearchParams();
+    if (filtros.estado !== "todos") params.set("estado", filtros.estado);
+    if (filtros.cluster) params.set("cluster", filtros.cluster);
+    if (filtros.q) params.set("q", filtros.q);
+    if (n > 1) params.set("pagina", String(n));
+    const query = params.toString();
+    return query ? `/admin/blog?${query}` : "/admin/blog";
+  }
   const mock = isBlogAdminMockActive();
 
   return (
@@ -89,10 +106,19 @@ export default async function AdminBlogPage({
           <BlogSummary resumen={resumen} />
           <BlogFilters filtros={filtros} clusters={clustersDe(temas)} conteoPorEstado={conteoPorEstado} />
           <p className="-mb-3 font-sans text-sm text-brand-slate" aria-live="polite">
-            {visibles.length === 1 ? "1 tema" : `${visibles.length} temas`}
+            {visibles.length === 0
+              ? "0 temas"
+              : totalPaginas > 1
+                ? `Mostrando ${desde + 1}–${desde + temasPagina.length} de ${visibles.length} temas`
+                : visibles.length === 1
+                  ? "1 tema"
+                  : `${visibles.length} temas`}
           </p>
           {visibles.length > 0 ? (
-            <BlogTopicsList topics={visibles} />
+            <>
+              <BlogTopicsList topics={temasPagina} />
+              <BlogPagination pagina={pagina} totalPaginas={totalPaginas} buildHref={hrefPagina} />
+            </>
           ) : (
             <div className="flex flex-col items-center gap-2 rounded-lg bg-white p-8 text-center shadow-sm">
               <p className="font-sans text-sm text-brand-slate">Ningún tema coincide con estos filtros.</p>

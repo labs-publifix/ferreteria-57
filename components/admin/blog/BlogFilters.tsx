@@ -37,6 +37,8 @@ export function BlogFilters({
 
   function hrefCon(cambios: Partial<Record<"estado" | "cluster" | "q", string>>): string {
     const params = new URLSearchParams(searchParams.toString());
+    // Cualquier cambio de filtro regresa a la primera página.
+    params.delete("pagina");
     for (const [key, value] of Object.entries(cambios)) {
       if (!value || (key === "estado" && value === "todos")) params.delete(key);
       else params.set(key, value);
