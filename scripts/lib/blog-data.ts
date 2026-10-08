@@ -16,3 +16,6 @@ export function loadBacklog() {
 export function loadLinkMap() {
   return parseLinkMap(readFileSync(LINK_MAP_CSV, "utf-8"));
 }
+
+export const EXCEL_FILE = path.join(ROOT, "docs", "blog", "backlog_blog_ferreteria57.xlsx");
+export const GUIDES_DIR = path.join(ROOT, "content", "blog", "guides");

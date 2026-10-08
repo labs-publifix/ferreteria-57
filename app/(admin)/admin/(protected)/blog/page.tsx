@@ -5,6 +5,7 @@ import type { BlogTopic } from "@/lib/blog/types";
 import { resolveTopicStatus } from "@/lib/blog/topic-status";
 import { getNow } from "@/lib/blog/now";
 import { getRegistryEntry } from "@/lib/blog/registry";
+import { getGuideBySlug } from "@/lib/blog/guide-content";
 import {
   clustersDe,
   filtrarTemas,
@@ -38,14 +39,24 @@ export default async function AdminBlogPage({
 }) {
   const filtros = parseFiltros(searchParams);
   const supabase = await createClient();
-  const { data, error } = await supabase.from("blog_topics").select(COLUMNAS);
+  const [{ data, error }, { data: conteos }] = await Promise.all([
+    supabase.from("blog_topics").select(COLUMNAS),
+    supabase.from("blog_guide_download_counts").select("topic_id, descargas"),
+  ]);
+  const descargas = new Map(((conteos ?? []) as { topic_id: string; descargas: number }[]).map((row) => [row.topic_id, row.descargas]));
 
   const now = getNow();
   const temas: TopicView[] = ordenarTemas(
     ((data ?? []) as BlogTopic[]).map((topic) => {
       const entry = getRegistryEntry(topic.id);
       // El enlace "Ver artículo" usa el slug real del archivo del artículo.
-      return { ...topic, slug: entry?.slug ?? topic.slug, ...resolveTopicStatus(topic, entry, now) };
+      return {
+        ...topic,
+        slug: entry?.slug ?? topic.slug,
+        ...resolveTopicStatus(topic, entry, now),
+        guiaDisponible: entry ? getGuideBySlug(entry.slug) !== undefined : false,
+        descargas: descargas.get(topic.id) ?? 0,
+      };
     })
   );
   const resumen = resumenBacklog(temas);
@@ -80,7 +91,8 @@ export default async function AdminBlogPage({
         <h1 className="font-display text-xl uppercase text-brand-slate sm:text-2xl">Blog</h1>
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-slate">
           Backlog de temas del blog con su fecha programada. El estado se calcula solo: un tema pasa a programado o
-          publicado cuando tiene artículo. Aquí solo puedes descartar o restaurar temas pendientes.
+          publicado cuando tiene artículo. Aquí solo puedes descartar o restaurar temas pendientes y revisar el PDF de
+          cada guía disponible.
         </p>
       </div>
 

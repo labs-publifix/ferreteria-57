@@ -3,7 +3,13 @@
 import { normalizeText } from "@/lib/normalizeText";
 import type { BlogTopic, TopicEstado, TopicStatus } from "./types";
 
-export type TopicView = BlogTopic & TopicStatus;
+export type TopicView = BlogTopic &
+  TopicStatus & {
+    /** Hay guía PDF válida para el artículo del tema (content/blog/guides). */
+    guiaDisponible?: boolean;
+    /** Descargas registradas en blog_guide_downloads. */
+    descargas?: number;
+  };
 
 export const ESTADO_FILTROS = ["todos", "pendiente", "programado", "publicado", "descartado"] as const;
 export type EstadoFiltro = (typeof ESTADO_FILTROS)[number];

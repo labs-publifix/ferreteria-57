@@ -16,6 +16,9 @@ const BLACK = rgb(0x1a / 255, 0x1a / 255, 0x1a / 255);
 const GRAY = rgb(0xf2 / 255, 0xf1 / 255, 0xef / 255);
 const WHITE = rgb(1, 1, 1);
 
+/** Tokens de marca para los PDF (los reutiliza la guía del blog: lib/blog/guide-pdf.ts). */
+export const BRAND_PDF = { ORANGE, SLATE, BLACK, GRAY, WHITE } as const;
+
 const PAGE_WIDTH = 612;
 const PAGE_HEIGHT = 792;
 const MARGIN = 40;
@@ -37,13 +40,23 @@ const CELL_PAD_Y = 6;
 
 const moneyFormatter = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
-interface Fonts {
+export interface Fonts {
   regular: PDFFont;
   bold: PDFFont;
   display: PDFFont;
 }
 
-function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+/** Inter (regular y bold) y Russo One embebidas en subconjunto: texto seleccionable y archivo ligero. */
+export async function embedBrandFonts(doc: PDFDocument): Promise<Fonts> {
+  doc.registerFontkit(fontkit);
+  return {
+    regular: await doc.embedFont(Buffer.from(INTER_REGULAR_TTF, "base64"), { subset: true }),
+    bold: await doc.embedFont(Buffer.from(INTER_BOLD_TTF, "base64"), { subset: true }),
+    display: await doc.embedFont(Buffer.from(RUSSO_ONE_TTF, "base64"), { subset: true }),
+  };
+}
+
+export function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const lines: string[] = [];
   let current = "";
   for (const word of text.split(" ")) {
@@ -87,12 +100,7 @@ export async function renderLiquidacionPdf(input: {
   rango: PromoRango | null;
 }): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  doc.registerFontkit(fontkit);
-  const fonts: Fonts = {
-    regular: await doc.embedFont(Buffer.from(INTER_REGULAR_TTF, "base64"), { subset: true }),
-    bold: await doc.embedFont(Buffer.from(INTER_BOLD_TTF, "base64"), { subset: true }),
-    display: await doc.embedFont(Buffer.from(RUSSO_ONE_TTF, "base64"), { subset: true }),
-  };
+  const fonts = await embedBrandFonts(doc);
   const logo = await doc.embedPng(Buffer.from(LOGO_NARANJA_PNG, "base64"));
   const vigencia = input.rango ? `Válido ${formatRangoLegible(input.rango).replace(/^Del /, "del ").replace(/^El /, "el ")}` : "Vigencia por definir";
 

@@ -15,7 +15,12 @@ desarrollo todavía. Actualizado: 7 de octubre de 2026.
   (`BLOG_NOW_OVERRIDE`, solo fuera de producción), RSS dinámico, noindex sin
   publicados, `blog:check` (prebuild + CI), `blog:links` con el mapa de
   enlaces, `blog:new` y enlaces reales al catálogo. Sin cron ni avisos.
-- Fases 4–5: guías PDF, artículos de lanzamiento.
+- **Fase 4 — guías PDF y flujo editorial.** `blog:next` (Excel + repo),
+  guía por artículo (`content/blog/guides`, PDF de marca generado al
+  descargar), descarga solo para miembros con límite por hora y registro en
+  `blog_guide_downloads`, «Mis guías» en /cuenta, vista previa para admin,
+  `blog:pdf`, `blog:verify` y la skill `blog-articulo`. Guía piloto de B03.
+- Fase 5: artículos de lanzamiento (B01–B08) con sus guías y fechas reales.
 
 ## Pendientes del cliente
 

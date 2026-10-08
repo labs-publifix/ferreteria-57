@@ -26,3 +26,23 @@ export function fixtureArticle(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 }
+
+// Guía mínima válida que acompaña a fixtureArticle().
+export function fixtureGuide(overrides: Record<string, unknown> = {}) {
+  return {
+    topicId: "B90",
+    slug: "articulo-de-prueba",
+    titulo: "Guía de prueba",
+    subtitulo: "Subtítulo de prueba.",
+    paginas: [
+      {
+        titulo: "Página única",
+        bloques: [
+          { type: "tabla", columnas: ["Material", "Broca"], filas: [["Madera", "De punta"]] },
+          { type: "callout", variante: "seguridad", titulo: "Antes de taladrar", items: ["Marca el punto."] },
+        ],
+      },
+    ],
+    ...overrides,
+  };
+}

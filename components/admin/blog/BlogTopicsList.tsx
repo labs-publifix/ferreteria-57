@@ -10,6 +10,7 @@ import { setTopicDescartado } from "@/app/(admin)/admin/(protected)/blog/actions
 import { describeActionFailure } from "@/lib/admin/describeActionFailure";
 import { FechaProgramada } from "./FechaProgramada";
 import { TopicEstadoBadge } from "./TopicEstadoBadge";
+import { descargasLabel, GuiaEstadoBadge, VerGuia } from "./GuiaEstado";
 
 const ORIGEN_LABEL = { cliente: "Cliente", propuesto: "Propuesto" } as const;
 
@@ -148,7 +149,8 @@ export function BlogTopicsList({ topics }: { topics: TopicView[] }) {
               <th scope="col" className="px-3 py-3 font-semibold">Clúster</th>
               <th scope="col" className="px-3 py-3 font-semibold">Tipo</th>
               <th scope="col" className="px-3 py-3 font-semibold">Estado</th>
-              <th scope="col" className="px-3 py-3 font-semibold">Guía PDF</th>
+              <th scope="col" className="px-3 py-3 font-semibold">Guía</th>
+              <th scope="col" className="px-3 py-3 text-right font-semibold">Descargas</th>
             </tr>
           </thead>
           <tbody>
@@ -182,11 +184,19 @@ export function BlogTopicsList({ topics }: { topics: TopicView[] }) {
                         <VerArticulo topic={topic} />
                       </div>
                     </td>
-                    <td className="min-w-[9rem] px-3 py-3 text-brand-slate">{topic.guia_titulo}</td>
+                    <td className="px-3 py-3">
+                      <GuiaEstadoBadge topic={topic} />
+                      <div className="-mb-2 -ml-3 mt-0.5">
+                        <VerGuia topic={topic} className={actionClass} />
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 text-right font-display tabular-nums text-brand-black">
+                      {topic.descargas ?? 0}
+                    </td>
                   </tr>
                   {abierto && (
                     <tr className="border-b border-brand-gray bg-brand-gray/40">
-                      <td colSpan={7} className="px-4 py-4">
+                      <td colSpan={8} className="px-4 py-4">
                         <Detalle
                           topic={topic}
                           pending={pendingId === topic.id}
@@ -228,9 +238,14 @@ export function BlogTopicsList({ topics }: { topics: TopicView[] }) {
                   {topic.guia_titulo}
                 </p>
               )}
+              <div className="flex flex-wrap items-center gap-2 font-sans text-xs text-brand-slate">
+                <GuiaEstadoBadge topic={topic} />
+                <span>{descargasLabel(topic.descargas)}</span>
+              </div>
               <div className="-ml-3 flex flex-wrap items-center">
                 <ExpandButton topic={topic} expanded={abierto} onToggle={() => toggle(topic.id)} label={abierto ? "Ocultar detalle" : "Ver detalle"} />
                 <VerArticulo topic={topic} />
+                <VerGuia topic={topic} className={actionClass} />
               </div>
               {abierto && (
                 <div className="border-t border-brand-gray pt-3">

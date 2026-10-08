@@ -17,6 +17,10 @@ import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 import type { PromoTipo } from "@/lib/club57/promociones/config";
 import { buildMemberPromoCards, type MemberPromoCard } from "@/lib/club57/promociones/vigencia";
+import { getAllArticles } from "@/lib/blog/content";
+import { getAllGuides } from "@/lib/blog/guide-content";
+import { buildMisGuias, type MiGuia } from "@/lib/blog/mis-guias";
+import { getNow } from "@/lib/blog/now";
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
 // app/layout.tsx.
@@ -80,6 +84,7 @@ export default async function CuentaPage({
   let bonoReferidoPendientePts: number | null = null;
   const hoy = todayInStoreTimezone();
   let promociones: MemberPromoCard[] = buildMemberPromoCards([], hoy);
+  let guias: MiGuia[] = [];
 
   if (user) {
     // Los puntos 'pendiente' cuya fecha_disponible ya llegó se pasan a
@@ -98,6 +103,7 @@ export default async function CuentaPage({
       ordersResult,
       configResult,
       promocionesResult,
+      guiaDescargasResult,
     ] = await Promise.all([
         supabase.from("profiles").select("full_name, referral_code").eq("id", user.id).single(),
         supabase.from("club57_members").select("referred_by").eq("id", user.id).maybeSingle(),
@@ -127,7 +133,11 @@ export default async function CuentaPage({
         // Solo id, tipo y fechas — la tabla base no es legible para el
         // miembro (ver migración 20261006010000).
         supabase.from("club57_promociones_vigentes").select("id, tipo, vigencia_inicio, vigencia_fin"),
+        // «Mis guías»: solo sus propias descargas (RLS).
+        supabase.from("blog_guide_downloads").select("slug, downloaded_at").eq("user_id", user.id),
       ]);
+
+    guias = buildMisGuias(getAllArticles(), getAllGuides(), guiaDescargasResult.data ?? [], getNow());
 
     profile = profileResult.data;
     promociones = buildMemberPromoCards(
@@ -235,6 +245,7 @@ export default async function CuentaPage({
             pedidos={pedidos}
             promociones={promociones}
             hoy={hoy}
+            guias={guias}
           />
         </>
       ) : (
