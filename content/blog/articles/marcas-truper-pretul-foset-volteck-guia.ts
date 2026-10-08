@@ -28,7 +28,7 @@ export default defineArticle({
   cluster: "marca-y-club-57",
   pillar: true,
   publishAt: "2026-10-08T11:00:00-06:00",
-  updatedAt: "2026-10-08T11:00:00-06:00",
+  updatedAt: "2026-10-08T11:30:00-06:00",
   intro:
     "En Ferretería 57 todo lo que vendemos es de la familia Truper: la marca Truper y las demás **marcas Truper** del grupo: Pretul, Foset, Volteck, Fiero, Hermex y Klintek. No compiten entre sí: cada una responde a un tipo de comprador. La forma más sencilla de elegir es contestar tres preguntas: qué tan seguido vas a usar la herramienta, qué tan pesado es el trabajo y cuánto quieres invertir hoy. Con esas respuestas casi siempre queda clara la marca. En esta guía te explicamos cómo leer la familia completa, cuándo conviene pagar un poco más y cuándo no hace falta.",
   blocks: [
@@ -59,7 +59,7 @@ export default defineArticle({
     },
     {
       type: "p",
-      text: "Si vas a armar tu caja desde cero, Truper te permite tener todo de una misma familia: [herramienta](" +
+      text: "Si vas a armar tu caja desde cero, empieza por nuestra lista de [[B02|herramientas básicas para el hogar]]: con Truper puedes tener todo de una misma familia: [herramienta](" +
         catalogHref("herramienta") +
         "), [jardinería](" +
         catalogHref("jardineria") +
@@ -195,7 +195,7 @@ export default defineArticle({
     { type: "h2", text: "Cómo encontrar cada marca en nuestro catálogo" },
     {
       type: "p",
-      text: "En el sitio puedes buscar por marca: escribe el nombre en el buscador y verás todo lo que tenemos en línea de esa marca. Por ejemplo: [Truper](/buscar?q=Truper), [Pretul](/buscar?q=Pretul) o [Volteck](/buscar?q=Volteck). Dentro de cada producto, la ficha te muestra la marca, la clave y sus características, para que compares con calma.",
+      text: "En el sitio puedes buscar por marca: escribe el nombre en el buscador y verás todo lo que tenemos en línea de esa marca. Por ejemplo: [Truper](/buscar?q=Truper) o [Pretul](/buscar?q=Pretul). Dentro de cada producto, la ficha te muestra la marca, la clave y sus características, para que compares con calma.",
     },
     {
       type: "p",
