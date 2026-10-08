@@ -112,12 +112,7 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
           <BlogBreadcrumbs items={crumbs} tone="muted" />
 
           <div className={`mt-5 rounded-3xl px-5 pb-8 pt-5 sm:px-10 sm:pb-12 sm:pt-8 ${theme.block}`}>
-            <div className="flex items-start justify-between gap-6">
-              <ArticleBadges tema={article.clusterInfo.tema} readingMinutes={article.readingMinutes} />
-              <span aria-hidden="true" className="font-display text-6xl leading-[0.8] tabular-nums sm:text-8xl">
-                {article.number}
-              </span>
-            </div>
+            <ArticleBadges tema={article.clusterInfo.tema} readingMinutes={article.readingMinutes} />
             <Link
               href={categoryPath}
               className={`mt-8 inline-block rounded font-sans text-xs font-bold uppercase tracking-[0.14em] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 sm:mt-10 ${theme.muted} ${

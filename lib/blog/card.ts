@@ -9,7 +9,6 @@ import { formatFechaLarga } from "./dates";
 export interface BlogCardData {
   slug: string;
   topicId: string;
-  number: string;
   title: string;
   /** Resumen (la meta description del artículo), para la tarjeta destacada. */
   excerpt: string;
@@ -26,7 +25,6 @@ export function toCardData(article: BlogArticle): BlogCardData {
   return {
     slug: article.slug,
     topicId: article.topicId,
-    number: article.number,
     title: article.title,
     excerpt: article.metaDescription,
     keyword: article.keyword,
