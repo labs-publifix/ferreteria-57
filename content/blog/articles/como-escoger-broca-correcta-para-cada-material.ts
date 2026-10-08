@@ -23,9 +23,9 @@ export default defineArticle({
   ],
   cluster: "construccion-fijacion-y-materiales",
   pillar: true,
-  // PLACEHOLDER: se fija en Fase 5
-  publishAt: "2099-12-31T08:00:00-06:00",
-  updatedAt: "2099-12-31T08:00:00-06:00",
+  // Lanzamiento: se publica junto con B01 (el calendario decía 09/10/2026).
+  publishAt: "2026-10-08T11:00:00-06:00",
+  updatedAt: "2026-10-08T11:00:00-06:00",
   intro:
     "Hay muchos **tipos de brocas** y cada una está hecha para un material: para concreto y tabique usa una broca de carburo de tungsteno con percusión; para madera, una broca de punta, de paleta o una sierra copa; para metal, una broca HSS; para azulejo y porcelanato, una broca específica para cerámica y sin percusión; y para tablaroca, una broca para madera o metal sin golpe. El tamaño lo decide el taquete: la broca debe tener su mismo diámetro y perforar un poco más profundo que su largo. Aquí te explicamos cómo reconocer cada una y cómo usarla sin romper nada.",
   blocks: [
@@ -248,7 +248,7 @@ export default defineArticle({
       // Taquete y tornillo no tienen categoría propia en el catálogo: se
       // quedan en la búsqueda. Brocas, taladros, rotomartillos y sierras copa
       // viven en Herramienta (content/blog/catalog-links.ts).
-      text: `Con la broca correcta, la técnica adecuada y el trío completo de broca, [taquete](/buscar?q=taquete) y [tornillo](/buscar?q=tornillo), cualquier perforación en casa queda firme a la primera. Brocas, taladros, rotomartillos y sierras copa los encuentras en nuestra categoría de [${catalogName("herramienta")}](${catalogHref("herramienta")}). Y si tienes dudas, llévanos el taquete o una foto del muro: en el mostrador de Ferretería 57 te ayudamos a elegir.`,
+      text: `Con la broca correcta, la técnica adecuada y el trío completo de broca, [taquete](/buscar?q=taquete) y [tornillo](/buscar?q=tornillo), cualquier perforación en casa queda firme a la primera. Brocas, taladros, rotomartillos y sierras copa los encuentras en nuestra categoría de [${catalogName("herramienta")}](${catalogHref("herramienta")}); si dudas entre una broca Truper y una Pretul, nuestra guía de [[B01|marcas truper]] te ayuda a decidir según el uso. Y si tienes dudas, llévanos el taquete o una foto del muro: en el mostrador de Ferretería 57 te ayudamos a elegir.`,
     },
   ],
   faq: [
@@ -266,5 +266,5 @@ export default defineArticle({
     },
   ],
   guia: { titulo: "Tabla rápida: broca, taquete y tornillo por material" },
-  relatedTopicIds: ["B09", "B20", "B42", "B47", "B02"],
+  relatedTopicIds: ["B09", "B20", "B42", "B47", "B02", "B01"],
 });
