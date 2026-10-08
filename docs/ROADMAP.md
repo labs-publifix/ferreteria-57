@@ -3,10 +3,12 @@
 Pendientes acordados con el cliente. Solo planeación: nada de esto está en
 desarrollo todavía. Actualizado: 7 de octubre de 2026.
 
-## Siguiente (en curso)
+## En curso: Blog (5 fases)
 
-- **Blog (`/blog`).** Ruta nueva; los detalles los comparte el cliente al
-  arrancar.
+- **Fase 1 — backlog en /admin/blog (vista de lectura).** Tabla
+  `blog_topics`, seed del lote 1 (58 temas), estado derivado y
+  descartar/restaurar.
+- Fases 2–5: blog público, artículos, guías PDF y programación automática.
 
 ## Pendientes del cliente
 

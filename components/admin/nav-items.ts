@@ -5,6 +5,7 @@ import {
   Images,
   LayoutGrid,
   MessageSquareMore,
+  Newspaper,
   Package,
   Image as ImageIcon,
   Settings,
@@ -32,6 +33,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/promo-banners", label: "Promo Banners", icon: Images },
   { href: "/admin/pop-up-banner", label: "Pop-Up Banner", icon: MessageSquareMore },
   { href: "/admin/lealtad", label: "Club 57", icon: Gift },
+  { href: "/admin/blog", label: "Blog", icon: Newspaper },
   // Las últimas dos: a diferencia de las 7 anteriores (gestión de
   // contenido de la tienda), estas son administración del propio panel —
   // mismo criterio que separa "Programa de Lealtad" del resto de
