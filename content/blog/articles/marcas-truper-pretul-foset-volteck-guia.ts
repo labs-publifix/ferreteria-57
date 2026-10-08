@@ -28,7 +28,7 @@ export default defineArticle({
   cluster: "marca-y-club-57",
   pillar: true,
   publishAt: "2026-10-08T11:00:00-06:00",
-  updatedAt: "2026-10-08T11:30:00-06:00",
+  updatedAt: "2026-10-08T16:00:00-06:00",
   intro:
     "En Ferretería 57 todo lo que vendemos es de la familia Truper: la marca Truper y las demás **marcas Truper** del grupo: Pretul, Foset, Volteck, Fiero, Hermex y Klintek. No compiten entre sí: cada una responde a un tipo de comprador. La forma más sencilla de elegir es contestar tres preguntas: qué tan seguido vas a usar la herramienta, qué tan pesado es el trabajo y cuánto quieres invertir hoy. Con esas respuestas casi siempre queda clara la marca. En esta guía te explicamos cómo leer la familia completa, cuándo conviene pagar un poco más y cuándo no hace falta.",
   blocks: [
@@ -84,7 +84,7 @@ export default defineArticle({
       type: "p",
       text: "Volteck es la marca de la familia para material eléctrico. La vas a encontrar sobre todo en nuestra categoría de [eléctrico](" +
         catalogHref("electrico") +
-        "). En este tipo de producto la etiqueta es especialmente importante: indica para qué carga y qué uso está hecho cada artículo. Si vas a modificar una instalación, que un electricista la revise.",
+        "). En este tipo de producto la etiqueta es especialmente importante: indica para qué carga y qué uso está hecho cada artículo. Para elegir el cable correcto, en nuestra guía de [[B05|calibre de cable para casa]] te explicamos cómo calcularlo. Si vas a modificar una instalación, que un electricista la revise.",
     },
     { type: "h3", text: "Foset" },
     {
