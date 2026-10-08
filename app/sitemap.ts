@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/seo";
+import { getAllArticles } from "@/lib/blog/content";
+import { buildBlogSitemapEntries } from "@/lib/blog/sitemap";
 
 // /sitemap.xml generado en cada request (sin caché propia más allá de la
 // que Next.js ya aplica a las rutas de metadata) — home, todas las
@@ -37,5 +39,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticRoutes, ...categoryRoutes, ...productRoutes];
+  // Blog: /blog, sus páginas, categorías y artículos — solo publicados
+  // (ver lib/blog/sitemap.ts).
+  const blogRoutes = buildBlogSitemapEntries(getAllArticles(), new Date());
+
+  return [...staticRoutes, ...categoryRoutes, ...productRoutes, ...blogRoutes];
 }

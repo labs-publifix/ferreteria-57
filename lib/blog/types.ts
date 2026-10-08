@@ -20,8 +20,9 @@ export interface BlogTopic {
   descartado_at: string | null;
 }
 
-/** Registro de un artículo real del blog (lo conecta la Fase 3). */
+/** Registro de un artículo real del blog (ver lib/blog/registry.ts). */
 export interface RegistryEntry {
+  slug: string;
   /** Instante de publicación (ISO 8601). */
   publishAt: string;
 }

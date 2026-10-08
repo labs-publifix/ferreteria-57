@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Gift } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import type { Category } from "@/lib/navigation/categories";
 import type { TopBannerConfig } from "@/types/marketing";
@@ -32,10 +33,14 @@ function CloseIcon() {
 export function Header({
   categories,
   topBanner,
+  showBlog = false,
 }: {
   categories: Category[];
   topBanner: TopBannerConfig | null;
+  showBlog?: boolean;
 }) {
+  const pathname = usePathname();
+  const inBlog = pathname === "/blog" || pathname?.startsWith("/blog/");
   const { totalQuantity } = useResolvedCart();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,6 +60,16 @@ export function Header({
 
   return (
     <header className="bg-brand-white">
+      {/* Saltar al contenido: primer elemento enfocable en las páginas del
+          blog (su <main id="contenido">), visible solo con el teclado. */}
+      {inBlog && (
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-brand-black focus:px-4 focus:py-3 focus:font-sans focus:text-sm focus:font-semibold focus:text-white focus:outline-none focus:ring-2 focus:ring-brand-orange"
+        >
+          Saltar al contenido
+        </a>
+      )}
       <AnnouncementBar config={topBanner} />
 
       {/* Header principal */}
@@ -128,6 +143,15 @@ export function Header({
       >
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2.5 sm:px-6 lg:px-8">
           <CategoryNavRail categories={categories} />
+          {showBlog && (
+            <Link
+              href="/blog"
+              aria-current={inBlog ? "page" : undefined}
+              className="shrink-0 rounded-md px-2 py-1 font-sans text-sm font-semibold text-brand-slate transition-colors hover:text-brand-black aria-[current=page]:text-brand-black aria-[current=page]:underline aria-[current=page]:decoration-brand-orange aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+            >
+              Blog
+            </Link>
+          )}
           {/*
             Programa de Lealtad no es una categoría de producto: se separa
             del resto con una píldora de fondo naranja (como Badge), no
@@ -185,6 +209,17 @@ export function Header({
               <Gift className="size-4" aria-hidden="true" strokeWidth={1.75} />
               Club 57
             </Link>
+
+            {showBlog && (
+              <Link
+                href="/blog"
+                onClick={() => setMenuOpen(false)}
+                aria-current={inBlog ? "page" : undefined}
+                className="mb-3 flex min-h-11 items-center rounded-full px-3 font-sans text-sm font-semibold text-brand-black ring-1 ring-brand-slate/25"
+              >
+                Blog: guías y consejos
+              </Link>
+            )}
 
             <ul className="flex flex-col">
               {categories.map((category) => (

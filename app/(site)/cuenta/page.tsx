@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { redirect } from "next/navigation";
+import { safeNextPath } from "@/lib/safeNext";
 import { createClient } from "@/lib/supabase/server";
 import { AuthTabs } from "@/components/account/AuthTabs";
 import { ProfileView } from "@/components/account/ProfileView";
@@ -32,8 +34,11 @@ export const metadata: Metadata = {
 export default async function CuentaPage({
   searchParams,
 }: {
-  searchParams: { passwordReset?: string };
+  searchParams: { passwordReset?: string; next?: string | string[]; registro?: string };
 }) {
+  // ?next=: regreso tras entrar/registrarse (solo rutas internas permitidas,
+  // ver lib/safeNext.ts). ?registro=1 abre directo la pestaña "Crear cuenta".
+  const next = safeNextPath(searchParams.next);
   // Si todavía no se agregaron las variables de entorno en Vercel, esta
   // página es la única que depende de ellas de forma directa (el resto
   // del sitio sigue funcionando, ver AuthProvider/middleware) — mejor un
@@ -58,6 +63,10 @@ export default async function CuentaPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Ya tiene sesión y viene de un enlace con ?next= (p. ej. la guía de un
+  // artículo del blog): no hay nada que hacer aquí, de regreso al destino.
+  if (user && next) redirect(next);
 
   let profile: { full_name: string | null; referral_code: string | null } | null = null;
   let saldoDisponible = 0;
@@ -252,7 +261,7 @@ export default async function CuentaPage({
               Tu contraseña se actualizó — ya puedes iniciar sesión con ella.
             </p>
           )}
-          <AuthTabs />
+          <AuthTabs next={next} initialTab={searchParams.registro === "1" ? "signup" : "login"} />
         </>
       )}
     </main>

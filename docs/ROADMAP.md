@@ -8,7 +8,10 @@ desarrollo todavía. Actualizado: 7 de octubre de 2026.
 - **Fase 1 — backlog en /admin/blog (vista de lectura).** Tabla
   `blog_topics`, seed del lote 1 (58 temas), estado derivado y
   descartar/restaurar.
-- Fases 2–5: blog público, artículos, guías PDF y programación automática.
+- **Fase 2 — blog público.** /blog, categorías, artículo con índice y CTA
+  de la guía (Club 57), SEO completo (JSON-LD, sitemap, RSS, OG), sección
+  en el home y artículo piloto B03 (programado; fecha real en Fase 5).
+- Fases 3–5: validador de calidad + cron, guías PDF, artículos de lanzamiento.
 
 ## Pendientes del cliente
 
