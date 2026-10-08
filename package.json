@@ -14,7 +14,10 @@
     "blog:index": "tsx scripts/blog-build-index.ts",
     "blog:check": "tsx scripts/blog-check.ts",
     "blog:links": "tsx scripts/blog-links.ts",
-    "blog:new": "tsx scripts/blog-new.ts"
+    "blog:new": "tsx scripts/blog-new.ts",
+    "blog:next": "tsx scripts/blog-next.ts",
+    "blog:pdf": "tsx scripts/blog-pdf.ts",
+    "blog:verify": "tsx scripts/blog-verify.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

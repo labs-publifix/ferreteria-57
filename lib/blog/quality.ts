@@ -1,6 +1,7 @@
 import { isAllowedCatalogPath } from "@/content/blog/catalog-links";
 import { articleSchema, formatZodError, type ArticleData } from "./article-schema";
 import { type ArticleSource, countWords, inlineStrings, plainTextOf, topicLinkIssues, enrich } from "./build";
+import { guideSchema, guideStrings, type GuideSource } from "./guide-schema";
 import { parseInline } from "./inline";
 import { missingRoundTrip } from "./links";
 import type { BacklogTopic, PlannedLink } from "./sources";
@@ -125,7 +126,9 @@ export function checkContent(
   backlog: BacklogTopic[],
   linkMap: PlannedLink[],
   now: Date,
-  config: QualityConfig = DEFAULT_QUALITY_CONFIG
+  config: QualityConfig = DEFAULT_QUALITY_CONFIG,
+  /** Guías de content/blog/guides; sin este argumento no se revisan (pruebas de artículos). */
+  guides?: readonly GuideSource[]
 ): ArticleReport[] {
   const topics = new Map(backlog.map((topic) => [topic.id, topic]));
   const reports: ArticleReport[] = [];
@@ -205,15 +208,7 @@ export function checkContent(
     }
 
     // Texto prohibido
-    const text = allText(data);
-    for (const rule of config.forbidden) {
-      const hit = text.find((value) => rule.pattern.test(value));
-      if (hit) {
-        const match = hit.match(rule.pattern)!;
-        const at = Math.max(0, (match.index ?? 0) - 30);
-        errors.push(`Texto prohibido (${rule.label}): «…${hit.slice(at, at + 70)}…»`);
-      }
-    }
+    errors.push(...forbiddenHits(allText(data), config));
 
     // ---- advertencias ----
     if (topic?.fechaProgramada) {
@@ -265,7 +260,65 @@ export function checkContent(
     }
   }
 
+  if (guides) checkGuides(valid, guides, config, reports);
   return reports;
+}
+
+function forbiddenHits(texts: string[], config: QualityConfig): string[] {
+  const out: string[] = [];
+  for (const rule of config.forbidden) {
+    const hit = texts.find((value) => rule.pattern.test(value));
+    if (hit) {
+      const match = hit.match(rule.pattern)!;
+      const at = Math.max(0, (match.index ?? 0) - 30);
+      out.push(`Texto prohibido (${rule.label}): «…${hit.slice(at, at + 70)}…»`);
+    }
+  }
+  return out;
+}
+
+// Cada artículo declara su guía (guia.titulo) y no puede publicarse sin
+// una válida: falta de archivo, esquema inválido o texto prohibido son ERROR
+// del artículo. Una guía sin artículo también es ERROR (casi siempre un slug
+// mal escrito).
+function checkGuides(
+  valid: { report: ArticleReport; data: ArticleData }[],
+  guides: readonly GuideSource[],
+  config: QualityConfig,
+  reports: ArticleReport[]
+) {
+  const byFile = new Map(guides.map((source) => [source.file, source]));
+  for (const { report, data } of valid) {
+    const source = byFile.get(data.slug);
+    const file = `content/blog/guides/${data.slug}.ts`;
+    if (!source) {
+      report.errors.push(`Falta la guía PDF ${file} (npm run blog:new la crea con la plantilla)`);
+      continue;
+    }
+    const result = guideSchema.safeParse(source.guide);
+    if (!result.success) {
+      report.errors.push(`Guía con esquema inválido (${file}):\n${formatZodError(result.error)}`);
+      continue;
+    }
+    const guide = result.data;
+    if (guide.slug !== data.slug) report.errors.push(`La guía declara slug "${guide.slug}"; debe ser "${data.slug}"`);
+    if (guide.topicId !== data.topicId) report.errors.push(`La guía declara topicId ${guide.topicId}; debe ser ${data.topicId}`);
+    if (guide.titulo !== data.guia.titulo) {
+      report.errors.push(`El título de la guía («${guide.titulo}») no coincide con guia.titulo del artículo («${data.guia.titulo}»)`);
+    }
+    for (const hit of forbiddenHits(guideStrings(guide), config)) report.errors.push(`Guía: ${hit}`);
+  }
+  const slugs = new Set(valid.map(({ data }) => data.slug));
+  for (const source of guides) {
+    if (slugs.has(source.file)) continue;
+    const raw = source.guide as { topicId?: unknown } | undefined;
+    reports.push({
+      file: `guides/${source.file}`,
+      topicId: typeof raw?.topicId === "string" ? raw.topicId : undefined,
+      errors: [`La guía content/blog/guides/${source.file}.ts no tiene artículo con ese slug en content/blog/articles`],
+      warnings: [],
+    });
+  }
 }
 
 export function hasErrors(reports: ArticleReport[]): boolean {

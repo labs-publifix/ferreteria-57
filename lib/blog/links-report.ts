@@ -15,7 +15,7 @@ function line(check: LinkCheck, side: "destino" | "origen"): string {
           : `agregar en ${link.origen}: [[${link.destino}|${link.ancla}]] (y subir su updatedAt)`
         : check.status === "esperando"
           ? `al publicarse ${link.destino}`
-          : `${other} aún no existe`;
+          : `${check.missing?.length ? check.missing.join(" y ") : other} aún no existe`;
   return `  ${ICON[check.status]} ${link.id}  ${link.origen} → ${link.destino}  «${link.ancla}»  · ${detail}  · ${link.cuando} (${link.fecha})`;
 }
 

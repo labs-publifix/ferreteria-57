@@ -9,6 +9,8 @@ import { CLUB57_REDEMPTION_ESTADO_LABEL, CLUB57_TIPO_LABEL } from "@/lib/club57/
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
+import { MisGuias } from "./MisGuias";
+import type { MiGuia } from "@/lib/blog/mis-guias";
 import { Club57PromoCards } from "@/components/account/Club57PromoCards";
 import type { MemberPromoCard } from "@/lib/club57/promociones/vigencia";
 
@@ -91,6 +93,7 @@ export function Club57MemberPanel({
   pedidos,
   promociones,
   hoy,
+  guias,
 }: {
   referralCode: string | null;
   saldoDisponible: number;
@@ -105,6 +108,8 @@ export function Club57MemberPanel({
   promociones: MemberPromoCard[];
   /** Hoy en America/Mexico_City ("YYYY-MM-DD"), resuelto en el servidor. */
   hoy: string;
+  /** Guías PDF de los artículos publicados del blog («Mis guías»). */
+  guias: MiGuia[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -309,6 +314,8 @@ export function Club57MemberPanel({
       {/* Promociones descargables: fuera de las pestañas (como la franja de
           saldo) para no empujar el contenido de ninguna pestaña. */}
       <Club57PromoCards cards={promociones} hoy={hoy} />
+
+      <MisGuias guias={guias} />
 
       <Tabs idPrefix="cuenta" tabs={TABS} activeId={activeTab} onChange={setActiveTab} />
 

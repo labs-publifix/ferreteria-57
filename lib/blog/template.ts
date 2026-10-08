@@ -72,3 +72,36 @@ export default defineArticle({
 });
 `;
 }
+
+// Plantilla de la guía PDF del tema (content/blog/guides/{slug}.ts). Igual
+// que el artículo: pasa el esquema con marcadores TODO y blog:check no deja
+// publicar mientras quede uno.
+export function guideTemplate(topic: BacklogTopic): string {
+  const json = (value: string) => JSON.stringify(value);
+  return `import { defineGuide } from "@/lib/blog/guide-schema";
+
+// Guía PDF de ${topic.id} (hoja «Guías PDF» del Excel: título, páginas y contenido por página).
+// Generado con \`npm run blog:new -- ${topic.id}\`. El PDF agrega la portada: aquí van de 1 a 3
+// páginas de contenido. Texto plano, mismas reglas de redacción que el artículo.
+// Ver el PDF: npm run blog:pdf -- ${topic.id}
+export default defineGuide({
+  topicId: ${json(topic.id)},
+  slug: ${json(topic.slug)},
+  // Debe coincidir con guia.titulo del artículo.
+  titulo: ${json(topic.guiaTitulo || "TODO Título de la guía PDF")},
+  subtitulo: "TODO Una línea: qué resuelve la guía y cuándo usarla.",
+  paginas: [
+    {
+      titulo: "TODO Título de la página 1",
+      // Bloques disponibles:
+      //   { type: "tabla", titulo?: "…", columnas: ["…", "…"], filas: [["…", "…"]], anchos?: [1, 2] }
+      //   { type: "checklist", titulo?: "…", items: ["…"] }
+      //   { type: "pasos", titulo?: "…", items: [{ titulo: "…", texto: "…" }] }
+      //   { type: "consejo", titulo?: "…", texto: "…" }
+      //   { type: "callout", variante: "seguridad" | "importante" | "nota", titulo: "…", texto?: "…", items?: ["…"] }
+      bloques: [{ type: "checklist", items: ["TODO Contenido de la página según la hoja Guías PDF"] }],
+    },
+  ],
+});
+`;
+}

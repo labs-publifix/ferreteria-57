@@ -24,6 +24,8 @@ export type LinkStatus = "cumplido" | "falta" | "esperando" | "futuro";
 export interface LinkCheck {
   link: PlannedLink;
   status: LinkStatus;
+  /** Artículos del par que todavía no existen (solo en "futuro"). */
+  missing?: string[];
 }
 
 function refsOf(article: LinkArticle): Set<string> {
@@ -53,7 +55,9 @@ export function topicLinkReport(topicId: string, links: PlannedLink[], articles:
   const report: TopicLinkReport = { topicId, outgoing: [], incoming: [], future: [] };
   for (const link of links) {
     if (link.origen !== topicId && link.destino !== topicId) continue;
-    const check = { link, status: linkStatus(link, articles, now) };
+    const status = linkStatus(link, articles, now);
+    const check: LinkCheck =
+      status === "futuro" ? { link, status, missing: [link.origen, link.destino].filter((id) => !articles.has(id)) } : { link, status };
     if (check.status === "futuro" || (check.status === "esperando" && link.origen === topicId)) report.future.push(check);
     else if (link.origen === topicId) report.outgoing.push(check);
     else report.incoming.push(check);
