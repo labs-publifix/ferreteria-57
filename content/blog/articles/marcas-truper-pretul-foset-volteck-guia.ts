@@ -28,7 +28,7 @@ export default defineArticle({
   cluster: "marca-y-club-57",
   pillar: true,
   publishAt: "2026-10-08T11:00:00-06:00",
-  updatedAt: "2026-10-08T16:00:00-06:00",
+  updatedAt: "2026-10-09T12:30:00-06:00",
   intro:
     "En Ferretería 57 todo lo que vendemos es de la familia Truper: la marca Truper y las demás **marcas Truper** del grupo: Pretul, Foset, Volteck, Fiero, Hermex y Klintek. No compiten entre sí: cada una responde a un tipo de comprador. La forma más sencilla de elegir es contestar tres preguntas: qué tan seguido vas a usar la herramienta, qué tan pesado es el trabajo y cuánto quieres invertir hoy. Con esas respuestas casi siempre queda clara la marca. En esta guía te explicamos cómo leer la familia completa, cuándo conviene pagar un poco más y cuándo no hace falta.",
   blocks: [
@@ -51,7 +51,7 @@ export default defineArticle({
     { type: "h2", text: "Truper: la marca principal y qué ofrece" },
     {
       type: "p",
-      text: "Truper es la marca que da nombre a la familia y la que más vas a ver en el catálogo. Aparece en herramienta manual, herramienta eléctrica, jardinería, plomería, pintura y prácticamente cualquier área de una ferretería. Por eso, si no sabes por dónde empezar, Truper es el punto de partida natural: casi siempre hay un modelo para lo que necesitas.",
+      text: "Truper es la marca que da nombre a la familia y la que más vas a ver en el catálogo. Aparece en herramienta manual, herramienta eléctrica, jardinería, plomería, pintura y prácticamente cualquier área de una ferretería. Por eso, si no sabes por dónde empezar, Truper es el punto de partida natural: casi siempre hay un modelo para lo que necesitas. Si vas a pintar, en nuestra guía de [[B08|brocha o rodillo]] te explicamos qué herramienta conviene según la pintura.",
     },
     {
       type: "p",
