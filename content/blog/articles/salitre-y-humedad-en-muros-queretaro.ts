@@ -26,7 +26,7 @@ export default defineArticle({
   cluster: "pintura-sellado-e-impermeabilizacion",
   pillar: true,
   publishAt: "2026-10-09T08:00:00-06:00",
-  updatedAt: "2026-10-09T08:00:00-06:00",
+  updatedAt: "2026-10-09T12:30:00-06:00",
   intro:
     "El **salitre en paredes** es ese polvo o costra blanca que aparece en la parte baja de los muros, ampolla la pintura y hace que el aplanado se desmorone. No es suciedad: son sales que el agua arrastra desde adentro del muro y que se quedan en la superficie cuando esa agua se evapora. Por eso la regla número uno es que el salitre no se quita de verdad mientras no se corte la humedad que lo provoca. En esta guía te explicamos cómo encontrar el origen de la humedad, cómo limpiar y reparar el muro en el orden correcto, qué productos usar en cada caso y cómo distinguir el salitre del moho.",
   blocks: [
@@ -209,7 +209,7 @@ export default defineArticle({
         "[Cepillo de alambre](/buscar?q=cepillo%20de%20alambre) o de cerda dura.",
         "[Espátula](/buscar?q=espatula) o rasqueta.",
         "Llana y cuchara de albañil si vas a reparar aplanado.",
-        "Brocha y rodillo para sellador y pintura.",
+        "Brocha y rodillo para sellador y pintura; si dudas cuál usar, revisa nuestra guía de [[B08|brocha o rodillo]].",
         "[Guantes](/buscar?q=guantes), lentes y [mascarilla](/buscar?q=mascarilla) o respirador para polvo; los encuentras en nuestra categoría de [seguridad](" +
           catalogHref("seguridad") +
           ").",
