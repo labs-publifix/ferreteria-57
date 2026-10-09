@@ -24,7 +24,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: true,
   publishAt: "2026-10-08T12:00:00-06:00",
-  updatedAt: "2026-10-08T12:00:00-06:00",
+  updatedAt: "2026-10-09T12:00:00-06:00",
   intro:
     "La principal **diferencia entre tubería PPR y PVC** está en la temperatura y en la forma de unirlas: el PVC hidráulico es para agua fría y se pega con cemento, mientras que el PPR sirve para agua fría y caliente y se une por termofusión, con calor. El CPVC es la opción pegada para agua caliente, y el cobre es el material tradicional que se suelda. Elegir bien depende de tres cosas: qué agua va a pasar por el tubo, qué herramienta tienes o estás dispuesto a conseguir y cuánto quieres invertir. Aquí te explicamos cada material con sus ventajas, sus límites y en qué casos conviene.",
   blocks: [
@@ -130,7 +130,7 @@ export default defineArticle({
     },
     {
       type: "p",
-      text: "También influye el clima: en temporada de calor el sol pega fuerte en azoteas y patios, así que cualquier tubo plástico que quede a la intemperie debe ir protegido. Y si tu casa tiene tinaco en la azotea, revisa que los tramos expuestos estén bien sujetos y cubiertos.",
+      text: "También influye el clima: en temporada de calor el sol pega fuerte en azoteas y patios, así que cualquier tubo plástico que quede a la intemperie debe ir protegido. Y si tu casa tiene tinaco en la azotea, revisa que los tramos expuestos estén bien sujetos y cubiertos. Si vas a instalar tinaco o cisterna nuevos, en nuestra guía para [[B07|instalar tinaco]] te explicamos capacidad, ubicación y accesorios.",
     },
     {
       type: "steps",
