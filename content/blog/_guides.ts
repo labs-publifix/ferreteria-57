@@ -6,6 +6,7 @@ import g1 from "./guides/como-escoger-broca-correcta-para-cada-material";
 import g2 from "./guides/diferencias-tuberia-ppr-pvc-cpvc-cobre";
 import g3 from "./guides/kit-basico-herramientas-hogar";
 import g4 from "./guides/marcas-truper-pretul-foset-volteck-guia";
+import g5 from "./guides/salitre-y-humedad-en-muros-queretaro";
 
 export const GUIDE_SOURCES: readonly GuideSource[] = [
   { file: "calibre-de-cable-electrico-para-cada-electrodomestico", guide: g0 },
@@ -13,4 +14,5 @@ export const GUIDE_SOURCES: readonly GuideSource[] = [
   { file: "diferencias-tuberia-ppr-pvc-cpvc-cobre", guide: g2 },
   { file: "kit-basico-herramientas-hogar", guide: g3 },
   { file: "marcas-truper-pretul-foset-volteck-guia", guide: g4 },
+  { file: "salitre-y-humedad-en-muros-queretaro", guide: g5 },
 ];
