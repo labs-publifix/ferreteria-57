@@ -17,10 +17,13 @@
 //    aquí se declara en días completos (0 a 2), que es lo que pidió el
 //    cliente; 3 horas redondea a 0 días y 48 horas son exactamente 2
 //    días, así que el rango es equivalente, solo con menos granularidad.
-// 2. returnFees se declara como "el cliente paga" (ReturnShippingFees) —
-//    la regla general de /terminos §6.3 — pero ese texto tiene una
-//    excepción ("salvo que se trate de un error imputable a Ferretería
-//    57") que schema.org no puede expresar en esta propiedad.
+// 2. returnFees se declara como ReturnFeesCustomerResponsibility (el
+//    cliente paga y gestiona el envío de devolución) — la regla general de
+//    /terminos §6.3, que no fija un monto. ReturnShippingFees obligaría a
+//    declarar un returnShippingFeesAmount fijo que la política no tiene
+//    (Search Console lo marcó como faltante). La excepción del texto
+//    ("salvo que se trate de un error imputable a Ferretería 57") no se
+//    puede expresar en esta propiedad.
 // 3. returnMethod incluye ReturnInStore (devolución en tienda física)
 //    porque Ferretería 57 tiene sucursal física, pero el texto de
 //    /terminos §6 no lo menciona explícitamente — solo habla del costo
@@ -47,13 +50,15 @@ import { FORANEO_COST, FORANEO_MAX_STANDARD, FREE_SHIPPING_THRESHOLD } from "@/l
 // realizará el reembolso o cambio" — ventana finita (no ilimitada, no "sin
 // devoluciones"), 5 días, el cliente paga el envío de vuelta salvo error
 // de la tienda, y la tienda elige entre reembolso o cambio caso por caso.
+// El cliente paga el envío de vuelta, pero no hay una tarifa fija: por eso
+// ReturnFeesCustomerResponsibility y no ReturnShippingFees (ver #2 arriba).
 export function buildMerchantReturnPolicy(siteUrl: string) {
   return {
     "@type": "MerchantReturnPolicy",
     applicableCountry: "MX",
     returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
     merchantReturnDays: 5,
-    returnFees: "https://schema.org/ReturnShippingFees",
+    returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
     returnMethod: ["https://schema.org/ReturnByMail", "https://schema.org/ReturnInStore"],
     refundType: ["https://schema.org/FullRefund", "https://schema.org/ExchangeRefund"],
     merchantReturnLink: `${siteUrl}/terminos`,
