@@ -135,6 +135,17 @@ export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]) {
 
 const PRODUCT_DESCRIPTION_MAX_LENGTH = 5000;
 
+// priceValidUntil del Offer (Search Console lo sugiere en Fichas de
+// comerciantes). Los precios no tienen fecha de vencimiento: cambian
+// cuando el admin los actualiza y la página se vuelve a generar con el
+// precio nuevo. Se declara el 31 de diciembre del año siguiente (hora de
+// Querétaro), una fecha estable que no se acerca a vencer entre rastreos;
+// una fecha ya pasada haría que Google dejara de mostrar el precio.
+export function buildPriceValidUntil(now: Date = new Date()): string {
+  const year = Number(new Intl.DateTimeFormat("en-US", { year: "numeric", timeZone: "America/Mexico_City" }).format(now));
+  return `${year + 1}-12-31`;
+}
+
 // Texto plano, sin HTML (shortDescription ya sale de un <textarea> simple
 // en ProductForm.tsx, nunca de un editor enriquecido — esto solo limpia
 // por si algún día llega marcado de otra vía) y recortado a ~5,000
@@ -180,6 +191,7 @@ export function buildProductJsonLd(product: Product, categoryLabel?: string) {
       url: `${SITE_URL}/producto/${product.slug}`,
       price,
       priceCurrency: "MXN",
+      priceValidUntil: buildPriceValidUntil(),
       availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       validFrom: product.createdAt || SITE_LAUNCH_DATE,
       hasMerchantReturnPolicy: buildMerchantReturnPolicy(SITE_URL),
