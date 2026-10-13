@@ -57,7 +57,9 @@ export async function updateSession(request: NextRequest) {
   // así que el rol nunca se decide dos veces con dos criterios distintos.
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
-  const isAdminLoginRoute = pathname === "/admin/login";
+  // Rutas del panel que se usan SIN sesión de personal: el login y la
+  // pantalla de nueva contraseña a la que llega el enlace de recuperación.
+  const isAdminLoginRoute = pathname === "/admin/login" || pathname === "/admin/restablecer-contrasena";
   const isVendedorRoute = pathname.startsWith("/admin/vendedor");
 
   if (isAdminRoute && !isAdminLoginRoute) {

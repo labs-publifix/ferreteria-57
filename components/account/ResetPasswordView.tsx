@@ -8,7 +8,14 @@ import { Button, PasswordInput, buttonClassName } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/authErrors";
 
-type Stage = "verificando" | "listo" | "invalido" | "guardando" | "exito";
+type Stage = "verificando" | "listo" | "invalido" | "desactivada" | "guardando" | "exito";
+
+// Cuenta desactivada desde /admin/accesos (ban de Supabase Auth): el enlace
+// no sirve, pero el motivo no es que haya expirado.
+function stageFromVerifyError(error: { message: string } | null): Stage {
+  if (!error) return "listo";
+  return /banned/i.test(error.message) ? "desactivada" : "invalido";
+}
 
 // La plantilla de correo "Reset Password" en Supabase apunta directo a esta
 // página con ?token_hash=...&type=recovery (en vez de {{ .ConfirmationURL }},
@@ -21,7 +28,13 @@ type Stage = "verificando" | "listo" | "invalido" | "guardando" | "exito";
 // verifyOtp() —desde el navegador de la persona— lo hace. Se deja el
 // fallback a ?code= (exchangeCodeForSession) por si queda algún correo de
 // recuperación en tránsito con la plantilla vieja.
-export function ResetPasswordView() {
+// variant: "cliente" (/cuenta/restablecer-contrasena) o "personal"
+// (/admin/restablecer-contrasena). Solo cambia el texto y el botón del
+// enlace inválido. A dónde se va al terminar lo decide el rol de la cuenta,
+// no la página: la plantilla del correo de Supabase puede traer a una
+// persona del personal a la página de clientes, y aun así debe terminar en
+// el login del panel.
+export function ResetPasswordView({ variant = "cliente" }: { variant?: "cliente" | "personal" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [stage, setStage] = useState<Stage>("verificando");
@@ -39,14 +52,14 @@ export function ResetPasswordView() {
 
     if (tokenHash && type === "recovery") {
       supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" }).then(({ error: verifyError }) => {
-        setStage(verifyError ? "invalido" : "listo");
+        setStage(stageFromVerifyError(verifyError));
       });
       return;
     }
 
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
-        setStage(exchangeError ? "invalido" : "listo");
+        setStage(stageFromVerifyError(exchangeError));
       });
       return;
     }
@@ -77,12 +90,20 @@ export function ResetPasswordView() {
       return;
     }
 
+    // Antes de cerrar la sesión: ¿es del personal del panel? (mismas
+    // funciones SQL que el middleware).
+    const [{ data: isAdmin }, { data: isVendedor }] = await Promise.all([
+      supabase.rpc("is_admin"),
+      supabase.rpc("is_vendedor"),
+    ]);
+    const loginUrl = isAdmin || isVendedor ? "/admin/login?passwordReset=1" : "/cuenta?passwordReset=1";
+
     // Cierra la sesión de recuperación a propósito: updateUser() la deja
     // activa como una sesión normal, pero el pedido explícito es volver al
     // login con un mensaje de éxito, no entrar directo a la cuenta.
     await supabase.auth.signOut();
     setStage("exito");
-    setTimeout(() => router.push("/cuenta?passwordReset=1"), 1500);
+    setTimeout(() => router.push(loginUrl), 1500);
   }
 
   if (stage === "verificando") {
@@ -94,14 +115,22 @@ export function ResetPasswordView() {
     );
   }
 
+  if (stage === "desactivada") {
+    return (
+      <p role="alert" className="rounded-md bg-red-50 px-4 py-2.5 font-sans text-sm text-red-700">
+        Esta cuenta está desactivada. Pide a un administrador que la reactive.
+      </p>
+    );
+  }
+
   if (stage === "invalido") {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <p role="alert" className="rounded-md bg-red-50 px-4 py-2.5 font-sans text-sm text-red-700">
           Este enlace ya expiró o ya se usó antes. Solicita uno nuevo desde la pantalla de inicio de sesión.
         </p>
-        <Link href="/cuenta" className={buttonClassName("primary")}>
-          Ir a Mi cuenta
+        <Link href={variant === "personal" ? "/admin/login" : "/cuenta"} className={buttonClassName("primary")}>
+          {variant === "personal" ? "Ir al inicio de sesión" : "Ir a Mi cuenta"}
         </Link>
       </div>
     );

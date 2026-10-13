@@ -108,3 +108,116 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
   revalidatePath("/admin/accesos");
   return { success: true };
 }
+
+export interface StaffAccountActionResult {
+  error?: string;
+  success?: boolean;
+}
+
+// Duración del "ban" de Supabase Auth con el que se desactiva una cuenta:
+// en la práctica indefinido (se quita al reactivar con "none").
+const DESACTIVADA_BAN = "876000h";
+
+// Quién ejecuta la acción: solo un admin activo (is_admin() ya excluye
+// cuentas desactivadas, ver migración 20261013010000).
+async function requireAdminActor(): Promise<{ userId: string } | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: isAdmin, error } = await supabase.rpc("is_admin");
+  if (error || !isAdmin) return null;
+  return { userId: user.id };
+}
+
+// La cuenta sobre la que se actúa tiene que ser de personal: estas acciones
+// nunca deben poder tocar la cuenta de un cliente de Club 57.
+async function getStaffTarget(adminClient: ReturnType<typeof createAdminClient>, userId: string) {
+  const { data: profile, error } = await adminClient.from("profiles").select("id, role").eq("id", userId).maybeSingle();
+  if (error) return { error: "No se pudo validar la cuenta." };
+  if (!profile || (profile.role !== "admin" && profile.role !== "vendedor")) {
+    return { error: "Esa cuenta no es de personal del panel." };
+  }
+  return { role: profile.role as "admin" | "vendedor" };
+}
+
+function isBanned(bannedUntil: string | undefined | null): boolean {
+  return Boolean(bannedUntil && new Date(bannedUntil).getTime() > Date.now());
+}
+
+// Cambia la contraseña de una cuenta de personal (por ejemplo, porque la
+// olvidó o porque se compartió). Si la cuenta es de otra persona, también
+// se cierran sus sesiones abiertas para que tenga que entrar con la nueva.
+export async function setStaffPassword(userId: string, password: string): Promise<StaffAccountActionResult> {
+  const actor = await requireAdminActor();
+  if (!actor) return { error: "No autorizado." };
+  if (password.length < 6) return { error: "La contraseña debe tener al menos 6 caracteres." };
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return { error: "Falta configurar SUPABASE_SERVICE_ROLE_KEY en el servidor." };
+  }
+
+  const target = await getStaffTarget(adminClient, userId);
+  if ("error" in target) return { error: target.error };
+
+  const { error } = await adminClient.auth.admin.updateUserById(userId, { password });
+  if (error) return { error: translateAuthError(error.message) };
+
+  if (userId !== actor.userId) {
+    const { error: sessionsError } = await adminClient.rpc("staff_cerrar_sesiones", { p_user_id: userId });
+    if (sessionsError) console.error("[setStaffPassword] no se pudieron cerrar las sesiones", sessionsError.message);
+  }
+
+  revalidatePath("/admin/accesos");
+  return { success: true };
+}
+
+// Desactiva o reactiva una cuenta de personal. Desactivar bloquea el
+// inicio de sesión y cierra sus sesiones abiertas de inmediato; los datos
+// (clientes que dio de alta, compras registradas) se conservan. Nunca se
+// puede desactivar la propia cuenta ni al último administrador activo.
+export async function setStaffActive(userId: string, active: boolean): Promise<StaffAccountActionResult> {
+  const actor = await requireAdminActor();
+  if (!actor) return { error: "No autorizado." };
+  if (!active && userId === actor.userId) return { error: "No puedes desactivar tu propia cuenta." };
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return { error: "Falta configurar SUPABASE_SERVICE_ROLE_KEY en el servidor." };
+  }
+
+  const target = await getStaffTarget(adminClient, userId);
+  if ("error" in target) return { error: target.error };
+
+  if (!active && target.role === "admin") {
+    const { data: admins, error: adminsError } = await adminClient.from("profiles").select("id").eq("role", "admin");
+    if (adminsError) return { error: "No se pudo validar la lista de administradores." };
+    const otherAdmins = (admins ?? []).filter((admin) => admin.id !== userId);
+    const activeOthers = await Promise.all(
+      otherAdmins.map(async (admin) => {
+        const { data } = await adminClient.auth.admin.getUserById(admin.id);
+        return data.user ? !isBanned(data.user.banned_until) : false;
+      })
+    );
+    if (!activeOthers.some(Boolean)) return { error: "Debe quedar al menos un administrador activo." };
+  }
+
+  const { error } = await adminClient.auth.admin.updateUserById(userId, {
+    ban_duration: active ? "none" : DESACTIVADA_BAN,
+  });
+  if (error) return { error: translateAuthError(error.message) };
+
+  if (!active) {
+    const { error: sessionsError } = await adminClient.rpc("staff_cerrar_sesiones", { p_user_id: userId });
+    if (sessionsError) console.error("[setStaffActive] no se pudieron cerrar las sesiones", sessionsError.message);
+  }
+
+  revalidatePath("/admin/accesos");
+  return { success: true };
+}
