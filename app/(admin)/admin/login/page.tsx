@@ -10,7 +10,11 @@ export const metadata: Metadata = { title: "Iniciar sesión — Panel de adminis
 // panel (no hay nada que navegar todavía sin sesión). Si ya hay una
 // sesión de personal válida, no tiene caso mostrar el formulario de nuevo:
 // el admin va al panel y el vendedor a su vista.
-export default async function AdminLoginPage() {
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: { passwordReset?: string };
+}) {
   const staff = await getStaffProfile();
   if (staff) {
     redirect(staff.role === "admin" ? "/admin" : "/admin/vendedor");
@@ -32,7 +36,7 @@ export default async function AdminLoginPage() {
         </h1>
       </div>
 
-      <AdminLoginForm />
+      <AdminLoginForm passwordReset={searchParams.passwordReset === "1"} />
     </main>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { CreateAdminForm } from "@/components/admin/CreateAdminForm";
+import { StaffAccountActions } from "@/components/admin/StaffAccountActions";
 
 export const metadata: Metadata = { title: "Accesos — Panel de administración" };
 
@@ -9,6 +11,8 @@ interface StaffAccount {
   email: string;
   fullName: string | null;
   createdAt: string;
+  /** false si la cuenta está desactivada (ban de Supabase Auth). */
+  active: boolean;
 }
 
 async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAccount[] }> {
@@ -37,6 +41,7 @@ async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAc
         email: data.user.email ?? "",
         fullName: (data.user.user_metadata?.full_name as string | undefined) ?? profile.full_name ?? null,
         createdAt: data.user.created_at,
+        active: !(data.user.banned_until && new Date(data.user.banned_until).getTime() > Date.now()),
       };
       return { role: profile.role as "admin" | "vendedor", account };
     })
@@ -50,7 +55,17 @@ async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAc
   };
 }
 
-function StaffList({ title, emptyLabel, accounts }: { title: string; emptyLabel: string; accounts: StaffAccount[] }) {
+function StaffList({
+  title,
+  emptyLabel,
+  accounts,
+  currentUserId,
+}: {
+  title: string;
+  emptyLabel: string;
+  accounts: StaffAccount[];
+  currentUserId: string | null;
+}) {
   return (
     <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
       <h2 className="font-display text-base uppercase text-brand-slate">{title}</h2>
@@ -59,14 +74,36 @@ function StaffList({ title, emptyLabel, accounts }: { title: string; emptyLabel:
         <p className="mt-3 font-sans text-sm text-brand-slate/70">{emptyLabel}</p>
       ) : (
         <ul className="mt-3 flex flex-col divide-y divide-brand-slate/10">
-          {accounts.map((account) => (
-            <li key={account.id} className="flex flex-col gap-0.5 py-3 first:pt-0 last:pb-0">
-              <span className="font-sans text-sm font-semibold text-brand-black">
-                {account.fullName?.trim() || "Sin nombre"}
-              </span>
-              <span className="font-sans text-sm text-brand-slate/70">{account.email}</span>
-            </li>
-          ))}
+          {accounts.map((account) => {
+            const isSelf = account.id === currentUserId;
+            const name = account.fullName?.trim() || "Sin nombre";
+            return (
+              <li
+                key={account.id}
+                className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-2 font-sans text-sm font-semibold text-brand-black">
+                    {name}
+                    {isSelf && <span className="font-normal text-brand-slate/70">(tú)</span>}
+                    {!account.active && (
+                      <span className="rounded-full bg-red-50 px-2 py-0.5 font-sans text-xs font-semibold text-red-700">
+                        Desactivada
+                      </span>
+                    )}
+                  </span>
+                  <span className="break-all font-sans text-sm text-brand-slate/70">{account.email}</span>
+                </div>
+                <StaffAccountActions
+                  userId={account.id}
+                  name={name}
+                  email={account.email}
+                  active={account.active}
+                  isSelf={isSelf}
+                />
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -77,6 +114,12 @@ export default async function AdminAccesosPage() {
   let admins: StaffAccount[] = [];
   let vendedores: StaffAccount[] = [];
   let loadError: string | null = null;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const currentUserId = user?.id ?? null;
 
   try {
     const staff = await getStaff();
@@ -95,7 +138,9 @@ export default async function AdminAccesosPage() {
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-slate/70">
           Crea cuentas con acceso al panel de administración o a la vista de
           vendedor. La contraseña que definas aquí ya queda activa de
-          inmediato — no se envía ningún correo de confirmación.
+          inmediato — no se envía ningún correo de confirmación. Desde la
+          lista puedes cambiarle la contraseña a una cuenta o desactivarla:
+          una cuenta desactivada no puede entrar, pero conserva sus datos.
         </p>
       </div>
 
@@ -107,8 +152,8 @@ export default async function AdminAccesosPage() {
         </p>
       ) : (
         <>
-          <StaffList title="Administradores actuales" emptyLabel="Todavía no hay administradores registrados." accounts={admins} />
-          <StaffList title="Vendedores actuales" emptyLabel="Todavía no hay vendedores registrados." accounts={vendedores} />
+          <StaffList title="Administradores actuales" emptyLabel="Todavía no hay administradores registrados." accounts={admins} currentUserId={currentUserId} />
+          <StaffList title="Vendedores actuales" emptyLabel="Todavía no hay vendedores registrados." accounts={vendedores} currentUserId={currentUserId} />
         </>
       )}
     </div>
