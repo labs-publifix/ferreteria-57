@@ -23,7 +23,7 @@ export default defineArticle({
   cluster: "herramientas-y-mantenimiento",
   pillar: true,
   publishAt: "2026-10-08T11:30:00-06:00",
-  updatedAt: "2026-10-08T11:30:00-06:00",
+  updatedAt: "2026-10-13T09:00:00-06:00",
   intro:
     "Las **herramientas básicas para el hogar** son quince, y no hace falta comprarlas todas el mismo día. Con siete herramientas manuales resuelves la mayoría de las reparaciones de una casa: martillo, desarmadores, pinzas, flexómetro, nivel, cutter y llave ajustable. Cuando empiezas a hacer más cosas, sumas un juego de llaves, serrucho, segueta, pistola de silicón y un taladro. Y si te animas a proyectos, llegan el rotomartillo, la caladora y el multímetro. En esta guía te decimos para qué sirve cada una, qué revisar al comprarla y el error más común, para que armes tu caja sin gastar de más.",
   blocks: [
@@ -117,7 +117,7 @@ export default defineArticle({
     { type: "h3", text: "12. Taladro" },
     {
       type: "p",
-      text: "**Para qué sirve:** perforar muros, madera o metal y, con la punta adecuada, atornillar. Es la primera herramienta eléctrica que conviene comprar. **Qué buscar:** control de velocidad y, si vas a perforar tabique o concreto, función de percusión; la ficha indica para qué materiales sirve. **Error común:** usar cualquier broca: cada material pide la suya. Antes de perforar, lee nuestra guía de [[B03|tipos de brocas]] y revisa los modelos en [taladros](/buscar?q=taladro).",
+      text: "**Para qué sirve:** perforar muros, madera o metal y, con la punta adecuada, atornillar. Es la primera herramienta eléctrica que conviene comprar. **Qué buscar:** control de velocidad y, si vas a perforar tabique o concreto, función de percusión; la ficha indica para qué materiales sirve. **Error común:** usar cualquier broca: cada material pide la suya. Antes de perforar, lee nuestra guía de [[B03|tipos de brocas]], elige el taquete según tu muro con nuestra guía de [[B09|tipos de taquetes]] y revisa los modelos en [taladros](/buscar?q=taladro).",
     },
 
     { type: "h2", text: "Nivel 3: para proyectos" },

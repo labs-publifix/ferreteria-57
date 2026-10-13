@@ -25,7 +25,7 @@ export default defineArticle({
   pillar: true,
   // Lanzamiento: se publica junto con B01 (el calendario decía 09/10/2026).
   publishAt: "2026-10-08T11:00:00-06:00",
-  updatedAt: "2026-10-08T11:30:00-06:00",
+  updatedAt: "2026-10-13T09:00:00-06:00",
   intro:
     "Hay muchos **tipos de brocas** y cada una está hecha para un material: para concreto y tabique usa una broca de carburo de tungsteno con percusión; para madera, una broca de punta, de paleta o una sierra copa; para metal, una broca HSS; para azulejo y porcelanato, una broca específica para cerámica y sin percusión; y para tablaroca, una broca para madera o metal sin golpe. El tamaño lo decide el taquete: la broca debe tener su mismo diámetro y perforar un poco más profundo que su largo. Aquí te explicamos cómo reconocer cada una y cómo usarla sin romper nada.",
   blocks: [
@@ -62,7 +62,7 @@ export default defineArticle({
     },
     {
       type: "p",
-      text: "En Querétaro y en buena parte del Bajío muchas casas tienen muros de concreto y de tabique, materiales duros en los que una broca para mampostería hace toda la diferencia. Si tu muro es de tabique hueco o block, la broca es la misma, pero el taquete cambia: en esos muros conviene un taquete pensado para huecos, porque uno común puede no tener dónde expandirse.",
+      text: "En Querétaro y en buena parte del Bajío muchas casas tienen muros de concreto y de tabique, materiales duros en los que una broca para mampostería hace toda la diferencia. Si tu muro es de tabique hueco o block, la broca es la misma, pero el taquete cambia: en esos muros conviene un taquete pensado para huecos, porque uno común puede no tener dónde expandirse. En nuestra guía de [[B09|tipos de taquetes]] te explicamos cuál usar en cada muro.",
     },
     { type: "h3", text: "Madera" },
     {

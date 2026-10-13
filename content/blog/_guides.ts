@@ -9,6 +9,7 @@ import g4 from "./guides/instalar-tinaco-o-cisterna-queretaro";
 import g5 from "./guides/kit-basico-herramientas-hogar";
 import g6 from "./guides/marcas-truper-pretul-foset-volteck-guia";
 import g7 from "./guides/salitre-y-humedad-en-muros-queretaro";
+import g8 from "./guides/tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco";
 
 export const GUIDE_SOURCES: readonly GuideSource[] = [
   { file: "brocha-o-rodillo-segun-pintura-vinilica-esmalte", guide: g0 },
@@ -19,4 +20,5 @@ export const GUIDE_SOURCES: readonly GuideSource[] = [
   { file: "kit-basico-herramientas-hogar", guide: g5 },
   { file: "marcas-truper-pretul-foset-volteck-guia", guide: g6 },
   { file: "salitre-y-humedad-en-muros-queretaro", guide: g7 },
+  { file: "tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco", guide: g8 },
 ];
