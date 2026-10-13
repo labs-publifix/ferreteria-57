@@ -31,7 +31,10 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
   }
 
   const fullName = String(formData.get("fullName") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
+  // Sin espacios y en minúsculas: mismo criterio que el alta de clientes
+  // de Club 57, para que el correo guardado sea el mismo que se teclea al
+  // iniciar sesión.
+  const email = String(formData.get("email") ?? "").replace(/\s+/g, "").toLowerCase();
   const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "admin");
 
@@ -65,6 +68,15 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
   });
 
   if (createError || !created.user) {
+    // El correo ya pertenece a otra cuenta (casi siempre un cliente que se
+    // registró en el sitio o en Club 57). No se convierte en personal desde
+    // aquí: perdería su membresía y sus puntos.
+    if (createError?.code === "email_exists" || /already (been )?registered/i.test(createError?.message ?? "")) {
+      return {
+        error:
+          "Ya existe una cuenta con ese correo (por ejemplo, un cliente registrado en el sitio o en Club 57). Usa otro correo para esta cuenta de acceso.",
+      };
+    }
     return { error: translateAuthError(createError?.message ?? "No se pudo crear el usuario.") };
   }
 
