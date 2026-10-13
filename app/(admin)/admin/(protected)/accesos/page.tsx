@@ -14,37 +14,39 @@ interface StaffAccount {
 async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAccount[] }> {
   const adminClient = createAdminClient();
 
-  // listUsers() trae todos los usuarios de Auth (con su email — profiles
-  // nunca lo guarda, ver migraciones); profiles solo hace falta para
-  // filtrar por role. Ambas consultas usan la service_role: se saltan RLS
-  // a propósito, esta página ya está detrás del layout protegido.
-  const [{ data: usersPage, error: usersError }, { data: profiles, error: profilesError }] =
-    await Promise.all([
-      adminClient.auth.admin.listUsers(),
-      adminClient.from("profiles").select("id, role"),
-    ]);
+  // Primero las filas de profiles con rol de personal (pocas) y después el
+  // email de cada una con getUserById: profiles nunca guarda el email (ver
+  // migraciones). Antes se usaba listUsers(), que solo devuelve la primera
+  // página de Auth (50 usuarios): en cuanto había más clientes de Club 57
+  // que eso, las cuentas de personal más nuevas dejaban de aparecer aquí.
+  // Ambas consultas usan la service_role: se saltan RLS a propósito, esta
+  // página ya está detrás del layout protegido.
+  const { data: profiles, error: profilesError } = await adminClient
+    .from("profiles")
+    .select("id, full_name, role")
+    .in("role", ["admin", "vendedor"]);
 
-  if (usersError || profilesError) {
-    throw usersError ?? profilesError;
-  }
+  if (profilesError) throw profilesError;
 
-  const roleById = new Map((profiles ?? []).map((profile) => [profile.id, profile.role]));
-
-  const toStaffAccount = (user: (typeof usersPage.users)[number]): StaffAccount => ({
-    id: user.id,
-    email: user.email ?? "",
-    fullName: (user.user_metadata?.full_name as string | undefined) ?? null,
-    createdAt: user.created_at,
-  });
+  const accounts = await Promise.all(
+    (profiles ?? []).map(async (profile) => {
+      const { data, error } = await adminClient.auth.admin.getUserById(profile.id);
+      if (error || !data.user) throw error ?? new Error(`Sin usuario de Auth para ${profile.id}`);
+      const account: StaffAccount = {
+        id: profile.id,
+        email: data.user.email ?? "",
+        fullName: (data.user.user_metadata?.full_name as string | undefined) ?? profile.full_name ?? null,
+        createdAt: data.user.created_at,
+      };
+      return { role: profile.role as "admin" | "vendedor", account };
+    })
+  );
 
   const byCreatedAt = (a: StaffAccount, b: StaffAccount) => a.createdAt.localeCompare(b.createdAt);
 
   return {
-    admins: usersPage.users.filter((user) => roleById.get(user.id) === "admin").map(toStaffAccount).sort(byCreatedAt),
-    vendedores: usersPage.users
-      .filter((user) => roleById.get(user.id) === "vendedor")
-      .map(toStaffAccount)
-      .sort(byCreatedAt),
+    admins: accounts.filter((entry) => entry.role === "admin").map((entry) => entry.account).sort(byCreatedAt),
+    vendedores: accounts.filter((entry) => entry.role === "vendedor").map((entry) => entry.account).sort(byCreatedAt),
   };
 }
 

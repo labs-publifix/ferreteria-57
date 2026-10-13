@@ -2,17 +2,18 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
-import { getAdminProfile } from "@/lib/supabase/adminProfile";
+import { getStaffProfile } from "@/lib/supabase/adminProfile";
 
 export const metadata: Metadata = { title: "Iniciar sesión — Panel de administración" };
 
 // Fuera de app/(admin)/admin/(protected)/, así que no lleva el sidebar del
 // panel (no hay nada que navegar todavía sin sesión). Si ya hay una
-// sesión de admin válida, no tiene caso mostrar el formulario de nuevo.
+// sesión de personal válida, no tiene caso mostrar el formulario de nuevo:
+// el admin va al panel y el vendedor a su vista.
 export default async function AdminLoginPage() {
-  const admin = await getAdminProfile();
-  if (admin) {
-    redirect("/admin");
+  const staff = await getStaffProfile();
+  if (staff) {
+    redirect(staff.role === "admin" ? "/admin" : "/admin/vendedor");
   }
 
   return (

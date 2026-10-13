@@ -6,13 +6,28 @@ import { Button, PasswordInput } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/authErrors";
 
-// Login dedicado del admin (no las pestañas de /cuenta: aquí no hay
-// registro ni mensaje del Programa de Lealtad, no aplican). Mismo sistema
-// de Supabase Auth ya configurado, pero con una verificación extra: un
-// login válido de una cuenta sin role = 'admin' no debe entrar al panel
-// —is_admin() (la misma función SQL que protege /admin en el middleware)
-// decide eso aquí también, para dar el mensaje correcto en vez de dejar
-// que el usuario piense que sus credenciales están mal.
+// Login del panel para todo el personal (no las pestañas de /cuenta: aquí
+// no hay registro ni mensaje del Programa de Lealtad, no aplican). Mismo
+// sistema de Supabase Auth, con una verificación extra del rol, con las
+// mismas funciones SQL que usa el middleware para /admin:
+//   - is_admin()    → panel completo (/admin)
+//   - is_vendedor() → vista de vendedor (/admin/vendedor)
+//   - ninguno       → se cierra la sesión y se explica, en vez de dejar
+//                     que la persona piense que sus credenciales están mal.
+type BrowserClient = ReturnType<typeof createClient>;
+
+// A dónde entra cada rol de personal; null si la cuenta no es personal (o
+// si la consulta falla: ante la duda, sin acceso, igual que el middleware).
+async function staffDestination(supabase: BrowserClient): Promise<string | null> {
+  const { data: isAdmin, error: adminError } = await supabase.rpc("is_admin");
+  if (!adminError && isAdmin) return "/admin";
+
+  const { data: isVendedor, error: vendedorError } = await supabase.rpc("is_vendedor");
+  if (!vendedorError && isVendedor) return "/admin/vendedor";
+
+  return null;
+}
+
 export function AdminLoginForm() {
   const router = useRouter();
   const emailId = useId();
@@ -39,19 +54,19 @@ export function AdminLoginForm() {
       return;
     }
 
-    const { data: isAdmin, error: rpcError } = await supabase.rpc("is_admin");
+    const destination = await staffDestination(supabase);
 
-    if (rpcError || !isAdmin) {
-      // Credenciales válidas pero sin permiso: no lo dejamos con una
-      // sesión "a medias" en la página de login del panel — mejor cerrarla
-      // y que el mensaje sea inequívoco.
+    if (!destination) {
+      // Credenciales válidas pero sin rol de personal: no lo dejamos con
+      // una sesión "a medias" en la página de login del panel — mejor
+      // cerrarla y que el mensaje sea inequívoco.
       await supabase.auth.signOut();
       setError("Esta cuenta no tiene acceso al panel de administración.");
       setIsSubmitting(false);
       return;
     }
 
-    router.push("/admin");
+    router.push(destination);
     router.refresh();
   }
 
