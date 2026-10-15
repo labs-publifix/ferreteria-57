@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { buttonClassName, ConfirmDialog, ProductImagePlaceholder, SimplePagination, TabPanel, Tabs } from "@/components/ui";
@@ -403,7 +404,12 @@ export function Club57MemberPanel({
                   </div>
 
                   <p className="font-sans text-xs text-brand-slate/60">
-                    {catalogFiltered.length} {catalogFiltered.length === 1 ? "artículo" : "artículos"}
+                    {catalogFiltered.length} {catalogFiltered.length === 1 ? "artículo" : "artículos"} · Los artículos
+                    canjeados no tienen devolución ni cambio (
+                    <Link href="/terminos" className="underline underline-offset-2 hover:text-brand-black">
+                      ver términos
+                    </Link>
+                    ).
                   </p>
                 </div>
 
@@ -630,7 +636,7 @@ export function Club57MemberPanel({
         title="Canjear artículo"
         description={
           confirmTarget
-            ? `¿Canjear "${confirmTarget.nombre}" por ${confirmTarget.costo_puntos} puntos? Se descuentan al momento — recoge el artículo en tienda.`
+            ? `¿Canjear "${confirmTarget.nombre}" por ${confirmTarget.costo_puntos} puntos? Se descuentan al momento — recoge el artículo en tienda. Los artículos canjeados no tienen devolución ni cambio, y los puntos no se reintegran.`
             : undefined
         }
         confirmLabel={isSubmitting ? "Canjeando…" : "Canjear"}

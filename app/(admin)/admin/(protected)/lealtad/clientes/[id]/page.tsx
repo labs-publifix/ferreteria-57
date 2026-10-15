@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Club57RegisterPurchaseForm } from "@/components/admin/Club57RegisterPurchaseForm";
 import { createClient } from "@/lib/supabase/server";
-import { CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
+import { CLUB57_TIPO_LABEL, club57VendedorLabel } from "@/lib/club57/labels";
 
 export const metadata: Metadata = { title: "Detalle de cliente — Club 57" };
 
@@ -14,6 +14,7 @@ interface MemberDetail {
   phone: string;
   referral_code: string;
   origen_alta: "vendedor" | "autoregistro";
+  creado_por_vendedor_id: string | null;
   created_at: string;
 }
 
@@ -41,11 +42,25 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   const { data: member } = await supabase
     .from("club57_members")
-    .select("id, full_name, email, phone, referral_code, origen_alta, created_at")
+    .select("id, full_name, email, phone, referral_code, origen_alta, creado_por_vendedor_id, created_at")
     .eq("id", params.id)
     .maybeSingle();
 
   if (!member) notFound();
+
+  // Nombre del vendedor que dio de alta al cliente (perfiles: el admin los
+  // lee todos por RLS). Si la consulta falla, la fila cae a «Vendedor sin
+  // nombre» en vez de romper la página.
+  const vendedorId = (member as MemberDetail).creado_por_vendedor_id;
+  let vendedorNombre: string | null = null;
+  if (vendedorId) {
+    const { data: vendedor } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", vendedorId)
+      .maybeSingle();
+    vendedorNombre = (vendedor?.full_name as string | null | undefined) ?? null;
+  }
 
   // Puntos 'pendiente' de ESTE cliente cuya fecha ya llegó se pasan a
   // 'disponible' aquí — así el saldo que ve el vendedor en mostrador ya
@@ -111,6 +126,12 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
             <div className="flex justify-between gap-3 py-1">
               <dt className="shrink-0 text-brand-slate/70">Código de referido</dt>
               <dd className="min-w-0 break-all text-right font-medium">{memberDetail.referral_code}</dd>
+            </div>
+            <div className="flex justify-between gap-3 py-1">
+              <dt className="shrink-0 text-brand-slate/70">Vendedor</dt>
+              <dd className="min-w-0 break-words text-right font-medium">
+                {club57VendedorLabel(memberDetail.origen_alta, memberDetail.creado_por_vendedor_id, vendedorNombre)}
+              </dd>
             </div>
           </dl>
         </div>
