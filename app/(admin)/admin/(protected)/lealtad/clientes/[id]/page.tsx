@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Club57RegisterPurchaseForm } from "@/components/admin/Club57RegisterPurchaseForm";
+import { Club57StaffLedgerHistory, type Club57StaffLedgerRow } from "@/components/admin/Club57StaffLedgerHistory";
 import { createClient } from "@/lib/supabase/server";
-import { CLUB57_TIPO_LABEL, club57VendedorLabel } from "@/lib/club57/labels";
+import { todayInStoreTimezone } from "@/lib/marketing/visibility";
+import { club57VendedorLabel } from "@/lib/club57/labels";
 
 export const metadata: Metadata = { title: "Detalle de cliente — Club 57" };
 
@@ -15,18 +17,6 @@ interface MemberDetail {
   referral_code: string;
   origen_alta: "vendedor" | "autoregistro";
   creado_por_vendedor_id: string | null;
-  created_at: string;
-}
-
-interface LedgerRow {
-  id: string;
-  cantidad: number;
-  tipo: string;
-  estado: "pendiente" | "disponible";
-  fecha_disponible: string | null;
-  referencia: string | null;
-  producto_nombre: string | null;
-  producto_sku: string | null;
   created_at: string;
 }
 
@@ -71,12 +61,20 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   const { data: ledger } = await supabase
     .from("club57_points_ledger")
-    .select("id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, created_at")
+    .select(
+      "id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, monto, anula_a, corrige_a, motivo, motivo_nota, created_at"
+    )
     .eq("member_id", params.id)
     .order("created_at", { ascending: false });
 
+  const { data: config } = await supabase.from("club57_config").select("monto_por_punto").maybeSingle();
+  const montoPorPunto = config?.monto_por_punto ? Number(config.monto_por_punto) : 50;
+
   const memberDetail = member as MemberDetail;
-  const ledgerRows = (ledger ?? []) as LedgerRow[];
+  const ledgerRows = ((ledger ?? []) as Club57StaffLedgerRow[]).map((row) => ({
+    ...row,
+    monto: row.monto === null ? null : Number(row.monto),
+  }));
 
   const saldoDisponible = ledgerRows
     .filter((row) => row.estado === "disponible")
@@ -138,8 +136,16 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Saldo de puntos</h2>
-          <p className="font-display text-3xl text-brand-black">{saldoDisponible} pts</p>
+          <p className={`font-display text-3xl ${saldoDisponible < 0 ? "text-red-700" : "text-brand-black"}`}>
+            {saldoDisponible} pts
+          </p>
           <p className="mt-1 font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
+          {saldoDisponible < 0 && (
+            <p className="mt-2 font-sans text-sm text-brand-slate">
+              Saldo negativo por una compra cancelada o corregida cuyos puntos ya estaban disponibles. Se compensa con
+              sus próximas compras.
+            </p>
+          )}
           {puntosPendientes > 0 && (
             <p className="mt-3 font-sans text-sm text-brand-slate">
               + {puntosPendientes} pts pendientes (todavía no disponibles)
@@ -155,60 +161,12 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
       <div className="rounded-lg bg-white p-5 shadow-sm">
         <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Historial de puntos</h2>
-        {ledgerRows.length === 0 ? (
-          <p className="font-sans text-sm text-brand-slate/70">Sin movimientos todavía.</p>
-        ) : (
-          <div className="min-w-0 overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left font-sans text-sm">
-              <thead>
-                <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
-                  <th className="py-2">Fecha</th>
-                  <th className="py-2">Tipo</th>
-                  <th className="py-2">Producto</th>
-                  <th className="py-2">Puntos</th>
-                  <th className="py-2">Estado</th>
-                  <th className="py-2">Referencia</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ledgerRows.map((row) => (
-                  <tr key={row.id} className="border-b border-brand-slate/10 last:border-0">
-                    <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
-                    <td className="py-2 text-brand-black">{CLUB57_TIPO_LABEL[row.tipo] ?? row.tipo}</td>
-                    <td className="max-w-[200px] py-2 text-brand-black">
-                      {row.producto_nombre ? (
-                        <>
-                          {row.producto_nombre}
-                          {row.producto_sku && (
-                            <span className="block text-xs text-brand-slate/60">Cód. {row.producto_sku}</span>
-                          )}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>
-                      {row.cantidad > 0 ? "+" : ""}
-                      {row.cantidad}
-                    </td>
-                    <td className="py-2">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          row.estado === "disponible"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {row.estado === "disponible" ? "Disponible" : "Pendiente"}
-                      </span>
-                    </td>
-                    <td className="max-w-[220px] py-2 text-brand-slate">{row.referencia ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <Club57StaffLedgerHistory
+          rows={ledgerRows}
+          role="admin"
+          hoy={todayInStoreTimezone()}
+          montoPorPunto={montoPorPunto}
+        />
       </div>
     </div>
   );

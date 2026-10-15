@@ -7,6 +7,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { buttonClassName, ConfirmDialog, ProductImagePlaceholder, SimplePagination, TabPanel, Tabs } from "@/components/ui";
 import { requestClub57Redemption } from "@/app/(site)/cuenta/actions";
 import { CLUB57_REDEMPTION_ESTADO_LABEL, CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
+import { club57AnotarCorrecciones, club57MotivoTexto } from "@/lib/club57/correcciones";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
@@ -23,6 +24,11 @@ export interface Club57LedgerRow {
   fecha_disponible?: string | null;
   created_at: string;
   referencia: string | null;
+  producto_nombre?: string | null;
+  anula_a?: string | null;
+  corrige_a?: string | null;
+  motivo?: string | null;
+  motivo_nota?: string | null;
 }
 
 export interface Club57CatalogItem {
@@ -116,6 +122,7 @@ export function Club57MemberPanel({
   const searchParams = useSearchParams();
   const searchInputId = useId();
   const [activeTab, setActiveTab] = useState("catalogo");
+  const correccionesHistorial = useMemo(() => club57AnotarCorrecciones(historial, hoy), [historial, hoy]);
   const [confirmTarget, setConfirmTarget] = useState<Club57CatalogItem | null>(null);
   const [quickViewItem, setQuickViewItem] = useState<Club57CatalogItem | null>(null);
   const [orderDetail, setOrderDetail] = useState<Club57OrderRow | null>(null);
@@ -271,8 +278,19 @@ export function Club57MemberPanel({
         <p className="font-display text-xs uppercase tracking-wide text-brand-slate/60 sm:text-left">Club 57</p>
         <div className="mt-1 flex flex-col items-center gap-1 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
           <div>
-            <p className="font-display text-4xl text-brand-black">{saldoDisponible} pts</p>
+            <p className={`font-display text-4xl ${saldoDisponible < 0 ? "text-red-700" : "text-brand-black"}`}>
+              {saldoDisponible} pts
+            </p>
             <p className="font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
+            {saldoDisponible < 0 && (
+              <p className="mt-1 max-w-sm font-sans text-sm text-brand-slate">
+                Tu saldo es negativo porque se canceló o corrigió una compra cuyos puntos ya tenías. Se compensa con
+                los puntos de tus próximas compras.{" "}
+                <Link href="/terminos" className="underline underline-offset-2 hover:text-brand-black">
+                  Ver términos
+                </Link>
+              </p>
+            )}
             {puntosPendientes > 0 && (
               <p className="mt-1 font-sans text-sm text-brand-slate">
                 +{puntosPendientes} pts pendientes
@@ -424,7 +442,7 @@ export function Club57MemberPanel({
                     {catalogVisible.map((item) => {
                       const canRedeem = saldoDisponible >= item.costo_puntos && item.stock > 0;
                       const faltante = Math.max(0, item.costo_puntos - saldoDisponible);
-                      const progresoPct = Math.min(100, Math.round((saldoDisponible / item.costo_puntos) * 100));
+                      const progresoPct = Math.max(0, Math.min(100, Math.round((saldoDisponible / item.costo_puntos) * 100)));
                       return (
                         <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-brand-slate/10 p-4">
                           <button
@@ -602,28 +620,61 @@ export function Club57MemberPanel({
                   </tr>
                 </thead>
                 <tbody>
-                  {historial.map((row) => (
-                    <tr key={row.id} className="border-b border-brand-slate/10 last:border-0">
-                      <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
-                      <td className="py-2 text-brand-black">{CLUB57_TIPO_LABEL[row.tipo] ?? row.tipo}</td>
-                      <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>
-                        {row.cantidad > 0 ? "+" : ""}
-                        {row.cantidad} pts
-                        <span className="block text-xs font-normal text-brand-slate/60">
-                          ~{pesosFormatter.format(Math.abs(row.cantidad) * montoPorPunto)}
-                        </span>
-                      </td>
-                      <td className="py-2">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            row.estado === "disponible" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {row.estado === "disponible" ? "Disponible" : "Pendiente"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {historial.map((row) => {
+                    const correccion = correccionesHistorial.get(row.id);
+                    const motivoTexto = club57MotivoTexto(row.motivo, row.motivo_nota);
+                    const anuladaEsCorreccion =
+                      correccion?.compraAnulada &&
+                      correccionesHistorial.get(correccion.compraAnulada.id)?.estadoCompra === "corregida";
+                    const tipoLabel =
+                      row.tipo === "cancelacion_compra"
+                        ? anuladaEsCorreccion
+                          ? "Ajuste por compra corregida"
+                          : "Compra cancelada"
+                        : CLUB57_TIPO_LABEL[row.tipo] ?? row.tipo;
+                    return (
+                      <tr key={row.id} className="border-b border-brand-slate/10 align-top last:border-0">
+                        <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
+                        <td className="py-2 pr-3 text-brand-black">
+                          {tipoLabel}
+                          {row.producto_nombre && (
+                            <span className="block text-xs text-brand-slate/70">{row.producto_nombre}</span>
+                          )}
+                          {correccion?.estadoCompra && (
+                            <span className="mt-1 block">
+                              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
+                                {correccion.estadoCompra === "cancelada" ? "Cancelada" : "Corregida"}
+                              </span>
+                            </span>
+                          )}
+                          {correccion?.original && (
+                            <span className="block text-xs text-brand-slate/70">
+                              Corrección de tu compra del {dateFormatter.format(new Date(correccion.original.created_at))}
+                            </span>
+                          )}
+                          {row.tipo === "cancelacion_compra" && motivoTexto && (
+                            <span className="block text-xs text-brand-slate/70">Motivo: {motivoTexto}</span>
+                          )}
+                        </td>
+                        <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>
+                          {row.cantidad > 0 ? "+" : ""}
+                          {row.cantidad} pts
+                          <span className="block text-xs font-normal text-brand-slate/60">
+                            ~{pesosFormatter.format(Math.abs(row.cantidad) * montoPorPunto)}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              row.estado === "disponible" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {row.estado === "disponible" ? "Disponible" : "Pendiente"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

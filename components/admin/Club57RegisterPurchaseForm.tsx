@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { registerClub57ManualPurchase } from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
@@ -8,6 +8,17 @@ import { registerClub57ManualPurchase } from "@/app/(admin)/admin/(protected)/le
 const inputClass =
   "w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate";
 const labelClass = "mb-1.5 block font-sans text-sm font-medium text-brand-black";
+
+// crypto.randomUUID solo existe en contextos seguros (https o localhost);
+// con getRandomValues se arma un UUID v4 igual de válido en cualquier caso.
+function newRequestId(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
   const router = useRouter();
@@ -20,14 +31,24 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<number | null>(null);
+  // Doble clic: el ref frena el segundo envío antes de que React vuelva a
+  // pintar el botón deshabilitado, y la llave (una por compra, se renueva
+  // solo al registrarse con éxito) hace que el servidor ignore un envío
+  // repetido que aun así llegara (ver registerClub57ManualPurchase).
+  const submittingRef = useRef(false);
+  const requestIdRef = useRef<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    requestIdRef.current ??= newRequestId();
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
 
-    const result = await registerClub57ManualPurchase(memberId, monto, producto, codigo);
+    const result = await registerClub57ManualPurchase(memberId, monto, producto, codigo, requestIdRef.current);
+    submittingRef.current = false;
     setIsSubmitting(false);
 
     if (result.error || typeof result.puntos !== "number") {
@@ -35,6 +56,7 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
       return;
     }
 
+    requestIdRef.current = null;
     setSuccess(result.puntos);
     setProducto("");
     setCodigo("");
