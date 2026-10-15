@@ -23,7 +23,7 @@ export default defineArticle({
   cluster: "herramientas-y-mantenimiento",
   pillar: true,
   publishAt: "2026-10-08T11:30:00-06:00",
-  updatedAt: "2026-10-13T09:00:00-06:00",
+  updatedAt: "2026-10-15T08:00:00-06:00",
   intro:
     "Las **herramientas básicas para el hogar** son quince, y no hace falta comprarlas todas el mismo día. Con siete herramientas manuales resuelves la mayoría de las reparaciones de una casa: martillo, desarmadores, pinzas, flexómetro, nivel, cutter y llave ajustable. Cuando empiezas a hacer más cosas, sumas un juego de llaves, serrucho, segueta, pistola de silicón y un taladro. Y si te animas a proyectos, llegan el rotomartillo, la caladora y el multímetro. En esta guía te decimos para qué sirve cada una, qué revisar al comprarla y el error más común, para que armes tu caja sin gastar de más.",
   blocks: [
@@ -88,6 +88,10 @@ export default defineArticle({
       text: "**Para qué sirve:** apretar tuercas de distintos tamaños, como las de la regadera, el lavabo o un mueble. **Qué buscar:** que la mordaza abra y cierre suave y no tenga juego. **Error común:** dejarla floja sobre la tuerca: se resbala y la redondea. Ajústala bien antes de girar.",
     },
     { type: "cta" },
+    {
+      type: "p",
+      text: "Si vas armando tu caja poco a poco, [[B10|Club 57 de Ferretería 57]] te ayuda: cada compra suma puntos que después cambias por artículos del catálogo de canje.",
+    },
 
     { type: "h2", text: "Nivel 2: cuando ya haces más cosas" },
     {

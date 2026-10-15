@@ -24,7 +24,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: true,
   publishAt: "2026-10-08T12:00:00-06:00",
-  updatedAt: "2026-10-09T12:00:00-06:00",
+  updatedAt: "2026-10-15T08:00:00-06:00",
   intro:
     "La principal **diferencia entre tubería PPR y PVC** está en la temperatura y en la forma de unirlas: el PVC hidráulico es para agua fría y se pega con cemento, mientras que el PPR sirve para agua fría y caliente y se une por termofusión, con calor. El CPVC es la opción pegada para agua caliente, y el cobre es el material tradicional que se suelda. Elegir bien depende de tres cosas: qué agua va a pasar por el tubo, qué herramienta tienes o estás dispuesto a conseguir y cuánto quieres invertir. Aquí te explicamos cada material con sus ventajas, sus límites y en qué casos conviene.",
   blocks: [
@@ -85,6 +85,10 @@ export default defineArticle({
       text: "**Ventajas:** uniones muy confiables, buena durabilidad y sirve para agua caliente según el tipo de tubo que indique la ficha. **Límites:** necesitas una termofusora con los dados de la medida que vas a usar, y la técnica pide un poco de práctica: calentar el tiempo justo, meter recto y no girar la pieza al unir. **Lo que necesitas:** [termofusora](/buscar?q=termofusora), cortatubos para PPR, tubos y [conexiones PPR](/buscar?q=ppr).",
     },
     { type: "cta" },
+    {
+      type: "p",
+      text: "La guía se descarga gratis siendo miembro. Si todavía no lo eres, te contamos cómo funciona [[B10|Club 57 de Ferretería 57]] y qué recibes al registrarte.",
+    },
 
     { type: "h2", text: "Cobre: el clásico, con ventajas y costo" },
     {
