@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { translateAuthError } from "@/lib/supabase/authErrors";
 
+const STAFF_ROLE_LABEL: Record<"admin" | "operador" | "vendedor", string> = {
+  admin: "administrador",
+  operador: "operador",
+  vendedor: "vendedor",
+};
+
 export interface CreateAdminResult {
   error?: string;
   success?: boolean;
@@ -25,7 +31,7 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
     return { error: "No autorizado." };
   }
 
-  const { data: isAdmin, error: adminCheckError } = await supabase.rpc("is_admin");
+  const { data: isAdmin, error: adminCheckError } = await supabase.rpc("is_full_admin");
   if (adminCheckError || !isAdmin) {
     return { error: "No autorizado." };
   }
@@ -44,7 +50,7 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
   if (password.length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres." };
   }
-  if (role !== "admin" && role !== "vendedor") {
+  if (role !== "admin" && role !== "operador" && role !== "vendedor") {
     return { error: "Rol inválido." };
   }
 
@@ -92,9 +98,7 @@ export async function createAdminUser(formData: FormData): Promise<CreateAdminRe
 
   if (promoteError) {
     return {
-      error: `El usuario se creó pero no se pudo asignar el rol de ${
-        role === "admin" ? "administrador" : "vendedor"
-      }. Avísale a soporte.`,
+      error: `El usuario se creó pero no se pudo asignar el rol de ${STAFF_ROLE_LABEL[role]}. Avísale a soporte.`,
     };
   }
 
@@ -118,15 +122,16 @@ export interface StaffAccountActionResult {
 // en la práctica indefinido (se quita al reactivar con "none").
 const DESACTIVADA_BAN = "876000h";
 
-// Quién ejecuta la acción: solo un admin activo (is_admin() ya excluye
-// cuentas desactivadas, ver migración 20261013010000).
+// Quién ejecuta la acción: solo un admin completo activo (el operador no
+// administra cuentas de personal; is_full_admin() ya excluye cuentas
+// desactivadas, ver migraciones 20261013010000 y 20261016010000).
 async function requireAdminActor(): Promise<{ userId: string } | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: isAdmin, error } = await supabase.rpc("is_admin");
+  const { data: isAdmin, error } = await supabase.rpc("is_full_admin");
   if (error || !isAdmin) return null;
   return { userId: user.id };
 }
@@ -136,10 +141,10 @@ async function requireAdminActor(): Promise<{ userId: string } | null> {
 async function getStaffTarget(adminClient: ReturnType<typeof createAdminClient>, userId: string) {
   const { data: profile, error } = await adminClient.from("profiles").select("id, role").eq("id", userId).maybeSingle();
   if (error) return { error: "No se pudo validar la cuenta." };
-  if (!profile || (profile.role !== "admin" && profile.role !== "vendedor")) {
+  if (!profile || (profile.role !== "admin" && profile.role !== "operador" && profile.role !== "vendedor")) {
     return { error: "Esa cuenta no es de personal del panel." };
   }
-  return { role: profile.role as "admin" | "vendedor" };
+  return { role: profile.role as "admin" | "operador" | "vendedor" };
 }
 
 function isBanned(bannedUntil: string | undefined | null): boolean {

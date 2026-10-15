@@ -365,3 +365,24 @@ export async function correctClub57Purchase(input: CorrectPurchaseInput): Promis
     fueraDePolitica: Boolean(result.fuera_de_politica),
   };
 }
+
+// Asignar o cambiar el vendedor de un cliente (admin u operador). Toda la
+// regla vive en club57_asignar_vendedor(): quién puede, que el vendedor
+// exista y esté activo, y el registro del cambio. vendedorId "" = sin
+// vendedor.
+export async function assignClub57Vendedor(memberId: string, vendedorId: string): Promise<{ error?: string }> {
+  const staff = await requireStaff();
+  if (!staff || staff.role !== "admin") return { error: "No autorizado." };
+  if (!UUID_RE.test(memberId)) return { error: "Cliente no encontrado." };
+  if (vendedorId && !UUID_RE.test(vendedorId)) return { error: "Elige un vendedor de la lista." };
+
+  const { error } = await staff.supabase.rpc("club57_asignar_vendedor", {
+    p_member_id: memberId,
+    p_vendedor_id: vendedorId || null,
+  });
+  if (error) return { error: error.message || "No se pudo cambiar el vendedor." };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  revalidatePath("/admin/vendedor/clientes", "layout");
+  return {};
+}

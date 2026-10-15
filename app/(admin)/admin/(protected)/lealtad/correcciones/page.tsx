@@ -9,6 +9,7 @@ import { CLUB57_MOTIVOS, club57MotivoTexto } from "@/lib/club57/correcciones";
 export const metadata: Metadata = { title: "Bitácora de correcciones — Club 57" };
 
 const PAGE_SIZE = 50;
+const ROL_LABEL: Record<string, string> = { admin: "Admin", operador: "Operador", vendedor: "Vendedor" };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -37,7 +38,7 @@ interface CorreccionRow {
   fecha_compra: string;
   dias_transcurridos: number;
   actor_id: string | null;
-  actor_rol: "admin" | "vendedor";
+  actor_rol: "admin" | "operador" | "vendedor";
   created_at: string;
   club57_members: { full_name: string } | { full_name: string }[] | null;
 }
@@ -69,7 +70,7 @@ function leerFiltros(searchParams: Record<string, string | undefined>): Filtros 
 // leen todos los perfiles, ver 20260914010000).
 async function getPersonal(): Promise<{ id: string; nombre: string; rol: string }[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "vendedor"]);
+  const { data } = await supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "operador", "vendedor"]);
   return (data ?? [])
     .map((row) => ({
       id: row.id as string,
@@ -193,7 +194,7 @@ export default async function AdminClub57CorreccionesPage({
               { value: "", label: "Todo el personal" },
               ...personal.map((p) => ({
                 value: p.id,
-                label: `${p.nombre} (${p.rol === "admin" ? "admin" : "vendedor"})`,
+                label: `${p.nombre} (${p.rol})`,
               })),
             ]}
           />
@@ -302,7 +303,7 @@ export default async function AdminClub57CorreccionesPage({
                       <td className="px-4 py-3 text-brand-black">
                         {(row.actor_id && nombrePorId.get(row.actor_id)) || "—"}
                         <span className="block text-xs text-brand-slate/70">
-                          {row.actor_rol === "admin" ? "Admin" : "Vendedor"}
+                          {ROL_LABEL[row.actor_rol] ?? row.actor_rol}
                         </span>
                       </td>
                       <td className="max-w-[260px] px-4 py-3">

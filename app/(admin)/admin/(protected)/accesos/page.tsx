@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { requireFullAdmin } from "@/lib/supabase/requireStaff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { CreateAdminForm } from "@/components/admin/CreateAdminForm";
@@ -15,7 +17,11 @@ interface StaffAccount {
   active: boolean;
 }
 
-async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAccount[] }> {
+async function getStaff(): Promise<{
+  admins: StaffAccount[];
+  operadores: StaffAccount[];
+  vendedores: StaffAccount[];
+}> {
   const adminClient = createAdminClient();
 
   // Primero las filas de profiles con rol de personal (pocas) y después el
@@ -28,7 +34,7 @@ async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAc
   const { data: profiles, error: profilesError } = await adminClient
     .from("profiles")
     .select("id, full_name, role")
-    .in("role", ["admin", "vendedor"]);
+    .in("role", ["admin", "operador", "vendedor"]);
 
   if (profilesError) throw profilesError;
 
@@ -43,7 +49,7 @@ async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAc
         createdAt: data.user.created_at,
         active: !(data.user.banned_until && new Date(data.user.banned_until).getTime() > Date.now()),
       };
-      return { role: profile.role as "admin" | "vendedor", account };
+      return { role: profile.role as "admin" | "operador" | "vendedor", account };
     })
   );
 
@@ -51,6 +57,7 @@ async function getStaff(): Promise<{ admins: StaffAccount[]; vendedores: StaffAc
 
   return {
     admins: accounts.filter((entry) => entry.role === "admin").map((entry) => entry.account).sort(byCreatedAt),
+    operadores: accounts.filter((entry) => entry.role === "operador").map((entry) => entry.account).sort(byCreatedAt),
     vendedores: accounts.filter((entry) => entry.role === "vendedor").map((entry) => entry.account).sort(byCreatedAt),
   };
 }
@@ -111,7 +118,12 @@ function StaffList({
 }
 
 export default async function AdminAccesosPage() {
+  // Solo el admin completo (el operador no administra este módulo); el
+  // middleware ya lo redirige, esto es la segunda capa.
+  if (!(await requireFullAdmin())) redirect("/admin");
+
   let admins: StaffAccount[] = [];
+  let operadores: StaffAccount[] = [];
   let vendedores: StaffAccount[] = [];
   let loadError: string | null = null;
 
@@ -124,6 +136,7 @@ export default async function AdminAccesosPage() {
   try {
     const staff = await getStaff();
     admins = staff.admins;
+    operadores = staff.operadores;
     vendedores = staff.vendedores;
   } catch {
     loadError = "No se pudo cargar la lista de cuentas de acceso.";
@@ -137,7 +150,8 @@ export default async function AdminAccesosPage() {
         </h1>
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-slate/70">
           Crea cuentas con acceso al panel de administración o a la vista de
-          vendedor. La contraseña que definas aquí ya queda activa de
+          vendedor. Un operador usa el panel completo salvo Accesos,
+          Configuración y la configuración de Club 57. La contraseña que definas aquí ya queda activa de
           inmediato — no se envía ningún correo de confirmación. Desde la
           lista puedes cambiarle la contraseña a una cuenta o desactivarla:
           una cuenta desactivada no puede entrar, pero conserva sus datos.
@@ -153,6 +167,7 @@ export default async function AdminAccesosPage() {
       ) : (
         <>
           <StaffList title="Administradores actuales" emptyLabel="Todavía no hay administradores registrados." accounts={admins} currentUserId={currentUserId} />
+          <StaffList title="Operadores actuales" emptyLabel="Todavía no hay operadores registrados." accounts={operadores} currentUserId={currentUserId} />
           <StaffList title="Vendedores actuales" emptyLabel="Todavía no hay vendedores registrados." accounts={vendedores} currentUserId={currentUserId} />
         </>
       )}
