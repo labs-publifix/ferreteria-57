@@ -28,7 +28,7 @@ export default defineArticle({
   cluster: "marca-y-club-57",
   pillar: true,
   publishAt: "2026-10-08T11:00:00-06:00",
-  updatedAt: "2026-10-09T12:30:00-06:00",
+  updatedAt: "2026-10-15T08:00:00-06:00",
   intro:
     "En Ferretería 57 todo lo que vendemos es de la familia Truper: la marca Truper y las demás **marcas Truper** del grupo: Pretul, Foset, Volteck, Fiero, Hermex y Klintek. No compiten entre sí: cada una responde a un tipo de comprador. La forma más sencilla de elegir es contestar tres preguntas: qué tan seguido vas a usar la herramienta, qué tan pesado es el trabajo y cuánto quieres invertir hoy. Con esas respuestas casi siempre queda clara la marca. En esta guía te explicamos cómo leer la familia completa, cuándo conviene pagar un poco más y cuándo no hace falta.",
   blocks: [
@@ -68,6 +68,10 @@ export default defineArticle({
         "). Y si vas a perforar muros, antes de elegir el taladro revisa nuestra guía de [[B03|tipos de brocas]]: la broca correcta importa tanto como la marca.",
     },
     { type: "cta" },
+    {
+      type: "p",
+      text: "¿Todavía no eres miembro? Aquí te explicamos cómo funciona [[B10|Club 57 de Ferretería 57]]: cómo registrarte, ganar puntos con tus compras y ver la Promo Truper para miembros.",
+    },
 
     { type: "h2", text: "Una por una: Pretul, Foset, Volteck, Fiero, Hermex y Klintek" },
     {

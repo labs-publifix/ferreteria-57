@@ -26,7 +26,7 @@ export default defineArticle({
   cluster: "electricidad-e-iluminacion",
   pillar: true,
   publishAt: "2026-10-08T16:00:00-06:00",
-  updatedAt: "2026-10-08T16:00:00-06:00",
+  updatedAt: "2026-10-15T08:00:00-06:00",
   intro:
     "El **calibre de cable para casa** se elige según la corriente, en amperes, que va a pasar por el circuito. Como regla práctica orientativa, el cable calibre 14 se usa en circuitos de 15 amperes (normalmente iluminación), el calibre 12 en circuitos de 20 amperes (contactos de uso general, cocina, lavadora) y el calibre 10 en circuitos de 30 amperes (equipos grandes como algunos minisplits o calentadores eléctricos). Para saber cuántos amperes pide un aparato basta una división: watts entre volts. En esta guía te explicamos cómo hacer ese cálculo, cómo leer el calibre en el forro del cable, qué tipo de cable conviene y en qué casos lo mejor es llamar a un electricista.",
   blocks: [
@@ -81,6 +81,10 @@ export default defineArticle({
       text: "La regla se lee en las dos direcciones: un cable calibre 14 va con una pastilla de 15 A, y una pastilla de 20 A pide al menos cable calibre 12. Nunca pongas una pastilla mayor sobre un cable delgado. Para cargas más grandes que las de la tabla, el calibre y la protección los define un electricista.",
     },
     { type: "cta" },
+    {
+      type: "p",
+      text: "Para descargar la tabla necesitas ser miembro. Te explicamos cómo funciona [[B10|Club 57 de Ferretería 57]], cómo registrarte y cómo ganar puntos con tus compras.",
+    },
 
     { type: "h2", text: "Fórmula fácil: watts ÷ volts = amperes (ejemplo resuelto)" },
     {
