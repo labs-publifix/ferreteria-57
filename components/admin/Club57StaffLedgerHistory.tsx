@@ -4,7 +4,9 @@ import { useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, buttonClassName, Modal } from "@/components/ui";
 import { correctClub57Purchase } from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
+import { ProductCatalogAutocomplete } from "@/components/admin/ProductCatalogAutocomplete";
 import { CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
+import { club57CompraDesdeCatalogo } from "@/lib/club57/catalogoCompra";
 import {
   CLUB57_MOTIVOS,
   CLUB57_PLAZO_CORRECCION_DIAS,
@@ -359,29 +361,36 @@ function CorrectPurchaseDialog({
         {accion === "corregir" && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr]">
             <div className="sm:col-span-2">
-              <label htmlFor={productoId} className={labelClass}>
-                Producto
-              </label>
-              <input
+              <ProductCatalogAutocomplete
                 id={productoId}
-                type="text"
+                label="Producto"
                 value={producto}
-                onChange={(event) => setProducto(event.target.value)}
-                className={inputClass}
+                onChange={setProducto}
+                onSelect={(item) => {
+                  const datos = club57CompraDesdeCatalogo(item);
+                  setProducto(datos.producto);
+                  setCodigo(datos.codigo);
+                  if (datos.monto) setMonto(datos.monto);
+                }}
+                inputClassName={inputClass}
+                labelClassName={labelClass}
               />
             </div>
-            <div>
-              <label htmlFor={codigoId} className={labelClass}>
-                Código (opcional)
-              </label>
-              <input
-                id={codigoId}
-                type="text"
-                value={codigo}
-                onChange={(event) => setCodigo(event.target.value)}
-                className={inputClass}
-              />
-            </div>
+            <ProductCatalogAutocomplete
+              id={codigoId}
+              label="Código (opcional)"
+              value={codigo}
+              onChange={setCodigo}
+              onSelect={(item) => {
+                const datos = club57CompraDesdeCatalogo(item);
+                setProducto(datos.producto);
+                setCodigo(datos.codigo);
+                if (datos.monto) setMonto(datos.monto);
+              }}
+              minChars={1}
+              inputClassName={inputClass}
+              labelClassName={labelClass}
+            />
             <div>
               <label htmlFor={montoId} className={labelClass}>
                 Monto (MXN)

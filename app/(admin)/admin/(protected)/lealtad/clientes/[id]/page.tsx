@@ -97,7 +97,11 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
         </h1>
         <p className="mt-1 font-sans text-sm text-brand-slate/70">
           Cliente desde {dateFormatter.format(new Date(memberDetail.created_at))} ·{" "}
-          {ORIGEN_LABEL[memberDetail.origen_alta]}
+          {memberDetail.origen_alta === "autoregistro"
+            ? ORIGEN_LABEL.autoregistro
+            : memberDetail.creado_por_vendedor_id
+              ? ORIGEN_LABEL.vendedor
+              : "Alta manual desde el panel"}
         </p>
       </div>
 

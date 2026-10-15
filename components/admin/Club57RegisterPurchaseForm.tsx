@@ -3,6 +3,9 @@
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { ProductCatalogAutocomplete } from "@/components/admin/ProductCatalogAutocomplete";
+import { club57CompraDesdeCatalogo } from "@/lib/club57/catalogoCompra";
+import type { SearchResultItem } from "@/lib/catalog/search";
 import { registerClub57ManualPurchase } from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
 
 const inputClass =
@@ -31,6 +34,7 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<number | null>(null);
+  const [delCatalogo, setDelCatalogo] = useState(false);
   // Doble clic: el ref frena el segundo envío antes de que React vuelva a
   // pintar el botón deshabilitado, y la llave (una por compra, se renueva
   // solo al registrarse con éxito) hace que el servidor ignore un envío
@@ -61,7 +65,16 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
     setProducto("");
     setCodigo("");
     setMonto("");
+    setDelCatalogo(false);
     router.refresh();
+  }
+
+  function elegirDelCatalogo(item: SearchResultItem) {
+    const datos = club57CompraDesdeCatalogo(item);
+    setProducto(datos.producto);
+    setCodigo(datos.codigo);
+    if (datos.monto) setMonto(datos.monto);
+    setDelCatalogo(true);
   }
 
   return (
@@ -81,32 +94,33 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
           cuánto. Código es opcional: no siempre está a la mano en el
           mostrador. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr_1fr] sm:items-end">
-        <div>
-          <label htmlFor={productoId} className={labelClass}>
-            Producto
-          </label>
-          <input
-            id={productoId}
-            type="text"
-            required
-            placeholder='p. ej. "Taladro Truper 1/2"'
-            value={producto}
-            onChange={(event) => setProducto(event.target.value)}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label htmlFor={codigoId} className={labelClass}>
-            Código (opcional)
-          </label>
-          <input
-            id={codigoId}
-            type="text"
-            value={codigo}
-            onChange={(event) => setCodigo(event.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <ProductCatalogAutocomplete
+          id={productoId}
+          label="Producto"
+          placeholder='Escribe para buscar, p. ej. "taladro"'
+          value={producto}
+          onChange={(value) => {
+            setProducto(value);
+            setDelCatalogo(false);
+          }}
+          onSelect={elegirDelCatalogo}
+          inputClassName={inputClass}
+          labelClassName={labelClass}
+        />
+        <ProductCatalogAutocomplete
+          id={codigoId}
+          label="Código (opcional)"
+          value={codigo}
+          onChange={(value) => {
+            setCodigo(value);
+            setDelCatalogo(false);
+          }}
+          onSelect={elegirDelCatalogo}
+          minChars={1}
+          listAlign="right"
+          inputClassName={inputClass}
+          labelClassName={labelClass}
+        />
         <div>
           <label htmlFor={montoId} className={labelClass}>
             Monto (MXN)
@@ -123,6 +137,11 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
           />
         </div>
       </div>
+      {delCatalogo && (
+        <p className="font-sans text-xs text-brand-slate/70">
+          Datos del catálogo en línea. Revisa el monto si fueron varias piezas o si el precio en tienda es otro.
+        </p>
+      )}
       <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto sm:self-start">
         {isSubmitting ? "Registrando…" : "Registrar compra en tienda"}
       </Button>
