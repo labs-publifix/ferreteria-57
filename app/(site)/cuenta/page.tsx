@@ -109,7 +109,9 @@ export default async function CuentaPage({
         supabase.from("club57_members").select("referred_by").eq("id", user.id).maybeSingle(),
         supabase
           .from("club57_points_ledger")
-          .select("id, cantidad, tipo, estado, fecha_disponible, referencia, created_at")
+          .select(
+            "id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, anula_a, corrige_a, motivo, motivo_nota, created_at"
+          )
           .eq("member_id", user.id)
           .order("created_at", { ascending: false }),
         supabase
