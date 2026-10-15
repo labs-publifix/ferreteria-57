@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { Club57MembersTable, type Club57MemberRow } from "@/components/admin/Club57MembersTable";
+import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { buttonClassName } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { club57VendedorLabel } from "@/lib/club57/labels";
@@ -133,23 +134,17 @@ export default async function AdminClub57ClientesPage({
           />
         </div>
         <div className="min-w-[200px]">
-          <label htmlFor="vendedor" className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
-            Vendedor
-          </label>
-          <select
-            id="vendedor"
+          <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Vendedor</span>
+          <FilterSelectField
             name="vendedor"
             defaultValue={vendedor}
-            className="w-full rounded-md border border-brand-slate/30 bg-white px-3 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-          >
-            <option value="">Todos</option>
-            {vendedores.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.nombre}
-              </option>
-            ))}
-            <option value={SIN_VENDEDOR}>Sin vendedor</option>
-          </select>
+            label="Vendedor"
+            options={[
+              { value: "", label: "Todos" },
+              ...vendedores.map((option) => ({ value: option.id, label: option.nombre })),
+              { value: SIN_VENDEDOR, label: "Sin vendedor" },
+            ]}
+          />
         </div>
         <button type="submit" className={buttonClassName("secondary")}>
           Buscar

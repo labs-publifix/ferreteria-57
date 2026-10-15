@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { buttonClassName } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { addDaysInStoreTimezone } from "@/lib/marketing/visibility";
@@ -16,7 +17,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", ti
 const pesosFormatter = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
 const fieldClass =
-  "w-full rounded-md border border-brand-slate/30 bg-white px-3 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate";
+  "min-h-11 w-full rounded-md border border-brand-slate/30 bg-white px-3 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate";
 const labelClass = "mb-1.5 block font-sans text-sm font-medium text-brand-black";
 
 interface CorreccionRow {
@@ -161,49 +162,53 @@ export default async function AdminClub57CorreccionesPage({
           <input id="hasta" name="hasta" type="date" defaultValue={filtros.hasta} className={fieldClass} />
         </div>
         <div>
-          <label htmlFor="motivo" className={labelClass}>
-            Motivo
-          </label>
-          <select id="motivo" name="motivo" defaultValue={filtros.motivo} className={fieldClass}>
-            <option value="">Todos</option>
-            {CLUB57_MOTIVOS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <span className={labelClass}>Motivo</span>
+          <FilterSelectField
+            name="motivo"
+            defaultValue={filtros.motivo}
+            label="Motivo"
+            options={[{ value: "", label: "Todos" }, ...CLUB57_MOTIVOS.map((m) => ({ value: m.value, label: m.label }))]}
+          />
         </div>
         <div>
-          <label htmlFor="accion" className={labelClass}>
-            Acción
-          </label>
-          <select id="accion" name="accion" defaultValue={filtros.accion} className={fieldClass}>
-            <option value="">Todas</option>
-            <option value="cancelada">Cancelada</option>
-            <option value="corregida">Corregida</option>
-          </select>
+          <span className={labelClass}>Acción</span>
+          <FilterSelectField
+            name="accion"
+            defaultValue={filtros.accion}
+            label="Acción"
+            options={[
+              { value: "", label: "Todas" },
+              { value: "cancelada", label: "Cancelada" },
+              { value: "corregida", label: "Corregida" },
+            ]}
+          />
         </div>
         <div>
-          <label htmlFor="quien" className={labelClass}>
-            Quién
-          </label>
-          <select id="quien" name="quien" defaultValue={filtros.quien} className={fieldClass}>
-            <option value="">Todo el personal</option>
-            {personal.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre} ({p.rol === "admin" ? "admin" : "vendedor"})
-              </option>
-            ))}
-          </select>
+          <span className={labelClass}>Quién</span>
+          <FilterSelectField
+            name="quien"
+            defaultValue={filtros.quien}
+            label="Quién"
+            options={[
+              { value: "", label: "Todo el personal" },
+              ...personal.map((p) => ({
+                value: p.id,
+                label: `${p.nombre} (${p.rol === "admin" ? "admin" : "vendedor"})`,
+              })),
+            ]}
+          />
         </div>
         <div>
-          <label htmlFor="politica" className={labelClass}>
-            Política
-          </label>
-          <select id="politica" name="politica" defaultValue={filtros.politica} className={fieldClass}>
-            <option value="">Todas</option>
-            <option value="fuera">Solo fuera de política</option>
-          </select>
+          <span className={labelClass}>Política</span>
+          <FilterSelectField
+            name="politica"
+            defaultValue={filtros.politica}
+            label="Política"
+            options={[
+              { value: "", label: "Todas" },
+              { value: "fuera", label: "Solo fuera de política" },
+            ]}
+          />
         </div>
         <div className="flex items-end gap-2 sm:col-span-2">
           <button type="submit" className={buttonClassName("secondary")}>
