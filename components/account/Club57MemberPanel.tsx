@@ -78,11 +78,18 @@ const REDEMPTION_ESTADO_STYLE: Record<string, string> = {
   cancelado: "bg-red-100 text-red-700",
 };
 
+// El historial va primero: es lo que más consulta el cliente después de
+// una compra en tienda (qué se le registró y cuántos puntos le dio).
 const TABS = [
-  { id: "catalogo", label: "Catálogo de canje" },
+  { id: "puntos", label: "Historial de compras y puntos" },
   { id: "pedidos", label: "Mis pedidos" },
-  { id: "puntos", label: "Historial de puntos" },
+  { id: "catalogo", label: "Catálogo de canje" },
 ];
+
+// Filtros del catálogo que viven en la URL (ver syncCatalogFiltersToUrl):
+// si alguno viene, la persona estaba en el catálogo (p. ej. recargó la
+// página), así que se abre esa pestaña en vez del historial.
+const CATALOG_URL_PARAMS = ["cq", "cmin", "cmax", "csolo", "corden"];
 
 const CATALOGO_PAGE_SIZE = 9;
 const PEDIDOS_PAGE_SIZE = 10;
@@ -121,7 +128,9 @@ export function Club57MemberPanel({
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchInputId = useId();
-  const [activeTab, setActiveTab] = useState("catalogo");
+  const [activeTab, setActiveTab] = useState(() =>
+    CATALOG_URL_PARAMS.some((param) => searchParams.has(param)) ? "catalogo" : "puntos"
+  );
   const correccionesHistorial = useMemo(() => club57AnotarCorrecciones(historial, hoy), [historial, hoy]);
   const [confirmTarget, setConfirmTarget] = useState<Club57CatalogItem | null>(null);
   const [quickViewItem, setQuickViewItem] = useState<Club57CatalogItem | null>(null);
