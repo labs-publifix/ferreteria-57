@@ -46,9 +46,9 @@ import { FORANEO_COST, FORANEO_MAX_STANDARD, FREE_SHIPPING_THRESHOLD } from "@/l
 // quien la llama (buildProductJsonLd, en lib/seo.ts) ya tiene SITE_URL a
 // mano de todas formas.
 //
-// /terminos §6.3: "dentro de un plazo de 5 días naturales... Ferretería 57
+// /terminos §6.3: "dentro de un plazo de 7 días naturales... Ferretería 57
 // realizará el reembolso o cambio" — ventana finita (no ilimitada, no "sin
-// devoluciones"), 5 días, el cliente paga el envío de vuelta salvo error
+// devoluciones"), 7 días, el cliente paga el envío de vuelta salvo error
 // de la tienda, y la tienda elige entre reembolso o cambio caso por caso.
 // El cliente paga el envío de vuelta, pero no hay una tarifa fija: por eso
 // ReturnFeesCustomerResponsibility y no ReturnShippingFees (ver #2 arriba).
@@ -57,7 +57,7 @@ export function buildMerchantReturnPolicy(siteUrl: string) {
     "@type": "MerchantReturnPolicy",
     applicableCountry: "MX",
     returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
-    merchantReturnDays: 5,
+    merchantReturnDays: 7,
     returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
     returnMethod: ["https://schema.org/ReturnByMail", "https://schema.org/ReturnInStore"],
     refundType: ["https://schema.org/FullRefund", "https://schema.org/ExchangeRefund"],

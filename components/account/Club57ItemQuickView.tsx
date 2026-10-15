@@ -84,6 +84,9 @@ export function Club57ItemQuickView({
           >
             {canRedeem ? "Canjear" : "Puntos insuficientes"}
           </button>
+          <p className="font-sans text-xs text-brand-slate/70">
+            Los artículos canjeados no tienen devolución ni cambio, y los puntos no se reintegran.
+          </p>
         </div>
       </div>
     </Modal>

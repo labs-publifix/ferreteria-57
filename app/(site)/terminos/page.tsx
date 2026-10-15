@@ -32,7 +32,7 @@ export default function TerminosPage() {
       <LegalPageHeader
         title="Términos y Condiciones"
         subtitle="Condiciones generales de uso y compra en la tienda en línea de Ferretería 57"
-        lastUpdated="22 de septiembre de 2026"
+        lastUpdated="15 de octubre de 2026"
       />
 
       <LegalArticle>
@@ -123,9 +123,9 @@ export default function TerminosPage() {
         <LegalH3>6.1 Productos con defecto de fabricación</LegalH3>
         <LegalP>
           Ferretería 57 garantiza la calidad de los productos que comercializa. Si recibe un producto con defecto
-          de fabricación, tiene un plazo de 5 días hábiles a partir de la recepción para notificarlo a
-          contacto@ferreteria57.com adjuntando fotografías del producto. En este caso, Ferretería 57 podrá a su
-          elección:
+          de fabricación o que llegó dañado, tiene un plazo de 7 días naturales a partir de la compra en tienda o
+          de la recepción del pedido para notificarlo en sucursal o a contacto@ferreteria57.com adjuntando
+          fotografías del producto. En este caso, Ferretería 57 podrá a su elección:
         </LegalP>
         <LegalUl>
           <li>Reemplazar el producto por uno nuevo en perfectas condiciones sin costo adicional, o</li>
@@ -136,20 +136,35 @@ export default function TerminosPage() {
         <LegalP>
           Adicionalmente, los productos Truper y marcas hermanas cuentan con la garantía del fabricante conforme a
           sus propias políticas. El cliente podrá hacerla válida presentando su ticket de compra directamente en
-          sucursal, o a través de los centros de servicio autorizados Truper.
+          sucursal, o a través de los centros de servicio autorizados Truper. Una vez transcurrido el plazo de 7
+          días naturales señalado en esta sección, Ferretería 57 puede brindar apoyo al cliente en la gestión de la
+          garantía con el proveedor.
         </LegalP>
 
         <LegalH3>6.3 Cambios y devoluciones por cambio de opinión</LegalH3>
         <LegalP>
-          Ferretería 57 acepta devoluciones o cambios por cambio de opinión dentro de un plazo de 5 días naturales
-          a partir de la recepción, siempre que el producto se encuentre sin uso, en su empaque original y con
+          Ferretería 57 acepta devoluciones o cambios por cambio de opinión dentro de un plazo de 7 días naturales
+          a partir de la compra en tienda o de la recepción del pedido, siempre que el producto se encuentre sin uso, en su empaque original y con
           todos sus accesorios, acompañado del comprobante de compra. El costo del envío de devolución, en su
           caso, correrá a cargo del cliente, salvo que se trate de un error imputable a Ferretería 57. Una vez
           recibido y validado el producto, Ferretería 57 realizará el reembolso o cambio en un plazo de 5 a 10 días
           hábiles.
         </LegalP>
 
-        <LegalH3>6.4 Derechos del consumidor</LegalH3>
+        <LegalH3>6.4 Puntos de Club 57 en devoluciones y canjes</LegalH3>
+        <LegalP>
+          Cuando una compra se cancela o se corrige por una devolución o un cambio, los puntos de Club 57 que esa
+          compra generó se descuentan del saldo del miembro, aun cuando el saldo quede negativo. Un saldo negativo
+          se compensa con los puntos de compras posteriores. El miembro puede consultar estos movimientos en el
+          historial de su cuenta.
+        </LegalP>
+        <LegalP>
+          Los artículos obtenidos mediante el canje de puntos de Club 57 no admiten devolución ni cambio, y los
+          puntos utilizados en un canje no se reintegran, salvo que Ferretería 57 cancele el canje (por ejemplo,
+          por falta de existencias), en cuyo caso los puntos se devuelven al saldo del miembro.
+        </LegalP>
+
+        <LegalH3>6.5 Derechos del consumidor</LegalH3>
         <LegalP>
           Nada de lo establecido en esta política limita o excluye los derechos que le corresponden como
           consumidor conforme a la Ley Federal de Protección al Consumidor (LFPC) y demás disposiciones aplicables
