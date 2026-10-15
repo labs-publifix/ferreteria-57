@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Club57AssignVendedor } from "@/components/admin/Club57AssignVendedor";
 import { Club57RegisterPurchaseForm } from "@/components/admin/Club57RegisterPurchaseForm";
 import { Club57StaffLedgerHistory, type Club57StaffLedgerRow } from "@/components/admin/Club57StaffLedgerHistory";
 import { createClient } from "@/lib/supabase/server";
@@ -23,7 +24,7 @@ interface MemberDetail {
 const dateFormatter = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
 
 const ORIGEN_LABEL: Record<MemberDetail["origen_alta"], string> = {
-  vendedor: "Alta manual (vendedor)",
+  vendedor: "Alta manual",
   autoregistro: "Autoregistro",
 };
 
@@ -38,19 +39,29 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   if (!member) notFound();
 
-  // Nombre del vendedor que dio de alta al cliente (perfiles: el admin los
-  // lee todos por RLS). Si la consulta falla, la fila cae a «Vendedor sin
-  // nombre» en vez de romper la página.
+  // Vendedor asignado y personal para nombres (perfiles: admin y operador
+  // los leen todos por RLS) + los últimos cambios de vendedor. Si alguna
+  // consulta falla, los nombres caen a «Sin nombre» en vez de romper la
+  // página.
   const vendedorId = (member as MemberDetail).creado_por_vendedor_id;
-  let vendedorNombre: string | null = null;
-  if (vendedorId) {
-    const { data: vendedor } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", vendedorId)
-      .maybeSingle();
-    vendedorNombre = (vendedor?.full_name as string | null | undefined) ?? null;
-  }
+  const [{ data: personal }, { data: asignaciones }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "operador", "vendedor"]),
+    supabase
+      .from("club57_asignaciones_vendedor")
+      .select("id, vendedor_anterior_id, vendedor_nuevo_id, actor_id, created_at")
+      .eq("member_id", params.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+  const nombrePorId = new Map(
+    (personal ?? []).map((p) => [p.id as string, (p.full_name as string | null)?.trim() || "Sin nombre"])
+  );
+  const vendedores = (personal ?? [])
+    .filter((p) => p.role === "vendedor")
+    .map((p) => ({ id: p.id as string, nombre: nombrePorId.get(p.id as string)! }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  const vendedorNombre = vendedorId ? nombrePorId.get(vendedorId) ?? null : null;
+  const nombreVendedor = (id: string | null) => (id ? nombrePorId.get(id) ?? "Vendedor sin nombre" : "Sin vendedor");
 
   // Puntos 'pendiente' de ESTE cliente cuya fecha ya llegó se pasan a
   // 'disponible' aquí — así el saldo que ve el vendedor en mostrador ya
@@ -97,11 +108,7 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
         </h1>
         <p className="mt-1 font-sans text-sm text-brand-slate/70">
           Cliente desde {dateFormatter.format(new Date(memberDetail.created_at))} ·{" "}
-          {memberDetail.origen_alta === "autoregistro"
-            ? ORIGEN_LABEL.autoregistro
-            : memberDetail.creado_por_vendedor_id
-              ? ORIGEN_LABEL.vendedor
-              : "Alta manual desde el panel"}
+          {ORIGEN_LABEL[memberDetail.origen_alta]}
         </p>
       </div>
 
@@ -131,11 +138,38 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
             </div>
             <div className="flex justify-between gap-3 py-1">
               <dt className="shrink-0 text-brand-slate/70">Vendedor</dt>
-              <dd className="min-w-0 break-words text-right font-medium">
-                {club57VendedorLabel(memberDetail.origen_alta, memberDetail.creado_por_vendedor_id, vendedorNombre)}
-              </dd>
+              <Club57AssignVendedor
+                memberId={memberDetail.id}
+                memberName={memberDetail.full_name}
+                currentVendedorId={memberDetail.creado_por_vendedor_id}
+                currentLabel={club57VendedorLabel(
+                  memberDetail.origen_alta,
+                  memberDetail.creado_por_vendedor_id,
+                  vendedorNombre
+                )}
+                vendedores={vendedores}
+              />
             </div>
           </dl>
+          {(asignaciones ?? []).length > 0 && (
+            <div className="mt-4 border-t border-brand-slate/10 pt-3">
+              <h3 className="font-sans text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
+                Cambios de vendedor
+              </h3>
+              <ul className="mt-2 flex flex-col gap-1.5 font-sans text-xs text-brand-slate">
+                {(asignaciones ?? []).map((cambio) => (
+                  <li key={cambio.id as string}>
+                    {dateFormatter.format(new Date(cambio.created_at as string))}:{" "}
+                    {nombreVendedor(cambio.vendedor_anterior_id as string | null)} →{" "}
+                    <span className="font-medium text-brand-black">
+                      {nombreVendedor(cambio.vendedor_nuevo_id as string | null)}
+                    </span>
+                    {cambio.actor_id && <> · por {nombrePorId.get(cambio.actor_id as string) ?? "personal"}</>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="rounded-lg bg-white p-5 shadow-sm">

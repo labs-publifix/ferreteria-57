@@ -17,7 +17,7 @@ export default async function AdminLoginPage({
 }) {
   const staff = await getStaffProfile();
   if (staff) {
-    redirect(staff.role === "admin" ? "/admin" : "/admin/vendedor");
+    redirect(staff.role === "vendedor" ? "/admin/vendedor" : "/admin");
   }
 
   return (

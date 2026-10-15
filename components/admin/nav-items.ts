@@ -18,6 +18,8 @@ export interface AdminNavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Solo para el admin completo: el operador no lo ve en el menú. */
+  fullAdminOnly?: boolean;
 }
 
 // Orden fijo pedido para el menú lateral. Cada entrada ya tiene su propia
@@ -39,6 +41,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // mismo criterio que separa "Programa de Lealtad" del resto de
   // categorías en el header de la tienda, aquí como los últimos ítems en
   // vez de un tratamiento visual aparte.
-  { href: "/admin/accesos", label: "Accesos", icon: ShieldCheck },
-  { href: "/admin/configuracion", label: "Configuración", icon: Settings },
+  { href: "/admin/accesos", label: "Accesos", icon: ShieldCheck, fullAdminOnly: true },
+  { href: "/admin/configuracion", label: "Configuración", icon: Settings, fullAdminOnly: true },
 ];

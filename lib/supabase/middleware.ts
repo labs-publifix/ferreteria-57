@@ -6,6 +6,10 @@ import { NextResponse, type NextRequest } from "next/server";
 // se renovaría hasta que el usuario recargara una página que llame a
 // getUser() del lado del servidor, dejando la sesión "colgada" mientras
 // tanto. supabase.auth.getUser() aquí es lo que dispara el refresh.
+// Lo mismo se valida otra vez en cada página y Server Action de estos
+// módulos (requireFullAdmin): el middleware nunca es la única capa.
+export const FULL_ADMIN_ROUTES = ["/admin/accesos", "/admin/configuracion", "/admin/lealtad/configuracion"];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -61,6 +65,11 @@ export async function updateSession(request: NextRequest) {
   // pantalla de nueva contraseña a la que llega el enlace de recuperación.
   const isAdminLoginRoute = pathname === "/admin/login" || pathname === "/admin/restablecer-contrasena";
   const isVendedorRoute = pathname.startsWith("/admin/vendedor");
+  // Módulos que solo administra el admin completo (no el operador):
+  // cuentas de personal, conexión de Mercado Pago y reglas de Club 57.
+  const isFullAdminRoute = FULL_ADMIN_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
 
   if (isAdminRoute && !isAdminLoginRoute) {
     // Cualquier error de red/RPC (incluida la función is_admin() todavía
@@ -92,6 +101,26 @@ export async function updateSession(request: NextRequest) {
     // /admin/vendedor/** acepta admin O vendedor; el resto de /admin sigue
     // exigiendo exactamente is_admin(), igual que siempre.
     const hasAccess = isVendedorRoute ? isAdmin || isVendedor : isAdmin;
+
+    // El operador pasa is_admin(); estas rutas además exigen is_full_admin().
+    // Si no lo es, vuelve al Inicio del panel (sí es personal, solo no le
+    // toca este módulo).
+    if (hasAccess && isFullAdminRoute && user) {
+      let isFullAdmin = false;
+      try {
+        const { data, error } = await supabase.rpc("is_full_admin");
+        isFullAdmin = !error && data === true;
+      } catch {
+        isFullAdmin = false;
+      }
+      if (!isFullAdmin) {
+        const redirectResponse = NextResponse.redirect(new URL("/admin", request.url));
+        supabaseResponse.cookies.getAll().forEach((cookie) => {
+          redirectResponse.cookies.set(cookie);
+        });
+        return redirectResponse;
+      }
+    }
 
     if (!hasAccess) {
       // Un vendedor autenticado que golpea una ruta de admin fuera de la

@@ -17,7 +17,7 @@ async function requireAdmin() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: isAdmin, error } = await supabase.rpc("is_admin");
+  const { data: isAdmin, error } = await supabase.rpc("is_full_admin");
   if (error || !isAdmin) return null;
 
   return supabase;
