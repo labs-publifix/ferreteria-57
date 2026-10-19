@@ -24,7 +24,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: true,
   publishAt: "2026-10-08T12:00:00-06:00",
-  updatedAt: "2026-10-15T08:00:00-06:00",
+  updatedAt: "2026-10-19T08:00:00-06:00",
   intro:
     "La principal **diferencia entre tubería PPR y PVC** está en la temperatura y en la forma de unirlas: el PVC hidráulico es para agua fría y se pega con cemento, mientras que el PPR sirve para agua fría y caliente y se une por termofusión, con calor. El CPVC es la opción pegada para agua caliente, y el cobre es el material tradicional que se suelda. Elegir bien depende de tres cosas: qué agua va a pasar por el tubo, qué herramienta tienes o estás dispuesto a conseguir y cuánto quieres invertir. Aquí te explicamos cada material con sus ventajas, sus límites y en qué casos conviene.",
   blocks: [
@@ -62,7 +62,7 @@ export default defineArticle({
       type: "callout",
       variant: "consejo",
       title: "Hidráulico no es sanitario",
-      text: "El PVC para drenaje (sanitario) es otro producto, con otras paredes y otras conexiones. No lo uses para agua a presión ni al revés: revisa en la etiqueta para qué uso está hecho cada tubo.",
+      text: "El PVC para drenaje (sanitario) es otro producto, con otras paredes y otras conexiones. No lo uses para agua a presión ni al revés: revisa en la etiqueta para qué uso está hecho cada tubo. Y si lo que tienes es un desagüe tapado, en nuestra guía de [[B11|cómo destapar un lavabo]] te explicamos cómo hacerlo sin dañar el PVC.",
     },
 
     { type: "h2", text: "CPVC: agua caliente y fría, con unión pegada" },
