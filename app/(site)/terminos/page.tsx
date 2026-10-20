@@ -32,7 +32,7 @@ export default function TerminosPage() {
       <LegalPageHeader
         title="Términos y Condiciones"
         subtitle="Condiciones generales de uso y compra en la tienda en línea de Ferretería 57"
-        lastUpdated="15 de octubre de 2026"
+        lastUpdated="20 de octubre de 2026"
       />
 
       <LegalArticle>
@@ -162,6 +162,13 @@ export default function TerminosPage() {
           Los artículos obtenidos mediante el canje de puntos de Club 57 no admiten devolución ni cambio, y los
           puntos utilizados en un canje no se reintegran, salvo que Ferretería 57 cancele el canje (por ejemplo,
           por falta de existencias), en cuyo caso los puntos se devuelven al saldo del miembro.
+        </LegalP>
+        <LegalP>
+          Ferretería 57 puede otorgar, a su criterio, puntos de cortesía a los miembros de Club 57 (por ejemplo, como
+          compensación, en una promoción o como agradecimiento). Estos puntos quedan disponibles para canje desde
+          que se otorgan, no cuentan como compra para el bono de referidos y, si se otorgaron por error, Ferretería
+          57 puede anularlos; en ese caso se descuentan del saldo del miembro, aun cuando el saldo quede negativo, y
+          el movimiento se muestra en el historial de su cuenta.
         </LegalP>
 
         <LegalH3>6.5 Derechos del consumidor</LegalH3>

@@ -386,3 +386,80 @@ export async function assignClub57Vendedor(memberId: string, vendedorId: string)
   revalidatePath("/admin/vendedor/clientes", "layout");
   return {};
 }
+
+export interface GrantCortesiaInput {
+  memberId: string;
+  puntos: string;
+  motivo: string;
+  motivoNota?: string;
+  requestId?: string;
+}
+
+export interface GrantCortesiaResult {
+  error?: string;
+  puntos?: number;
+  saldoDisponible?: number;
+}
+
+// Otorgar puntos de cortesía (admin u operador). Toda la regla vive en
+// club57_otorgar_puntos(): quién puede, el máximo por otorgamiento, el
+// motivo y la idempotencia por requestId (un doble clic devuelve el
+// otorgamiento ya hecho). Aquí solo se valida la forma de los datos.
+export async function grantClub57CortesiaPoints(input: GrantCortesiaInput): Promise<GrantCortesiaResult> {
+  const staff = await requireStaff();
+  if (!staff || staff.role !== "admin") return { error: "No autorizado." };
+  if (!UUID_RE.test(input.memberId)) return { error: "Cliente no encontrado." };
+
+  const texto = input.puntos.trim();
+  if (!/^\d+$/.test(texto) || Number(texto) <= 0) return { error: "Los puntos deben ser un número entero mayor a 0." };
+  if (!input.motivo) return { error: "Elige el motivo." };
+
+  const { data, error } = await staff.supabase.rpc("club57_otorgar_puntos", {
+    p_member_id: input.memberId,
+    p_cantidad: Number(texto),
+    p_motivo: input.motivo,
+    p_motivo_nota: input.motivoNota?.trim() || null,
+    p_request_id: input.requestId && UUID_RE.test(input.requestId) ? input.requestId : null,
+  });
+  if (error) return { error: error.message || "No se pudieron otorgar los puntos." };
+
+  const result = (data ?? {}) as { puntos?: number; saldo_disponible?: number };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  revalidatePath("/admin/vendedor/clientes", "layout");
+  revalidatePath("/admin/lealtad/cortesias");
+  return { puntos: result.puntos, saldoDisponible: result.saldo_disponible };
+}
+
+export interface AnnulCortesiaResult {
+  error?: string;
+  puntosAnulados?: number;
+  saldoDisponible?: number;
+}
+
+// Anular un otorgamiento de cortesía (admin u operador): un movimiento que
+// compensa, nunca un borrado. La regla vive en club57_anular_cortesia().
+export async function annulClub57Cortesia(input: {
+  cortesiaId: string;
+  motivo: string;
+  motivoNota?: string;
+}): Promise<AnnulCortesiaResult> {
+  const staff = await requireStaff();
+  if (!staff || staff.role !== "admin") return { error: "No autorizado." };
+  if (!UUID_RE.test(input.cortesiaId)) return { error: "Movimiento no encontrado." };
+  if (!input.motivo) return { error: "Elige el motivo." };
+
+  const { data, error } = await staff.supabase.rpc("club57_anular_cortesia", {
+    p_cortesia_id: input.cortesiaId,
+    p_motivo: input.motivo,
+    p_motivo_nota: input.motivoNota?.trim() || null,
+  });
+  if (error) return { error: error.message || "No se pudo anular." };
+
+  const result = (data ?? {}) as { puntos_anulados?: number; saldo_disponible?: number };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  revalidatePath("/admin/vendedor/clientes", "layout");
+  revalidatePath("/admin/lealtad/cortesias");
+  return { puntosAnulados: result.puntos_anulados, saldoDisponible: result.saldo_disponible };
+}

@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Club57AssignVendedor } from "@/components/admin/Club57AssignVendedor";
+import { Club57GrantCortesia } from "@/components/admin/Club57GrantCortesia";
 import { Club57RegisterPurchaseForm } from "@/components/admin/Club57RegisterPurchaseForm";
 import { Club57StaffLedgerHistory, type Club57StaffLedgerRow } from "@/components/admin/Club57StaffLedgerHistory";
 import { createClient } from "@/lib/supabase/server";
 import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 import { club57VendedorLabel } from "@/lib/club57/labels";
+import { CLUB57_MAX_PUNTOS_CORTESIA_DEFAULT } from "@/lib/club57/cortesias";
 
 export const metadata: Metadata = { title: "Detalle de cliente — Club 57" };
 
@@ -73,13 +75,19 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
   const { data: ledger } = await supabase
     .from("club57_points_ledger")
     .select(
-      "id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, monto, anula_a, corrige_a, motivo, motivo_nota, created_at"
+      "id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, monto, anula_a, corrige_a, motivo, motivo_nota, registrado_por, created_at"
     )
     .eq("member_id", params.id)
     .order("created_at", { ascending: false });
 
-  const { data: config } = await supabase.from("club57_config").select("monto_por_punto").maybeSingle();
+  const { data: config } = await supabase
+    .from("club57_config")
+    .select("monto_por_punto, max_puntos_cortesia")
+    .maybeSingle();
   const montoPorPunto = config?.monto_por_punto ? Number(config.monto_por_punto) : 50;
+  const maxPuntosCortesia = config?.max_puntos_cortesia
+    ? Number(config.max_puntos_cortesia)
+    : CLUB57_MAX_PUNTOS_CORTESIA_DEFAULT;
 
   const memberDetail = member as MemberDetail;
   const ledgerRows = ((ledger ?? []) as Club57StaffLedgerRow[]).map((row) => ({
@@ -180,8 +188,8 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
           <p className="mt-1 font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
           {saldoDisponible < 0 && (
             <p className="mt-2 font-sans text-sm text-brand-slate">
-              Saldo negativo por una compra cancelada o corregida cuyos puntos ya estaban disponibles. Se compensa con
-              sus próximas compras.
+              Saldo negativo por una compra cancelada o corregida, o una cortesía anulada, cuyos puntos ya estaban
+              disponibles. Se compensa con sus próximas compras.
             </p>
           )}
           {puntosPendientes > 0 && (
@@ -198,12 +206,23 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
       </div>
 
       <div className="rounded-lg bg-white p-5 shadow-sm">
+        <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Otorgar puntos de cortesía</h2>
+        <Club57GrantCortesia
+          memberId={memberDetail.id}
+          memberName={memberDetail.full_name}
+          saldoDisponible={saldoDisponible}
+          maxPuntos={maxPuntosCortesia}
+        />
+      </div>
+
+      <div className="rounded-lg bg-white p-5 shadow-sm">
         <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Historial de puntos</h2>
         <Club57StaffLedgerHistory
           rows={ledgerRows}
           role="admin"
           hoy={todayInStoreTimezone()}
           montoPorPunto={montoPorPunto}
+          nombrePersonal={Object.fromEntries(nombrePorId)}
         />
       </div>
     </div>
