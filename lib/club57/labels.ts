@@ -8,6 +8,8 @@ export const CLUB57_TIPO_LABEL: Record<string, string> = {
   reversion_cancelacion: "Reversión por cancelación",
   canje: "Canje",
   cancelacion_compra: "Cancelación de compra",
+  cortesia: "Puntos de cortesía",
+  anulacion_cortesia: "Cortesía anulada",
 };
 
 export const CLUB57_REDEMPTION_ESTADO_LABEL: Record<string, string> = {

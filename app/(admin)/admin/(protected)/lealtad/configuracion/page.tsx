@@ -46,6 +46,7 @@ export default async function AdminClub57ConfiguracionPage() {
             diasEsperaPendiente: String(data?.dias_espera_pendiente ?? 7),
             puntosReferidor: String(data?.puntos_referidor ?? 10),
             puntosReferido: String(data?.puntos_referido ?? 10),
+            maxPuntosCortesia: String(data?.max_puntos_cortesia ?? 500),
           }}
         />
       )}

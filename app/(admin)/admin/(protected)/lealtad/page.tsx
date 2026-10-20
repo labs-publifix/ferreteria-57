@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gift, History, Megaphone, RefreshCw, Settings, Users } from "lucide-react";
+import { Gift, HandCoins, History, Megaphone, RefreshCw, Settings, Users } from "lucide-react";
 import { getAdminProfile } from "@/lib/supabase/adminProfile";
 
 export const metadata: Metadata = { title: "Club 57 — Panel de administración" };
@@ -36,6 +36,12 @@ const SECTIONS = [
     label: "Correcciones",
     description: "Bitácora de compras en tienda canceladas o corregidas, con motivo y quién lo hizo.",
     icon: History,
+  },
+  {
+    href: "/admin/lealtad/cortesias",
+    label: "Puntos de cortesía",
+    description: "Bitácora de puntos otorgados a clientes y sus anulaciones, con motivo y quién lo hizo.",
+    icon: HandCoins,
   },
   {
     href: "/admin/lealtad/promociones",

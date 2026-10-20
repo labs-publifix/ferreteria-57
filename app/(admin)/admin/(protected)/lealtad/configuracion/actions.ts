@@ -37,6 +37,7 @@ export async function updateClub57Config(formData: FormData): Promise<Club57Conf
   const diasEsperaPendiente = Number.parseInt(String(formData.get("diasEsperaPendiente") ?? ""), 10);
   const puntosReferidor = Number.parseInt(String(formData.get("puntosReferidor") ?? ""), 10);
   const puntosReferido = Number.parseInt(String(formData.get("puntosReferido") ?? ""), 10);
+  const maxPuntosCortesia = Number.parseInt(String(formData.get("maxPuntosCortesia") ?? ""), 10);
 
   if (Number.isNaN(montoPorPunto) || montoPorPunto < 1) {
     return { error: "El monto por punto debe ser de al menos $1." };
@@ -53,6 +54,9 @@ export async function updateClub57Config(formData: FormData): Promise<Club57Conf
   if (Number.isNaN(puntosReferido) || puntosReferido < 1 || puntosReferido > 100) {
     return { error: "Los puntos por referido (referido) deben estar entre 1 y 100." };
   }
+  if (Number.isNaN(maxPuntosCortesia) || maxPuntosCortesia < 1 || maxPuntosCortesia > 10000) {
+    return { error: "El máximo de puntos de cortesía debe estar entre 1 y 10,000." };
+  }
 
   const { error } = await supabase
     .from("club57_config")
@@ -62,6 +66,7 @@ export async function updateClub57Config(formData: FormData): Promise<Club57Conf
       dias_espera_pendiente: diasEsperaPendiente,
       puntos_referidor: puntosReferidor,
       puntos_referido: puntosReferido,
+      max_puntos_cortesia: maxPuntosCortesia,
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);

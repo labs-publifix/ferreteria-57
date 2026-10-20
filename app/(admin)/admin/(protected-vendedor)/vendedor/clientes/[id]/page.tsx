@@ -115,8 +115,8 @@ export default async function VendedorClienteDetailPage({ params }: { params: { 
           <p className="mt-1 font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
           {saldoDisponible < 0 && (
             <p className="mt-2 font-sans text-sm text-brand-slate">
-              Saldo negativo por una compra cancelada o corregida cuyos puntos ya estaban disponibles. Se compensa con
-              sus próximas compras.
+              Saldo negativo por una compra cancelada o corregida, o una cortesía anulada, cuyos puntos ya estaban
+              disponibles. Se compensa con sus próximas compras.
             </p>
           )}
           {puntosPendientes > 0 && (

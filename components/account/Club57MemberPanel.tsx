@@ -8,6 +8,7 @@ import { buttonClassName, ConfirmDialog, ProductImagePlaceholder, SimplePaginati
 import { requestClub57Redemption } from "@/app/(site)/cuenta/actions";
 import { CLUB57_REDEMPTION_ESTADO_LABEL, CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
 import { club57AnotarCorrecciones, club57MotivoTexto } from "@/lib/club57/correcciones";
+import { club57MotivoCortesiaCliente, esMovimientoCortesia } from "@/lib/club57/cortesias";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
@@ -293,8 +294,8 @@ export function Club57MemberPanel({
             <p className="font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
             {saldoDisponible < 0 && (
               <p className="mt-1 max-w-sm font-sans text-sm text-brand-slate">
-                Tu saldo es negativo porque se canceló o corrigió una compra cuyos puntos ya tenías. Se compensa con
-                los puntos de tus próximas compras.{" "}
+                Tu saldo es negativo porque se canceló o corrigió una compra, o se anuló una cortesía, cuyos puntos ya
+                tenías. Se compensa con los puntos de tus próximas compras.{" "}
                 <Link href="/terminos" className="underline underline-offset-2 hover:text-brand-black">
                   Ver términos
                 </Link>
@@ -631,7 +632,10 @@ export function Club57MemberPanel({
                 <tbody>
                   {historial.map((row) => {
                     const correccion = correccionesHistorial.get(row.id);
-                    const motivoTexto = club57MotivoTexto(row.motivo, row.motivo_nota);
+                    const cortesia = esMovimientoCortesia(row.tipo);
+                    const motivoTexto = cortesia
+                      ? club57MotivoCortesiaCliente(row.motivo)
+                      : club57MotivoTexto(row.motivo, row.motivo_nota);
                     const anuladaEsCorreccion =
                       correccion?.compraAnulada &&
                       correccionesHistorial.get(correccion.compraAnulada.id)?.estadoCompra === "corregida";
@@ -652,7 +656,11 @@ export function Club57MemberPanel({
                           {correccion?.estadoCompra && (
                             <span className="mt-1 block">
                               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
-                                {correccion.estadoCompra === "cancelada" ? "Cancelada" : "Corregida"}
+                                {row.tipo === "cortesia"
+                                  ? "Anulada"
+                                  : correccion.estadoCompra === "cancelada"
+                                    ? "Cancelada"
+                                    : "Corregida"}
                               </span>
                             </span>
                           )}
@@ -661,8 +669,10 @@ export function Club57MemberPanel({
                               Corrección de tu compra del {dateFormatter.format(new Date(correccion.original.created_at))}
                             </span>
                           )}
-                          {row.tipo === "cancelacion_compra" && motivoTexto && (
-                            <span className="block text-xs text-brand-slate/70">Motivo: {motivoTexto}</span>
+                          {(row.tipo === "cancelacion_compra" || cortesia) && motivoTexto && (
+                            <span className="block text-xs text-brand-slate/70">
+                              {row.tipo === "cortesia" ? motivoTexto : `Motivo: ${motivoTexto}`}
+                            </span>
                           )}
                         </td>
                         <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>

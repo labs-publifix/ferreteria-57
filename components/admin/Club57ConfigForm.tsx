@@ -10,6 +10,7 @@ export interface Club57ConfigFormValues {
   diasEsperaPendiente: string;
   puntosReferidor: string;
   puntosReferido: string;
+  maxPuntosCortesia: string;
 }
 
 const inputClass =
@@ -23,6 +24,7 @@ export function Club57ConfigForm({ initialValues }: { initialValues: Club57Confi
   const diasEsperaPendienteId = useId();
   const puntosReferidorId = useId();
   const puntosReferidoId = useId();
+  const maxPuntosCortesiaId = useId();
 
   const [values, setValues] = useState(initialValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +41,7 @@ export function Club57ConfigForm({ initialValues }: { initialValues: Club57Confi
     const diasEsperaPendiente = Number.parseInt(values.diasEsperaPendiente, 10);
     const puntosReferidor = Number.parseInt(values.puntosReferidor, 10);
     const puntosReferido = Number.parseInt(values.puntosReferido, 10);
+    const maxPuntosCortesia = Number.parseInt(values.maxPuntosCortesia, 10);
 
     if (Number.isNaN(montoPorPunto) || montoPorPunto < 1) {
       return "El monto por punto debe ser de al menos $1.";
@@ -54,6 +57,9 @@ export function Club57ConfigForm({ initialValues }: { initialValues: Club57Confi
     }
     if (Number.isNaN(puntosReferido) || puntosReferido < 1 || puntosReferido > 100) {
       return "Los puntos por referido (referido) deben estar entre 1 y 100.";
+    }
+    if (Number.isNaN(maxPuntosCortesia) || maxPuntosCortesia < 1 || maxPuntosCortesia > 10000) {
+      return "El máximo de puntos de cortesía debe estar entre 1 y 10,000.";
     }
     return null;
   }
@@ -77,6 +83,7 @@ export function Club57ConfigForm({ initialValues }: { initialValues: Club57Confi
     formData.set("diasEsperaPendiente", values.diasEsperaPendiente);
     formData.set("puntosReferidor", values.puntosReferidor);
     formData.set("puntosReferido", values.puntosReferido);
+    formData.set("maxPuntosCortesia", values.maxPuntosCortesia);
 
     const result = await updateClub57Config(formData);
     setIsSubmitting(false);
@@ -201,6 +208,29 @@ export function Club57ConfigForm({ initialValues }: { initialValues: Club57Confi
           />
           <p className={hintClass}>Rango permitido: 1 a 100.</p>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor={maxPuntosCortesiaId} className={labelClass}>
+          Máximo de puntos de cortesía por otorgamiento
+        </label>
+        <input
+          id={maxPuntosCortesiaId}
+          type="number"
+          required
+          min="1"
+          max="10000"
+          step="1"
+          value={values.maxPuntosCortesia}
+          onChange={(event) =>
+            setValues((current) => ({ ...current, maxPuntosCortesia: event.target.value }))
+          }
+          className={inputClass}
+        />
+        <p className={hintClass}>
+          Lo más que el administrador o el operador pueden otorgar de una vez a un cliente desde su detalle. Rango
+          permitido: 1 a 10,000.
+        </p>
       </div>
 
       <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto sm:self-start">

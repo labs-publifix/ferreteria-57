@@ -7,21 +7,11 @@ import { ProductCatalogAutocomplete } from "@/components/admin/ProductCatalogAut
 import { club57CompraDesdeCatalogo } from "@/lib/club57/catalogoCompra";
 import type { SearchResultItem } from "@/lib/catalog/search";
 import { registerClub57ManualPurchase } from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
+import { newRequestId } from "@/lib/club57/requestId";
 
 const inputClass =
   "w-full rounded-md border border-brand-slate/30 px-4 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate";
 const labelClass = "mb-1.5 block font-sans text-sm font-medium text-brand-black";
-
-// crypto.randomUUID solo existe en contextos seguros (https o localhost);
-// con getRandomValues se arma un UUID v4 igual de válido en cualquier caso.
-function newRequestId(): string {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
 
 export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
   const router = useRouter();

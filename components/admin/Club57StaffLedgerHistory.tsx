@@ -3,7 +3,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, buttonClassName, Modal } from "@/components/ui";
-import { correctClub57Purchase } from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
+import { annulClub57Cortesia, correctClub57Purchase } from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
 import { ProductCatalogAutocomplete } from "@/components/admin/ProductCatalogAutocomplete";
 import { CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
 import { club57CompraDesdeCatalogo } from "@/lib/club57/catalogoCompra";
@@ -14,6 +14,12 @@ import {
   club57MotivoTexto,
   type Club57Motivo,
 } from "@/lib/club57/correcciones";
+import {
+  CLUB57_MOTIVOS_ANULACION_CORTESIA,
+  club57MotivoCortesiaTexto,
+  esMovimientoCortesia,
+  type Club57MotivoAnulacionCortesia,
+} from "@/lib/club57/cortesias";
 
 export interface Club57StaffLedgerRow {
   id: string;
@@ -29,6 +35,7 @@ export interface Club57StaffLedgerRow {
   corrige_a: string | null;
   motivo: string | null;
   motivo_nota: string | null;
+  registrado_por?: string | null;
   created_at: string;
 }
 
@@ -42,22 +49,28 @@ const labelClass = "mb-1.5 block font-sans text-sm font-medium text-brand-black"
 
 // Historial de puntos de un cliente para el personal (admin y vendedor):
 // misma tabla en /admin/lealtad/clientes/[id] y /admin/vendedor/clientes/[id],
-// con la acción de cancelar o corregir cada compra en tienda. Qué se
-// permite lo decide club57_corregir_compra() en la base; aquí solo se
-// oculta el botón cuando ya se sabe que no aplica (vendedor fuera de plazo).
+// con la acción de cancelar o corregir cada compra en tienda y, para admin
+// y operador, la de anular puntos de cortesía. Qué se permite lo deciden
+// club57_corregir_compra() y club57_anular_cortesia() en la base; aquí solo
+// se oculta el botón cuando ya se sabe que no aplica.
+// nombrePersonal: id → nombre del personal, para decir quién otorgó una
+// cortesía (solo el admin lee todos los perfiles).
 export function Club57StaffLedgerHistory({
   rows,
   role,
   hoy,
   montoPorPunto,
+  nombrePersonal,
 }: {
   rows: Club57StaffLedgerRow[];
   role: "admin" | "vendedor";
   hoy: string;
   montoPorPunto: number;
+  nombrePersonal?: Record<string, string>;
 }) {
   const info = useMemo(() => club57AnotarCorrecciones(rows, hoy), [rows, hoy]);
   const [target, setTarget] = useState<Club57StaffLedgerRow | null>(null);
+  const [anularTarget, setAnularTarget] = useState<Club57StaffLedgerRow | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   if (rows.length === 0) {
@@ -93,7 +106,11 @@ export function Club57StaffLedgerHistory({
             {rows.map((row) => {
               const rowInfo = info.get(row.id)!;
               const anulada = rowInfo.estadoCompra !== null;
-              const motivoTexto = club57MotivoTexto(row.motivo, row.motivo_nota);
+              const cortesia = esMovimientoCortesia(row.tipo);
+              const motivoTexto = cortesia
+                ? club57MotivoCortesiaTexto(row.motivo)
+                : club57MotivoTexto(row.motivo, row.motivo_nota);
+              const autor = cortesia && row.registrado_por ? nombrePersonal?.[row.registrado_por] : undefined;
               return (
                 <tr key={row.id} className="border-b border-brand-slate/10 align-top last:border-0">
                   <td className="py-2 pr-3 text-brand-slate">{dateTimeFormatter.format(new Date(row.created_at))}</td>
@@ -106,7 +123,11 @@ export function Club57StaffLedgerHistory({
                     {rowInfo.estadoCompra && (
                       <span className="mt-1 block">
                         <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
-                          {rowInfo.estadoCompra === "cancelada" ? "Cancelada" : "Corregida"}
+                          {row.tipo === "cortesia"
+                            ? "Anulada"
+                            : rowInfo.estadoCompra === "cancelada"
+                              ? "Cancelada"
+                              : "Corregida"}
                         </span>
                       </span>
                     )}
@@ -115,9 +136,10 @@ export function Club57StaffLedgerHistory({
                         Corrige la compra del {dateFormatter.format(new Date(rowInfo.original.created_at))}
                       </span>
                     )}
-                    {row.tipo === "cancelacion_compra" && motivoTexto && (
+                    {(row.tipo === "cancelacion_compra" || cortesia) && motivoTexto && (
                       <span className="block text-xs text-brand-slate/70">Motivo: {motivoTexto}</span>
                     )}
+                    {autor && <span className="block text-xs text-brand-slate/70">Por {autor}</span>}
                   </td>
                   <td className="max-w-[200px] py-2 pr-3 text-brand-black">
                     {row.producto_nombre ? (
@@ -150,6 +172,18 @@ export function Club57StaffLedgerHistory({
                   </td>
                   <td className="max-w-[220px] py-2 pr-3 text-brand-slate">{row.referencia ?? "—"}</td>
                   <td className="py-2 text-right">
+                    {role === "admin" && row.tipo === "cortesia" && !anulada && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNotice(null);
+                          setAnularTarget(row);
+                        }}
+                        className={buttonClassName("secondary", "whitespace-nowrap !px-3 !py-1.5 text-xs")}
+                      >
+                        Anular
+                      </button>
+                    )}
                     {rowInfo.corregible &&
                       (rowInfo.dentroDePlazo || role === "admin" ? (
                         <div className="flex flex-col items-end gap-1">
@@ -194,7 +228,142 @@ export function Club57StaffLedgerHistory({
           }}
         />
       )}
+
+      {anularTarget && (
+        <AnnulCortesiaDialog
+          cortesia={anularTarget}
+          onClose={() => setAnularTarget(null)}
+          onDone={(message) => {
+            setAnularTarget(null);
+            setNotice(message);
+          }}
+        />
+      )}
     </>
+  );
+}
+
+function AnnulCortesiaDialog({
+  cortesia,
+  onClose,
+  onDone,
+}: {
+  cortesia: Club57StaffLedgerRow;
+  onClose: () => void;
+  onDone: (message: string) => void;
+}) {
+  const router = useRouter();
+  const titleId = useId();
+  const notaId = useId();
+  const [motivo, setMotivo] = useState<Club57MotivoAnulacionCortesia | "">("");
+  const [nota, setNota] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submittingRef.current) return;
+    setError(null);
+
+    if (!motivo) {
+      setError("Elige el motivo.");
+      return;
+    }
+    if (motivo === "otro" && !nota.trim()) {
+      setError("Escribe el motivo en la nota.");
+      return;
+    }
+
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    const result = await annulClub57Cortesia({ cortesiaId: cortesia.id, motivo, motivoNota: nota });
+    submittingRef.current = false;
+    setIsSubmitting(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    router.refresh();
+    onDone(
+      `Cortesía anulada: se descontaron ${result.puntosAnulados ?? cortesia.cantidad} pts.` +
+        (typeof result.saldoDisponible === "number" ? ` Saldo disponible: ${result.saldoDisponible} pts.` : "")
+    );
+  }
+
+  return (
+    <Modal titleId={titleId} onClose={onClose} maxWidthClassName="max-w-lg">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left" noValidate>
+        <div className="pr-10">
+          <h2 id={titleId} className="font-display text-lg uppercase text-brand-slate">
+            Anular puntos de cortesía
+          </h2>
+          <p className="mt-1 font-sans text-sm text-brand-slate/80">
+            {cortesia.cantidad} pts · {club57MotivoCortesiaTexto(cortesia.motivo) ?? "Cortesía"} ·{" "}
+            {dateFormatter.format(new Date(cortesia.created_at))}
+          </p>
+        </div>
+
+        <fieldset className="flex flex-col gap-2">
+          <legend className={labelClass}>Motivo de la anulación</legend>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {CLUB57_MOTIVOS_ANULACION_CORTESIA.map((option) => (
+              <label
+                key={option.value}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-brand-slate/20 px-3 py-2 font-sans text-sm text-brand-black has-[:checked]:border-brand-slate"
+              >
+                <input
+                  type="radio"
+                  name="motivo-anulacion"
+                  value={option.value}
+                  checked={motivo === option.value}
+                  onChange={() => setMotivo(option.value)}
+                  className="accent-brand-slate"
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div>
+          <label htmlFor={notaId} className={labelClass}>
+            Nota interna {motivo === "otro" ? "" : "(opcional)"}
+          </label>
+          <textarea
+            id={notaId}
+            rows={2}
+            maxLength={300}
+            value={nota}
+            onChange={(event) => setNota(event.target.value)}
+            className={inputClass}
+          />
+          <p className="mt-1 font-sans text-xs text-brand-slate/70">Solo la ve el personal en la bitácora.</p>
+        </div>
+
+        <p className="font-sans text-sm text-brand-slate">
+          Se descuentan {cortesia.cantidad} pts del saldo disponible de inmediato, aunque quede negativo si el cliente
+          ya los usó. El cliente verá en su historial que la cortesía fue anulada.
+        </p>
+
+        {error && (
+          <p role="alert" className="rounded-md bg-red-50 px-4 py-2.5 font-sans text-sm text-red-700">
+            {error}
+          </p>
+        )}
+
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onClose} className={buttonClassName("secondary", "w-full sm:w-auto")}>
+            Volver
+          </button>
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+            {isSubmitting ? "Anulando…" : `Anular ${cortesia.cantidad} pts`}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
