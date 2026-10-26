@@ -68,7 +68,7 @@ export default defineArticle({
     { type: "h2", text: "CPVC: agua caliente y fría, con unión pegada" },
     {
       type: "p",
-      text: "El CPVC se parece al PVC, pero está hecho para soportar agua caliente. Por eso es una opción frecuente para la salida del calentador o del boiler cuando se prefiere una instalación pegada, sin termofusora ni soplete.",
+      text: "El CPVC se parece al PVC, pero está hecho para soportar agua caliente. Por eso es una opción frecuente para la salida del calentador o del boiler cuando se prefiere una instalación pegada, sin termofusora ni soplete. Si tienes calentador solar, en la guía de [[B14|mantenimiento calentador solar]] te decimos qué revisar en sus tuberías antes del frío.",
     },
     {
       type: "p",
