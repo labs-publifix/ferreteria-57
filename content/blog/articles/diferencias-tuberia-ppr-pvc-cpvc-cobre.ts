@@ -24,7 +24,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: true,
   publishAt: "2026-10-08T12:00:00-06:00",
-  updatedAt: "2026-10-19T08:00:00-06:00",
+  updatedAt: "2026-10-26T08:00:00-06:00",
   intro:
     "La principal **diferencia entre tubería PPR y PVC** está en la temperatura y en la forma de unirlas: el PVC hidráulico es para agua fría y se pega con cemento, mientras que el PPR sirve para agua fría y caliente y se une por termofusión, con calor. El CPVC es la opción pegada para agua caliente, y el cobre es el material tradicional que se suelda. Elegir bien depende de tres cosas: qué agua va a pasar por el tubo, qué herramienta tienes o estás dispuesto a conseguir y cuánto quieres invertir. Aquí te explicamos cada material con sus ventajas, sus límites y en qué casos conviene.",
   blocks: [
@@ -186,7 +186,7 @@ export default defineArticle({
     { type: "h2", text: "Cómo unir materiales distintos" },
     {
       type: "p",
-      text: "Es común que en una casa convivan dos materiales: una instalación de cobre que se amplía con PPR, o un PVC que llega a un calentador. La regla es **nunca pegar ni soldar materiales distintos entre sí**: se unen con conexiones de transición o adaptadores roscados pensados para ese cambio de material. En las roscas, usa [cinta teflón](/buscar?q=cinta%20teflon) o el sellador que indique el fabricante, sin exagerar las vueltas.",
+      text: "Es común que en una casa convivan dos materiales: una instalación de cobre que se amplía con PPR, o un PVC que llega a un calentador. La regla es **nunca pegar ni soldar materiales distintos entre sí**: se unen con conexiones de transición o adaptadores roscados pensados para ese cambio de material. En las roscas, usa [cinta teflón](/buscar?q=cinta%20teflon) o el sellador que indique el fabricante, sin exagerar las vueltas; en nuestra guía de [[B13|cinta teflón]] te explicamos cómo aplicarla bien.",
     },
     {
       type: "p",
