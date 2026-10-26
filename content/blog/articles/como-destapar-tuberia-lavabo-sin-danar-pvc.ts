@@ -23,7 +23,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: false,
   publishAt: "2026-10-17T08:00:00-06:00",
-  updatedAt: "2026-10-17T08:00:00-06:00",
+  updatedAt: "2026-10-26T08:00:00-06:00",
   intro:
     "Si te preguntas **cómo destapar un lavabo** sin dañar la tubería, la regla es ir de lo más suave a lo más agresivo: primero limpia el tapón, luego usa el chupón, después desarma y limpia el sifón y, si sigue tapado, pasa una sonda. Los destapacaños químicos van al final, solo si la etiqueta dice que sirven para tu tubería y siguiendo sus instrucciones al pie de la letra. Aquí te explicamos cada método paso a paso, qué evitar para no dañar el PVC y cómo saber cuándo ya es trabajo de un plomero.",
   blocks: [
@@ -99,7 +99,7 @@ export default defineArticle({
         },
         {
           title: "Revisa los empaques",
-          text: "Cada tuerca lleva un empaque o arandela. Si está aplastado, cuarteado o falta, cámbialo: es la causa más común de goteras después de limpiar el sifón.",
+          text: "Cada tuerca lleva un empaque o arandela. Si está aplastado, cuarteado o falta, cámbialo: es la causa más común de goteras después de limpiar el sifón. No le pongas cinta: aquí sella el empaque, y la [[B13|cinta teflón]] es para roscas sin empaque.",
         },
         {
           title: "Arma y prueba",

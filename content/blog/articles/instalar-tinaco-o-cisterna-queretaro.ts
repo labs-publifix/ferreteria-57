@@ -26,7 +26,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: true,
   publishAt: "2026-10-09T12:00:00-06:00",
-  updatedAt: "2026-10-09T12:00:00-06:00",
+  updatedAt: "2026-10-26T08:00:00-06:00",
   intro:
     "Antes de **instalar tinaco** o cisterna hay que resolver cuatro cosas: si te conviene uno, otro o los dos; qué capacidad necesita tu familia; dónde va a quedar y con qué base; y qué accesorios completan la instalación. En Querétaro y en buena parte del Bajío los cortes de agua y los tandeos son parte de la vida diaria, así que la idea es tener reserva suficiente para pasar esos días sin preocuparte. En esta guía te explicamos cómo decidir, cómo calcular la capacidad con un ejemplo que puedes ajustar a tu casa, qué piezas no pueden faltar y cómo darle mantenimiento.",
   blocks: [
@@ -161,7 +161,7 @@ export default defineArticle({
       type: "p",
       text: "Para la tubería, elige el material según el uso: en nuestra comparación de tuberías te explicamos la [[B04|diferencia entre tubería ppr y pvc]], CPVC y cobre. Encuentra conexiones, válvulas, flotadores y tubería en nuestra categoría de [plomería](" +
         catalogHref("plomeria") +
-        "), y busca [tinaco](/buscar?q=tinaco), [flotador](/buscar?q=flotador), [bomba de agua](/buscar?q=bomba%20de%20agua) o [cinta teflón](/buscar?q=cinta%20teflon) para ver lo que tenemos. Si no encuentras algo en línea, pregúntanos en el mostrador.",
+        "), y busca [tinaco](/buscar?q=tinaco), [flotador](/buscar?q=flotador), [bomba de agua](/buscar?q=bomba%20de%20agua) o [cinta teflón](/buscar?q=cinta%20teflon) para ver lo que tenemos. Si no encuentras algo en línea, pregúntanos en el mostrador. Para sellar las roscas de las conexiones, revisa cómo se aplica la [[B13|cinta teflón]].",
     },
     {
       type: "callout",
