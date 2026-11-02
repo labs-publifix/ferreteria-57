@@ -371,7 +371,12 @@ export function Club57PartnersImportWizard() {
                       {row.data.correo && <span className="block break-all text-xs text-brand-slate">{row.data.correo}</span>}
                     </td>
                     <td className="px-4 py-3 text-brand-black">
-                      {row.data.giro ?? <span className="text-amber-900">Por definir</span>}
+                      {row.data.giro ??
+                        (row.duplicado ? (
+                          <span className="text-brand-slate/70">Sin cambio</span>
+                        ) : (
+                          <span className="text-amber-900">Por definir</span>
+                        ))}
                     </td>
                     <td className="max-w-[320px] px-4 py-3">
                       <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${ESTADO_CLASS[row.estado]}`}>

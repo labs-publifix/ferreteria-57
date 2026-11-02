@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildImportTemplate } from "@/lib/importTemplates/buildTemplate";
 import { PARTNER_COLUMNS } from "@/lib/club57/socios/columns";
+import { MEDIOS_CONSENTIMIENTO } from "@/lib/club57/socios/consentimiento";
 import { requireStaff } from "@/lib/supabase/requireStaff";
 
 // Plantilla de la carga masiva del directorio de socios comerciales: los
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
     dropdowns: {
       giro: (giros ?? []).map((giro) => giro.nombre as string),
       consentimiento: ["SI", "NO"],
+      medio_consentimiento: MEDIOS_CONSENTIMIENTO.map((medio) => medio.label.replace(/ \(.*\)$/, "")),
     },
     extraNotes: [
       "Solo NOMBRE_COMERCIAL es obligatorio. El resto se normaliza solo: teléfono a 10 dígitos (sin 52 ni 521), correos en minúsculas, textos en formato título y ESTADO «Querétaro» si se deja vacío.",
@@ -33,7 +35,8 @@ export async function GET(request: NextRequest) {
       "Duplicados: si una fila coincide con un socio que ya existe (misma CLAVE_ORIGEN, teléfono o correo, o mismo nombre comercial y calle), eliges si se omite o si se actualiza con los datos del archivo. Al actualizar, las celdas vacías no borran lo que ya está guardado.",
       "GIRO: si no existe en el catálogo se crea. «Por definir» o vacío deja al socio pendiente de completar: no se publica hasta asignarle un giro.",
       "NOTAS se guarda como notas internas: solo las ve el personal en el panel, nunca se publican.",
-      "CONSENTIMIENTO: marca SI únicamente cuando el socio haya autorizado compartir sus datos de contacto con los miembros de Club 57. Sin esa autorización, los miembros ven al socio pero no su teléfono, correo ni dirección.",
+      "CONSENTIMIENTO: marca SI únicamente cuando el socio haya autorizado compartir sus datos de contacto con los miembros de Club 57. Sin esa autorización, los miembros ven al socio pero no su teléfono, correo ni dirección. En MEDIO_CONSENTIMIENTO indica cómo autorizó (WhatsApp, firma en papel, correo…) para que quede constancia.",
+      "Para marcar varias autorizaciones a la vez basta un archivo con NOMBRE_COMERCIAL, TELEFONO (o CORREO o CLAVE_ORIGEN), CONSENTIMIENTO y MEDIO_CONSENTIMIENTO, eligiendo «Actualizar» en los duplicados. También puedes seleccionarlos en la tabla del directorio y usar «Registrar autorización».",
       "LOGO_URL (opcional): enlace https directo a la imagen. Sin logo se usa el avatar con las iniciales del negocio; también se puede subir después desde la edición del socio.",
     ],
   });

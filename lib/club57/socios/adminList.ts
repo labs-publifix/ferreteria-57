@@ -19,6 +19,7 @@ export interface AdminPartnerRow {
   activo: boolean;
   eliminado_at: string | null;
   consentimiento_datos: boolean;
+  consentimiento_medio: string | null;
   origen: "manual" | "carga_masiva";
   updated_at: string;
 }
@@ -30,6 +31,7 @@ export const ESTATUS_OPCIONES = [
   { value: "inactivos", label: "Inactivos" },
   { value: "pendientes", label: "Pendientes de completar" },
   { value: "sin_consentimiento", label: "Sin consentimiento de datos" },
+  { value: "con_consentimiento", label: "Con consentimiento de datos" },
   { value: "eliminados", label: "Eliminados" },
 ] as const;
 
@@ -64,6 +66,7 @@ export function filtrarAdmin(rows: AdminPartnerRow[], q: string, giroId: string,
     if (estatus === "inactivos" && row.activo) return false;
     if (estatus === "pendientes" && !estaPendiente(row)) return false;
     if (estatus === "sin_consentimiento" && row.consentimiento_datos) return false;
+    if (estatus === "con_consentimiento" && !row.consentimiento_datos) return false;
     if (giroId === "sin_giro" ? row.giro_id : giroId && row.giro_id !== giroId) return false;
     if (!needle) return true;
     const texto = normalizeText([row.nombre_comercial, row.contacto, row.correo, row.colonia, row.municipio].join(" "));

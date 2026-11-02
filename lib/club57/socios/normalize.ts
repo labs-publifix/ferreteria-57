@@ -1,4 +1,5 @@
 import { normalizeText } from "@/lib/normalizeText";
+import { normalizarMedio, type MedioConsentimiento } from "./consentimiento";
 import { slugify } from "@/lib/slugify";
 
 // Normalización y validación de un socio comercial del directorio de
@@ -28,6 +29,8 @@ export interface PartnerInput {
   clave_origen: string;
   notas: string;
   consentimiento: string;
+  /** Medio por el que autorizó (WhatsApp, firma…); opcional. */
+  medio_consentimiento?: string;
 }
 
 export interface PartnerData {
@@ -50,6 +53,8 @@ export interface PartnerData {
   notas_internas: string | null;
   /** null = la fila no dice nada (en una actualización se conserva lo que haya). */
   consentimiento: boolean | null;
+  /** Solo cuando consentimiento es true; null = no se indicó. */
+  consentimiento_medio: MedioConsentimiento | null;
 }
 
 export interface NormalizedPartner {
@@ -198,6 +203,11 @@ export function normalizarSocio(input: Partial<PartnerInput>): NormalizedPartner
 
   const consentimiento = normalizarConsentimiento(input.consentimiento ?? "");
   if (consentimiento.error) warnings.push(`${consentimiento.error} No se cambia.`);
+  const medio = normalizarMedio(input.medio_consentimiento ?? "");
+  if (consentimiento.value === true) {
+    if (medio.error) warnings.push(`${medio.error} Se registra sin medio.`);
+    else if (!medio.value) warnings.push("Autorización sin medio: indica cómo autorizó el socio (WhatsApp, firma, correo…).");
+  }
 
   const giroRaw = clean(input.giro);
   const giro = esGiroPorDefinir(giroRaw) ? null : giroRaw;
@@ -233,6 +243,7 @@ export function normalizarSocio(input: Partial<PartnerInput>): NormalizedPartner
       clave_origen: orNull(clean(input.clave_origen)),
       notas_internas: orNull(clean(input.notas)),
       consentimiento: consentimiento.value,
+      consentimiento_medio: consentimiento.value === true ? medio.value : null,
     },
     errors,
     warnings,

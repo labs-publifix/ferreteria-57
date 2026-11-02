@@ -51,7 +51,7 @@ export default async function AdminSociosPage({ searchParams }: { searchParams: 
     supabase
       .from("club57_partners")
       .select(
-        "id, nombre_comercial, slug, giro_id, contacto, telefono, correo, municipio, colonia, logo_url, activo, eliminado_at, consentimiento_datos, origen, updated_at, club57_partner_giros(nombre, activo)"
+        "id, nombre_comercial, slug, giro_id, contacto, telefono, correo, municipio, colonia, logo_url, activo, eliminado_at, consentimiento_datos, consentimiento_medio, origen, updated_at, club57_partner_giros(nombre, activo)"
       )
       .limit(5000),
     supabase.from("club57_partner_giros").select("id, nombre, activo").order("nombre"),
@@ -77,6 +77,7 @@ export default async function AdminSociosPage({ searchParams }: { searchParams: 
       activo: row.activo as boolean,
       eliminado_at: row.eliminado_at as string | null,
       consentimiento_datos: row.consentimiento_datos as boolean,
+      consentimiento_medio: (row.consentimiento_medio as string | null) ?? null,
       origen: row.origen as AdminPartnerRow["origen"],
       updated_at: row.updated_at as string,
     };
@@ -243,7 +244,12 @@ export default async function AdminSociosPage({ searchParams }: { searchParams: 
             {filtrados.length} {filtrados.length === 1 ? "socio" : "socios"}
             {hayFiltros ? " con esos filtros" : ""}
           </p>
-          <Club57PartnersTable rows={visibles} canHardDelete={admin?.role === "admin"} />
+          <Club57PartnersTable
+            key={hrefCon(params, page)}
+            rows={visibles}
+            seleccionablesDelFiltro={filtrados.filter((row) => !row.eliminado_at).map((row) => row.id)}
+            canHardDelete={admin?.role === "admin"}
+          />
           {totalPaginas > 1 && (
             <nav aria-label="Paginación de socios" className="flex items-center justify-between gap-3">
               {page > 1 ? (

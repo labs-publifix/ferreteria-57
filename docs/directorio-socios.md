@@ -8,10 +8,12 @@ quiénes son y los miembros activos de Club 57 ven cómo contactarlos.
 1. Correr en el SQL Editor de Supabase la migración
    `supabase/migrations/20261102010000_club57_directorio_socios.sql`
    (idempotente: se puede correr más de una vez).
-2. Correr el seed `supabase/seed/directorio-socios.sql` (24 socios del archivo
+2. Correr la migración `supabase/migrations/20261103010000_club57_socios_consentimiento_medio.sql`
+   (medio de autorización y quién la registró; idempotente).
+3. Correr el seed `supabase/seed/directorio-socios.sql` (24 socios del archivo
    `Directorio_Socios_Comerciales_normalizado.xlsx`). También es idempotente:
    re-ejecutarlo no duplica socios ni pisa lo editado en el admin.
-3. Si el Excel cambia, regenerar el CSV y el SQL con `npm run seed:directorio`.
+4. Si el Excel cambia, regenerar el CSV y el SQL con `npm run seed:directorio`.
 
 ## Dónde está cada cosa
 
@@ -34,6 +36,27 @@ quiénes son y los miembros activos de Club 57 ven cómo contactarlos.
 - `/cuenta` solo llama a esa función cuando la sesión es de un miembro
   activo; para cualquier otra sesión no se pide nada.
 - Las notas internas solo se leen en el admin (RLS `is_admin()`).
+
+## Registrar autorizaciones de datos
+
+Cada autorización guarda **fecha, medio** (firma en papel, WhatsApp, correo,
+formulario, verbal u otro) **y quién la registró**. Al quitarla se limpian los
+tres. Hay tres formas de registrarla:
+
+- **Selección múltiple en la tabla:** marca las casillas de los socios (o la
+  del encabezado para toda la página; si el filtro tiene más páginas aparece
+  «Seleccionar los N socios del filtro»), «Registrar autorización», elige el
+  medio y confirma. Los que ya tenían autorización no se tocan, así que nunca
+  se pisa una fecha o un medio anterior. «Quitar autorización» pide
+  confirmación. El filtro de estatus «Con / Sin consentimiento de datos»
+  ayuda a armar cada grupo.
+- **Edición del socio:** la casilla de autorización pide el medio cuando se
+  marca por primera vez y muestra «Registrada el … · medio · por …».
+- **Carga masiva:** columnas `CONSENTIMIENTO` (SI/NO) y `MEDIO_CONSENTIMIENTO`.
+  Basta un archivo con NOMBRE_COMERCIAL, TELEFONO (o CORREO o CLAVE_ORIGEN),
+  CONSENTIMIENTO y MEDIO_CONSENTIMIENTO, eligiendo «Actualizar» en los
+  duplicados: como las celdas vacías no borran nada, solo cambia la
+  autorización. Un SI sin medio se registra con una advertencia.
 
 ## Decisiones conservadoras (documentadas)
 

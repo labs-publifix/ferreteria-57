@@ -7,6 +7,7 @@ import { Button, buttonClassName, Select } from "@/components/ui";
 import { PartnerLogoPicker, type LogoChange } from "@/components/admin/PartnerLogoPicker";
 import { removePartnerLogo, savePartner, type PartnerFormInput } from "@/app/(admin)/admin/(protected)/lealtad/socios/actions";
 import { normalizarCorreo, normalizarCp, normalizarTelefono } from "@/lib/club57/socios/normalize";
+import { MEDIOS_CONSENTIMIENTO, medioLabel } from "@/lib/club57/socios/consentimiento";
 
 export interface PartnerFormValues {
   nombre_comercial: string;
@@ -24,6 +25,7 @@ export interface PartnerFormValues {
   estado: string;
   notas: string;
   consentimiento: boolean;
+  consentimiento_medio: string;
 }
 
 export const EMPTY_PARTNER: PartnerFormValues = {
@@ -42,6 +44,7 @@ export const EMPTY_PARTNER: PartnerFormValues = {
   estado: "Querétaro",
   notas: "",
   consentimiento: false,
+  consentimiento_medio: "",
 };
 
 const MUNICIPIOS = ["Querétaro", "Corregidora", "El Marqués", "Huimilpan", "Pedro Escobedo", "San Juan del Río", "Colón", "Tequisquiapan"];
@@ -69,12 +72,15 @@ export function Club57PartnerForm({
   giros,
   logoUrl,
   consentimientoFecha,
+  consentimientoPor,
 }: {
   id?: string;
   initial: PartnerFormValues;
   giros: { id: string; nombre: string; activo: boolean }[];
   logoUrl: string | null;
   consentimientoFecha: string | null;
+  /** Nombre de quien registró la autorización vigente, si se sabe. */
+  consentimientoPor?: string | null;
 }) {
   const router = useRouter();
   const formId = useId();
@@ -110,6 +116,9 @@ export function Club57PartnerForm({
       if (error) locales[key] = error;
     }
     if (usarGiroNuevo && giroNuevo.trim().length < 2) locales.giro_id = "Escribe el giro nuevo o elige uno de la lista.";
+    if (values.consentimiento && !initial.consentimiento && !values.consentimiento_medio) {
+      locales.consentimiento_medio = "Indica por qué medio autorizó el socio (WhatsApp, firma, correo…).";
+    }
     setFieldErrors(locales);
     const lista = Object.values(locales).filter(Boolean) as string[];
     if (lista.length > 0) {
@@ -140,6 +149,7 @@ export function Club57PartnerForm({
       estado: values.estado,
       notas: values.notas,
       consentimiento: values.consentimiento,
+      consentimiento_medio: values.consentimiento ? values.consentimiento_medio : "",
     };
     const result = await savePartner(input);
     if (result.error || !result.id) {
@@ -312,12 +322,42 @@ export function Club57PartnerForm({
             <span className="mt-0.5 block text-xs text-brand-slate/80">
               Requisito de la Ley Federal de Protección de Datos Personales: sin esta autorización los miembros ven al
               socio, pero no su teléfono, correo ni dirección.
-              {consentimientoFecha && values.consentimiento && (
-                <> Registrado el {new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeZone: "America/Mexico_City" }).format(new Date(consentimientoFecha))}.</>
-              )}
             </span>
           </span>
         </label>
+        {values.consentimiento && (
+          <div className="flex flex-col gap-2 border-l-2 border-brand-slate/20 pl-4 sm:ml-8">
+            <div className="max-w-sm">
+              <span id={`${ids.consentimiento_medio}-label`} className={labelClass}>
+                Medio de autorización{initial.consentimiento ? "" : " (obligatorio)"}
+              </span>
+              <Select
+                label="Medio de autorización"
+                value={values.consentimiento_medio}
+                onChange={(value) => set("consentimiento_medio", value)}
+                options={MEDIOS_CONSENTIMIENTO.map((medio) => ({ value: medio.value, label: medio.label }))}
+                placeholder="Elige cómo autorizó"
+              />
+              {fieldErrors.consentimiento_medio && (
+                <p role="alert" className="mt-1 font-sans text-xs text-red-700">
+                  {fieldErrors.consentimiento_medio}
+                </p>
+              )}
+            </div>
+            {consentimientoFecha && initial.consentimiento ? (
+              <p className="font-sans text-xs text-brand-slate/80">
+                Registrada el{" "}
+                {new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeZone: "America/Mexico_City" }).format(new Date(consentimientoFecha))}
+                {initial.consentimiento_medio ? ` · ${medioLabel(initial.consentimiento_medio)}` : " · sin medio registrado"}
+                {consentimientoPor ? ` · por ${consentimientoPor}` : ""}.
+              </p>
+            ) : (
+              <p className="font-sans text-xs text-brand-slate/80">
+                Se guarda con la fecha de hoy y tu nombre como quien la registró.
+              </p>
+            )}
+          </div>
+        )}
         <div>
           <label htmlFor={ids.notas} className={labelClass}>
             Notas internas

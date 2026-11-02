@@ -23,6 +23,9 @@ export default async function EditarSocioPage({
     supabase.from("club57_partner_giros").select("id, nombre, activo").order("nombre"),
   ]);
   if (!socio) notFound();
+  const { data: registro } = socio.consentimiento_registrado_por
+    ? await supabase.from("profiles").select("full_name").eq("id", socio.consentimiento_registrado_por as string).maybeSingle()
+    : { data: null };
 
   const text = (value: unknown) => (typeof value === "string" ? value : "");
 
@@ -67,6 +70,7 @@ export default async function EditarSocioPage({
         giros={(giros ?? []) as { id: string; nombre: string; activo: boolean }[]}
         logoUrl={(socio.logo_url as string | null) ?? null}
         consentimientoFecha={(socio.consentimiento_fecha as string | null) ?? null}
+        consentimientoPor={(registro?.full_name as string | null | undefined) ?? null}
         initial={{
           nombre_comercial: text(socio.nombre_comercial),
           giro_id: text(socio.giro_id),
@@ -83,6 +87,7 @@ export default async function EditarSocioPage({
           estado: text(socio.estado) || "Querétaro",
           notas: text(socio.notas_internas),
           consentimiento: Boolean(socio.consentimiento_datos),
+          consentimiento_medio: text(socio.consentimiento_medio),
         }}
       />
     </div>

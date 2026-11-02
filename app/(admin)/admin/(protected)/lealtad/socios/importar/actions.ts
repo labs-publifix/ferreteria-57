@@ -107,9 +107,16 @@ export async function confirmPartnersImport(rows: ConfirmRow[]): Promise<Confirm
       if (fila.data.consentimiento === true && !consentimientoActual.get(fila.duplicado.id)) {
         update.consentimiento_datos = true;
         update.consentimiento_fecha = ahora;
+        update.consentimiento_medio = fila.data.consentimiento_medio;
+        update.consentimiento_registrado_por = staff.userId;
+      } else if (fila.data.consentimiento === true && fila.data.consentimiento_medio) {
+        // Ya autorizado: la fila solo completa o corrige el medio, sin mover la fecha.
+        update.consentimiento_medio = fila.data.consentimiento_medio;
       } else if (fila.data.consentimiento === false) {
         update.consentimiento_datos = false;
         update.consentimiento_fecha = null;
+        update.consentimiento_medio = null;
+        update.consentimiento_registrado_por = null;
       }
       if (fila.data.clave_origen) update.clave_origen = fila.data.clave_origen;
       const { error: updateError } = await db.from("club57_partners").update(update).eq("id", fila.duplicado.id);
@@ -141,6 +148,8 @@ export async function confirmPartnersImport(rows: ConfirmRow[]): Promise<Confirm
           clave_origen: fila.data.clave_origen,
           consentimiento_datos: fila.data.consentimiento === true,
           consentimiento_fecha: fila.data.consentimiento === true ? ahora : null,
+          consentimiento_medio: fila.data.consentimiento === true ? fila.data.consentimiento_medio : null,
+          consentimiento_registrado_por: fila.data.consentimiento === true ? staff.userId : null,
           origen: "carga_masiva",
           created_by: staff.userId,
           updated_by: staff.userId,

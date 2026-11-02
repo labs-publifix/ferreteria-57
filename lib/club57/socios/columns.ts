@@ -23,6 +23,7 @@ export const PARTNER_COLUMNS = [
   { key: "clave_origen", header: "CLAVE_ORIGEN", required: false, example: "", format: "Opcional. Clave del socio en tu sistema; sirve para reconocerlo en cargas futuras." },
   { key: "notas", header: "NOTAS", required: false, example: "", format: "Notas internas. Solo las ve el personal en el panel, nunca se publican." },
   { key: "consentimiento", header: "CONSENTIMIENTO", required: false, example: "SI", format: "SI si el socio autorizó compartir sus datos de contacto con los miembros de Club 57 (LFPDPPP); NO o vacío si todavía no." },
+  { key: "medio_consentimiento", header: "MEDIO_CONSENTIMIENTO", required: false, example: "WhatsApp", format: "Cómo autorizó el socio, cuando CONSENTIMIENTO es SI: Firma en papel, WhatsApp, Correo electrónico, Formulario, Verbal u Otro." },
 ] as const satisfies readonly ImportColumnDef[];
 
 export type PartnerColumnKey = (typeof PARTNER_COLUMNS)[number]["key"] & keyof PartnerInput;
@@ -37,4 +38,7 @@ export const PARTNER_COLUMN_ALIASES: Record<string, PartnerColumnKey> = {
   "codigo postal": "cp",
   notas_internas: "notas",
   consentimiento_datos: "consentimiento",
+  medio: "medio_consentimiento",
+  "medio de autorizacion": "medio_consentimiento",
+  medio_autorizacion: "medio_consentimiento",
 };

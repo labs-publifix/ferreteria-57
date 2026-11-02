@@ -5,6 +5,7 @@ import { requireFullAdmin, requireStaff, type StaffSession } from "@/lib/supabas
 import { normalizarSocio, type PartnerInput } from "@/lib/club57/socios/normalize";
 import { LOGO_BUCKET } from "@/lib/club57/socios/logo";
 import { resolverGiro, slugDisponible } from "@/lib/club57/socios/adminDb";
+import { esMedioConsentimiento } from "@/lib/club57/socios/consentimiento";
 
 // Acciones del directorio de socios comerciales (admin y operador). Cada una
 // confirma el rol por su cuenta (nunca confía en el middleware) y escribe
@@ -30,13 +31,16 @@ function revalidarDirectorio(id?: string) {
   revalidatePath("/cuenta");
 }
 
-export interface PartnerFormInput extends Omit<PartnerInput, "giro" | "consentimiento" | "logo_url" | "clave_origen"> {
+export interface PartnerFormInput
+  extends Omit<PartnerInput, "giro" | "consentimiento" | "medio_consentimiento" | "logo_url" | "clave_origen"> {
   id?: string;
   /** Giro elegido del catálogo ("" = por definir). */
   giro_id: string;
   /** Giro nuevo escrito a mano (tiene prioridad sobre giro_id). */
   giro_nuevo: string;
   consentimiento: boolean;
+  /** Medio de la autorización («whatsapp», «firma»…); obligatorio al registrarla. */
+  consentimiento_medio: string;
 }
 
 export interface SavePartnerResult extends ActionResult {
@@ -57,6 +61,7 @@ export async function savePartner(input: PartnerFormInput): Promise<SavePartnerR
     ...input,
     giro: input.giro_nuevo.trim() || (input.giro_id ? "catálogo" : ""),
     consentimiento: input.consentimiento ? "SI" : "NO",
+    medio_consentimiento: input.consentimiento ? input.consentimiento_medio : "",
   });
   if (result.errors.length > 0) return { error: "Revisa los datos marcados.", errors: result.errors };
   const data = result.data;
@@ -71,22 +76,33 @@ export async function savePartner(input: PartnerFormInput): Promise<SavePartnerR
     giroId = input.giro_id;
   }
 
-  // Consentimiento: la fecha se fija al marcarlo y se conserva mientras siga marcado.
+  // Consentimiento: fecha, medio y quién lo registró se fijan al marcarlo y
+  // se conservan mientras siga marcado; al quitarlo se limpian. El medio es
+  // obligatorio para una autorización nueva.
   let consentimientoFecha: string | null = null;
+  let consentimientoMedio: string | null = null;
+  let consentimientoPor: string | null = null;
   if (input.consentimiento) {
-    if (input.id) {
-      const { data: actual } = await db
-        .from("club57_partners")
-        .select("consentimiento_datos, consentimiento_fecha")
-        .eq("id", input.id)
-        .maybeSingle();
-      consentimientoFecha =
-        actual?.consentimiento_datos && actual.consentimiento_fecha
-          ? (actual.consentimiento_fecha as string)
-          : new Date().toISOString();
-    } else {
-      consentimientoFecha = new Date().toISOString();
+    const medioElegido = input.consentimiento_medio?.trim() ?? "";
+    if (medioElegido && !esMedioConsentimiento(medioElegido)) return { error: "Elige el medio de autorización de la lista." };
+    const { data: actual } = input.id
+      ? await db
+          .from("club57_partners")
+          .select("consentimiento_datos, consentimiento_fecha, consentimiento_medio, consentimiento_registrado_por")
+          .eq("id", input.id)
+          .maybeSingle()
+      : { data: null };
+    const yaAutorizado = Boolean(actual?.consentimiento_datos && actual.consentimiento_fecha);
+    if (!yaAutorizado && !medioElegido) {
+      const mensaje = "Indica por qué medio autorizó el socio (WhatsApp, firma, correo…).";
+      return { error: mensaje, errors: [mensaje] };
     }
+    consentimientoFecha = yaAutorizado ? (actual!.consentimiento_fecha as string) : new Date().toISOString();
+    consentimientoMedio = medioElegido || ((actual?.consentimiento_medio as string | null) ?? null);
+    consentimientoPor =
+      yaAutorizado && consentimientoMedio === actual!.consentimiento_medio
+        ? ((actual!.consentimiento_registrado_por as string | null) ?? null)
+        : staff.userId;
   }
 
   const row = {
@@ -106,6 +122,8 @@ export async function savePartner(input: PartnerFormInput): Promise<SavePartnerR
     notas_internas: data.notas_internas,
     consentimiento_datos: input.consentimiento,
     consentimiento_fecha: consentimientoFecha,
+    consentimiento_medio: consentimientoMedio,
+    consentimiento_registrado_por: consentimientoPor,
     updated_by: staff.userId,
   };
 
@@ -145,6 +163,52 @@ export async function setPartnerActivo(id: string, activo: boolean): Promise<Act
   if (error) return { error: `No se pudo cambiar el estatus: ${error.message}` };
   revalidarDirectorio(id);
   return {};
+}
+
+export interface BulkConsentResult extends ActionResult {
+  /** Socios que cambiaron. */
+  cambiados?: number;
+  /** Seleccionados que ya estaban así (o en «Eliminados») y no se tocaron. */
+  sinCambio?: number;
+}
+
+const BULK_MAX = 500;
+
+/**
+ * Registra o retira la autorización de datos de varios socios a la vez
+ * (selección múltiple de la tabla). Al registrarla solo toca a los que no
+ * la tenían, así que nunca pisa la fecha ni el medio de una autorización
+ * anterior; al retirarla limpia fecha, medio y quién la registró.
+ */
+export async function setPartnersConsentimiento(ids: string[], otorgar: boolean, medio?: string): Promise<BulkConsentResult> {
+  const staff = await requireDirectorioStaff();
+  if (!staff) return { error: "No autorizado." };
+  const unicos = Array.isArray(ids) ? [...new Set(ids)] : [];
+  if (unicos.length === 0) return { error: "Selecciona al menos un socio." };
+  if (unicos.length > BULK_MAX) return { error: `Máximo ${BULK_MAX} socios a la vez.` };
+  if (!unicos.every((id) => typeof id === "string" && UUID_RE.test(id))) return { error: "Hay socios no válidos en la selección." };
+  if (otorgar && !esMedioConsentimiento(medio)) return { error: "Elige el medio por el que autorizaron." };
+
+  const cambios = otorgar
+    ? {
+        consentimiento_datos: true,
+        consentimiento_fecha: new Date().toISOString(),
+        consentimiento_medio: medio,
+        consentimiento_registrado_por: staff.userId,
+      }
+    : { consentimiento_datos: false, consentimiento_fecha: null, consentimiento_medio: null, consentimiento_registrado_por: null };
+
+  const { data, error } = await staff.supabase
+    .from("club57_partners")
+    .update({ ...cambios, updated_by: staff.userId })
+    .in("id", unicos)
+    .is("eliminado_at", null)
+    .eq("consentimiento_datos", !otorgar)
+    .select("id");
+  if (error) return { error: `No se pudo actualizar la autorización: ${error.message}` };
+  const cambiados = data?.length ?? 0;
+  revalidarDirectorio();
+  return { cambiados, sinCambio: unicos.length - cambiados };
 }
 
 /** «Eliminar» del admin: soft delete, se puede restaurar desde «Eliminados». */
