@@ -1,0 +1,25 @@
+#,NOMBRE_COMERCIAL,GIRO_SUGERIDO,CONTACTO,TELEFONO,CORREO,CORREO_2,CALLE,NUM_EXT,NUM_INT,COLONIA,CP,MUNICIPIO,ESTADO,LOGO_URL,CLAVE_ORIGEN,NOTAS
+1,Accesorios de Autos,Accesorios automotrices,Ismael Alcantara Hernandez,4423015895,ismaelalcantara763@gmail.com,,Calle 47 Av 4,S/N,,Lomas de Casa Blanca,76080,Querétaro,Querétaro,,1115DA,Sin número exterior en origen.
+2,Afinaciones y Cambio de Aceite,Taller automotriz,Mario Piña Arce,4421386019,pina40041@gmail.com,,San Jorge,25,,Bernardo Quintana Arrioja,76903,Corregidora,Querétaro,,1101DA,"Colonia corregida de ""Bernando"" a ""Bernardo""; revisar."
+3,Automotriz Dhimma,Taller automotriz,Mario Alberto Robles García,8311042391,automotrizdhimmaqro@gmail.com,,Roberto Barrios,1,,Casa Blanca,76030,Querétaro,Querétaro,,1034DA,
+4,Custom Cars,Accesorios y personalización automotriz,Leonardo Daniel Nuñez Trejo,4424646822,dsnielne764@gmail.com,,José María Lozano,26,,Reforma Agraria,76086,Querétaro,Querétaro,,1044LG,
+5,Express Motors,Taller automotriz,Juan Alberto Rosales Payan,4421096785,albertoross@hotmail.com,,Fray Juan de San Miguel,24,,Casa Blanca,76030,Querétaro,Querétaro,,1040LG,
+6,Fix-ride,Taller automotriz,Edson Alejandro Aguilar Camacho,4421411914,alxac36@gmail.com,,Fray. Pedro de Gante,87,,Cimatario,76030,Querétaro,Querétaro,,1006DA,
+7,Grafiqro,Impresión y publicidad,José Fernando Hernández Padrón,4423340076,impresionez@yahoo.com.mx,,Autopista México-Querétaro,226,,Casa Blanca,76030,Querétaro,Querétaro,,1112,
+8,Grupo Vega Díaz Querétaro,Por definir,María Carolina Vega Diaz,4422500742,factura@grupovegadiaz.com,,Salvador Jimenez,37,,Reforma Agraria,76086,Querétaro,Querétaro,,1036LG,Giro por definir con el cliente.
+9,Herrería Vidrio y Aluminio,Vidrio y aluminio,Jaime Cabello,4424666931,jestrella7604@gmail.com,,Gustavo Cardemia,213,,Reforma Agraria,76086,Querétaro,Querétaro,,1043LG,
+10,HICA Operaciones,Servicios operativos,Aylin Santillán,7775675299,facturacion@hicamx.mx,,Roberto Barrios,1,,Casa Blanca,76030,Querétaro,Querétaro,,1033LG,
+11,Hotel Crown Victoria,Hotelería,Alejandra Vertiz Ledesma,4172470189,compras@hotelcrownvictoria.com,,Autopista México-Querétaro,2100,,Lomas de Casa Blanca,76080,Querétaro,Querétaro,,1140LG,
+12,MYPSA Ingeniería Industrial,Ingeniería industrial,Lupita Rivera,4427927772,oficinamypsa@gmail.com,,La Ollaga,S/N,,,76087,Querétaro,Querétaro,,1046LG,Sin colonia ni número exterior en origen.
+13,Refaccionaria Cleto,Refaccionaria automotriz,Luis David López García,4426104399,refaccionariacleto@gmail.com,,José María Lozano,26,,Reforma Agraria,76086,Querétaro,Querétaro,,1045DA,
+14,Servicio Camarillo,Taller automotriz,Angel Camarillo Núñez,4424794459,camarillos.taller@gmail.com,,Naranjon,27,,Valle Diamante,76903,Corregidora,Querétaro,,1104DA,Duplicado 1104T fusionado. Giro por confirmar.
+15,Stop Cars,Taller automotriz,Roberto Salvador Pacheco Silverio,4421276682,roberthpach.911@gmail.com,,Jesús Urrueta,100,,Reforma Agraria,76086,Querétaro,Querétaro,,1047DA,
+16,Taller Automotriz Gudiños,Taller automotriz,Juan Gabriel Gudiño García,4421855561,juangabriel1288@gmail.com,,Eriberton Allera,81,,Casa Blanca,,Querétaro,Querétaro,,1002DA,Sin CP en origen.
+17,Taller El Gallo,Taller automotriz,Abdon Morales de Luis,4422003777,elgalloautomotriz@gmail.com,,Antonio Carranza,21,,Reforma Agraria 5ta Sección,76086,Querétaro,Querétaro,,1118DA,
+18,Taller Herrería Estrella,Herrería,Agustin Estrella Cabello,4426387125,jestrella7604@hotmail.com,,Calle 15,907,,Lomas de Casa Blanca,76089,Querétaro,Querétaro,,1027LG,S/N = sin número exterior.
+19,Tecnica Innovacion,Servicios técnicos / industrial,,4421331592,tecnicainno@hotmail.com,,Ponciano Herrera,744,,Los Candiles,76903,Corregidora,Querétaro,,,
+20,Transmisiones Automáticas Charly,Taller automotriz – transmisiones,Carlos Alberto Franco Llamas,4424340123,charlycf33@hotmail.com,,Perez Alcocer,389,,Los Candiles,76030,Querétaro,Querétaro,,1039LG,"Colonia ""Candile"" corregida a ""Los Candiles""; revisar."
+21,Vazcos Motors,Taller automotriz,Nahum Jefet Camargo Oseguera,4481201112,nahumcamargo18@gmail.com,,Plan de Ayala,16,,Casa Blanca,76030,Querétaro,Querétaro,,1004DA,
+22,VEM Tooling México,Maquinados y herramentales,,4424715912,vfsrrrrr@hotmail.com,,"Módulo 7, Bodegas Gama",7,,Parque Industrial El Marqués 5,76246,El Marqués,Querétaro,,1052LG,Correo parece dudoso; confirmar. Municipio inferido por CP.
+23,Vidrio y Aluminios Mora,Vidrio y aluminio,Francisco Javier Mora Gonzalez,4425880445,vidrioyaluminiomora@hotmail.com,,Antonio Carranza,21,,Reforma Agraria,76086,Querétaro,Querétaro,,1041DA,
+24,Vidrios y Aluminios García,Vidrio y aluminio,Pablo García García,4425772474,vidrioyaluminios1489@gmail.com,,Boulevard de las Américas,101,,Reforma Agraria,76086,Querétaro,Querétaro,,1035DA,

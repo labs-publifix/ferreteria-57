@@ -24,7 +24,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     supabase.from("products").select("slug, updated_at").eq("active", true),
   ]);
 
-  const staticRoutes: MetadataRoute.Sitemap = [{ url: SITE_URL, changeFrequency: "daily", priority: 1 }];
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: SITE_URL, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/directorio`, changeFrequency: "weekly", priority: 0.6 },
+  ];
 
   const categoryRoutes: MetadataRoute.Sitemap = (categories ?? []).map((category) => ({
     url: `${SITE_URL}/categoria/${category.slug}`,

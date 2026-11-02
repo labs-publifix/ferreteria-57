@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed:zonas-envio": "node --env-file=.env.local scripts/seed-zonas-envio.mjs",
+    "seed:directorio": "tsx scripts/seed-directorio-socios.ts",
     "test": "vitest run",
     "blog:index": "tsx scripts/blog-build-index.ts",
     "blog:check": "tsx scripts/blog-check.ts",
