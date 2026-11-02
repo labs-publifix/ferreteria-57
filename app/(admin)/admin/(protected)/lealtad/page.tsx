@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gift, HandCoins, History, Megaphone, RefreshCw, Settings, Users } from "lucide-react";
+import { Gift, HandCoins, History, Megaphone, RefreshCw, Settings, Store, Users } from "lucide-react";
 import { getAdminProfile } from "@/lib/supabase/adminProfile";
 
 export const metadata: Metadata = { title: "Club 57 — Panel de administración" };
@@ -42,6 +42,12 @@ const SECTIONS = [
     label: "Puntos de cortesía",
     description: "Bitácora de puntos otorgados a clientes y sus anulaciones, con motivo y quién lo hizo.",
     icon: HandCoins,
+  },
+  {
+    href: "/admin/lealtad/socios",
+    label: "Directorio socios comerciales",
+    description: "Comercios de Querétaro del directorio: alta, edición, logos, giros y carga masiva por Excel.",
+    icon: Store,
   },
   {
     href: "/admin/lealtad/promociones",

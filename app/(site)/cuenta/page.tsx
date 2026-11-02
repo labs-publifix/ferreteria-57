@@ -21,6 +21,7 @@ import { getAllArticles } from "@/lib/blog/content";
 import { getAllGuides } from "@/lib/blog/guide-content";
 import { buildMisGuias, type MiGuia } from "@/lib/blog/mis-guias";
 import { getNow } from "@/lib/blog/now";
+import type { MemberPartner, SociosCuenta } from "@/lib/club57/socios/member";
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
 // app/layout.tsx.
@@ -85,6 +86,7 @@ export default async function CuentaPage({
   const hoy = todayInStoreTimezone();
   let promociones: MemberPromoCard[] = buildMemberPromoCards([], hoy);
   let guias: MiGuia[] = [];
+  let socios: SociosCuenta = { acceso: "sin_membresia" };
 
   if (user) {
     // Los puntos 'pendiente' cuya fecha_disponible ya llegó se pasan a
@@ -140,6 +142,16 @@ export default async function CuentaPage({
       ]);
 
     guias = buildMisGuias(getAllArticles(), getAllGuides(), guiaDescargasResult.data ?? [], getNow());
+
+    // Directorio de socios comerciales: solo un miembro activo recibe los
+    // datos completos (la función vuelve a validar la membresía en la
+    // base); a cualquier otra sesión no se le pide nada y ve el estado
+    // protegido.
+    const { data: esMiembro } = await supabase.rpc("is_active_club57_member");
+    if (esMiembro === true) {
+      const { data: sociosData, error: sociosError } = await supabase.rpc("club57_directorio_miembros");
+      socios = { acceso: "miembro", socios: (sociosData ?? []) as MemberPartner[], error: Boolean(sociosError) };
+    }
 
     profile = profileResult.data;
     promociones = buildMemberPromoCards(
@@ -248,6 +260,7 @@ export default async function CuentaPage({
             promociones={promociones}
             hoy={hoy}
             guias={guias}
+            socios={socios}
           />
         </>
       ) : (

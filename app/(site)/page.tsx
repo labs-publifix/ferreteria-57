@@ -6,6 +6,7 @@ import { BrandLogos } from "@/components/home/BrandLogos";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { LoyaltySection } from "@/components/home/LoyaltySection";
+import { PartnersTeaser } from "@/components/home/PartnersTeaser";
 import { PromoRail } from "@/components/home/PromoRail";
 import { StatsSection } from "@/components/home/StatsSection";
 import { Testimonials } from "@/components/home/Testimonials";
@@ -148,6 +149,12 @@ export default async function HomePage() {
           </div>
           <LoyaltySection />
         </section>
+
+        {/* Directorio de socios comerciales justo después de Club 57: los
+            datos de contacto son un beneficio de la membresía, así que el
+            teaser refuerza la invitación que se acaba de leer. Solo
+            aparece con 4 o más socios publicados. */}
+        <PartnersTeaser />
 
         <section className="mt-14 sm:mt-20" aria-labelledby="visitanos-heading">
           <h2

@@ -13,6 +13,8 @@ import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL, type FulfillmentType, typ
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
 import { MisGuias } from "./MisGuias";
+import { Club57PartnersDirectory } from "./Club57PartnersDirectory";
+import type { SociosCuenta } from "@/lib/club57/socios/member";
 import type { MiGuia } from "@/lib/blog/mis-guias";
 import { Club57PromoCards } from "@/components/account/Club57PromoCards";
 import type { MemberPromoCard } from "@/lib/club57/promociones/vigencia";
@@ -85,6 +87,7 @@ const TABS = [
   { id: "puntos", label: "Historial de compras y puntos" },
   { id: "pedidos", label: "Mis pedidos" },
   { id: "catalogo", label: "Catálogo de canje" },
+  { id: "socios", label: "Socios Comerciales" },
 ];
 
 // Filtros del catálogo que viven en la URL (ver syncCatalogFiltersToUrl):
@@ -109,6 +112,7 @@ export function Club57MemberPanel({
   promociones,
   hoy,
   guias,
+  socios,
 }: {
   referralCode: string | null;
   saldoDisponible: number;
@@ -125,12 +129,19 @@ export function Club57MemberPanel({
   hoy: string;
   /** Guías PDF de los artículos publicados del blog («Mis guías»). */
   guias: MiGuia[];
+  /** Directorio de socios comerciales: completo solo para miembros activos. */
+  socios: SociosCuenta;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchInputId = useId();
+  // ?tab=socios abre directo «Socios Comerciales» (enlaces desde /directorio).
   const [activeTab, setActiveTab] = useState(() =>
-    CATALOG_URL_PARAMS.some((param) => searchParams.has(param)) ? "catalogo" : "puntos"
+    searchParams.get("tab") === "socios"
+      ? "socios"
+      : CATALOG_URL_PARAMS.some((param) => searchParams.has(param))
+        ? "catalogo"
+        : "puntos"
   );
   const correccionesHistorial = useMemo(() => club57AnotarCorrecciones(historial, hoy), [historial, hoy]);
   const [confirmTarget, setConfirmTarget] = useState<Club57CatalogItem | null>(null);
@@ -699,6 +710,10 @@ export function Club57MemberPanel({
             </div>
           )}
         </div>
+      </TabPanel>
+
+      <TabPanel id="socios" idPrefix="cuenta" activeId={activeTab}>
+        <Club57PartnersDirectory data={socios} initialQuery={(searchParams.get("q") ?? "").slice(0, 60)} />
       </TabPanel>
 
       <ConfirmDialog
