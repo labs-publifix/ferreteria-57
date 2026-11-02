@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { ProductCatalogProvider } from "@/components/cart/ProductCatalogProvider";
 import { ToastProvider } from "@/components/ui";
+import { getVisibleArticles } from "@/lib/blog/content";
 import { getVisibleTopBanner } from "@/lib/marketing/queries";
 import { getActiveCategories } from "@/lib/navigation/categories";
 import { getVisiblePopupBanner } from "@/lib/popup/queries";
@@ -22,6 +23,9 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
   const categories = await getActiveCategories();
   const topBanner = await getVisibleTopBanner();
   const popupBanner = await getVisiblePopupBanner();
+  // El enlace "Blog" del header/footer solo aparece cuando hay algo que
+  // leer (sin I/O: el contenido del blog va en el bundle).
+  const showBlog = getVisibleArticles().length > 0;
 
   return (
     // ToastProvider por fuera de CartProvider: el carrito dispara el toast
@@ -36,9 +40,9 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         <ProductCatalogProvider>
           <CartProvider>
-            <Header categories={categories} topBanner={topBanner} />
+            <Header categories={categories} topBanner={topBanner} showBlog={showBlog} />
             {children}
-            <Footer categories={categories} />
+            <Footer categories={categories} showBlog={showBlog} />
             <WhatsAppButton />
             <PopupBannerGate banner={popupBanner} />
           </CartProvider>

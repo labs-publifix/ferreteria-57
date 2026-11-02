@@ -62,8 +62,13 @@ function FormField({
 // login y registro apilados. Cada pestaña tiene su propio estado y su
 // propio submit — comparten estilos (FormField) pero no lógica, para que un
 // error en uno no deje campos a medias en el otro.
-export function AuthTabs() {
-  const [tab, setTab] = useState<Tab>("login");
+//
+// `next` (ya validado en el servidor con safeNextPath, ver /cuenta): a
+// dónde regresar después de entrar o registrarse — p. ej. el artículo del
+// blog desde el que se pidió la guía. Sin `next`, todo sigue igual:
+// refresh() y el visitante se queda en /cuenta.
+export function AuthTabs({ next = null, initialTab = "login" }: { next?: string | null; initialTab?: Tab } = {}) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const tabListId = useId();
 
   return (
@@ -82,7 +87,7 @@ export function AuthTabs() {
         </TabButton>
       </div>
 
-      {tab === "login" ? <LoginPanel /> : <SignupForm />}
+      {tab === "login" ? <LoginPanel next={next} /> : <SignupForm next={next} />}
     </div>
   );
 }
@@ -117,16 +122,22 @@ function TabButton({
 // y el de recuperación en el mismo espacio, en vez de mandar a otra
 // pantalla — evita perder el contexto de "sigo intentando entrar" con una
 // navegación completa por algo que es un caso secundario del mismo flujo.
-function LoginPanel() {
+function LoginPanel({ next }: { next: string | null }) {
   const [view, setView] = useState<LoginView>("credentials");
   return view === "credentials" ? (
-    <LoginForm onForgotPassword={() => setView("forgot")} />
+    <LoginForm next={next} onForgotPassword={() => setView("forgot")} />
   ) : (
     <ForgotPasswordForm onBack={() => setView("credentials")} />
   );
 }
 
-function LoginForm({ onForgotPassword }: { onForgotPassword: () => void }) {
+// Navegación completa (no router.push) para que la página de destino se
+// pinte ya con la sesión en las cookies y el navegador respete el #ancla.
+function goToNext(next: string) {
+  window.location.assign(next);
+}
+
+function LoginForm({ next, onForgotPassword }: { next: string | null; onForgotPassword: () => void }) {
   const router = useRouter();
   const emailId = useId();
   const passwordId = useId();
@@ -155,6 +166,10 @@ function LoginForm({ onForgotPassword }: { onForgotPassword: () => void }) {
     // La sesión ya quedó en las cookies (createBrowserClient las escribe
     // ahí, no en localStorage, justo para esto): refresh() vuelve a pedir
     // los Server Components de la ruta actual, que ahora sí ven sesión.
+    if (next) {
+      goToNext(next);
+      return;
+    }
     router.refresh();
   }
 
@@ -197,7 +212,7 @@ function LoginForm({ onForgotPassword }: { onForgotPassword: () => void }) {
   );
 }
 
-function SignupForm() {
+function SignupForm({ next }: { next: string | null }) {
   const router = useRouter();
   const nameId = useId();
   const emailId = useId();
@@ -258,6 +273,10 @@ function SignupForm() {
     // correo. Si el proyecto tiene la confirmación desactivada, data.session
     // ya viene, y se procede igual que en el login.
     if (data.session) {
+      if (next) {
+        goToNext(next);
+        return;
+      }
       router.refresh();
       return;
     }

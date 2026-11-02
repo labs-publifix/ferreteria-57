@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { requireFullAdmin } from "@/lib/supabase/requireStaff";
 import Link from "next/link";
 import { Club57ConfigForm } from "@/components/admin/Club57ConfigForm";
 import { createClient } from "@/lib/supabase/server";
@@ -6,6 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Configuración de Club 57 — Panel de administración" };
 
 export default async function AdminClub57ConfiguracionPage() {
+  // Solo el admin completo (el operador no administra este módulo); el
+  // middleware ya lo redirige, esto es la segunda capa.
+  if (!(await requireFullAdmin())) redirect("/admin");
+
   const supabase = await createClient();
   const { data, error } = await supabase.from("club57_config").select("*").maybeSingle();
 
@@ -40,6 +46,7 @@ export default async function AdminClub57ConfiguracionPage() {
             diasEsperaPendiente: String(data?.dias_espera_pendiente ?? 7),
             puntosReferidor: String(data?.puntos_referidor ?? 10),
             puntosReferido: String(data?.puntos_referido ?? 10),
+            maxPuntosCortesia: String(data?.max_puntos_cortesia ?? 500),
           }}
         />
       )}

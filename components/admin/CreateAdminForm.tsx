@@ -5,10 +5,17 @@ import { useRouter } from "next/navigation";
 import { Button, PasswordInput, Select } from "@/components/ui";
 import { createAdminUser } from "@/app/(admin)/admin/(protected)/accesos/actions";
 
-type StaffRole = "admin" | "vendedor";
+type StaffRole = "admin" | "operador" | "vendedor";
+
+const CREATE_LABEL: Record<StaffRole, string> = {
+  admin: "Crear administrador",
+  operador: "Crear operador",
+  vendedor: "Crear vendedor",
+};
 
 const ROLE_OPTIONS: { value: StaffRole; label: string }[] = [
   { value: "admin", label: "Administrador — acceso completo al panel" },
+  { value: "operador", label: "Operador — todo menos Accesos y Configuración" },
   { value: "vendedor", label: "Vendedor — solo sus propios clientes de Club 57" },
 ];
 
@@ -134,7 +141,7 @@ export function CreateAdminForm() {
       />
 
       <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto sm:self-start">
-        {isSubmitting ? "Creando…" : role === "admin" ? "Crear administrador" : "Crear vendedor"}
+        {isSubmitting ? "Creando…" : CREATE_LABEL[role]}
       </Button>
     </form>
   );

@@ -3,10 +3,24 @@
 Pendientes acordados con el cliente. Solo planeación: nada de esto está en
 desarrollo todavía. Actualizado: 7 de octubre de 2026.
 
-## Siguiente (en curso)
+## En curso: Blog (5 fases)
 
-- **Blog (`/blog`).** Ruta nueva; los detalles los comparte el cliente al
-  arrancar.
+- **Fase 1 — backlog en /admin/blog (vista de lectura).** Tabla
+  `blog_topics`, seed del lote 1 (58 temas), estado derivado y
+  descartar/restaurar.
+- **Fase 2 — blog público.** /blog, categorías, artículo con índice y CTA
+  de la guía (Club 57), SEO completo (JSON-LD, sitemap, RSS, OG), sección
+  en el home y artículo piloto B03 (programado; fecha real en Fase 5).
+- **Fase 3 — publicación programada y calidad.** Reloj inyectable
+  (`BLOG_NOW_OVERRIDE`, solo fuera de producción), RSS dinámico, noindex sin
+  publicados, `blog:check` (prebuild + CI), `blog:links` con el mapa de
+  enlaces, `blog:new` y enlaces reales al catálogo. Sin cron ni avisos.
+- **Fase 4 — guías PDF y flujo editorial.** `blog:next` (Excel + repo),
+  guía por artículo (`content/blog/guides`, PDF de marca generado al
+  descargar), descarga solo para miembros con límite por hora y registro en
+  `blog_guide_downloads`, «Mis guías» en /cuenta, vista previa para admin,
+  `blog:pdf`, `blog:verify` y la skill `blog-articulo`. Guía piloto de B03.
+- Fase 5: artículos de lanzamiento (B01–B08) con sus guías y fechas reales.
 
 ## Pendientes del cliente
 

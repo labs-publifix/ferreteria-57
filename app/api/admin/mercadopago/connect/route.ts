@@ -11,7 +11,7 @@ import { MP_OAUTH_STATE_COOKIE, MP_OAUTH_STATE_MAX_AGE_SECONDS } from "@/lib/mer
 // configuración de la tienda, no atención a clientes.
 export async function GET(request: NextRequest) {
   const staff = await requireStaff();
-  if (!staff || staff.role !== "admin") {
+  if (!staff || !staff.isFullAdmin) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 

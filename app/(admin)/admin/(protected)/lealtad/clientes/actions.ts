@@ -188,6 +188,8 @@ export interface RegisterPurchaseResult {
   puntos?: number;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Descuenta nada, solo suma un movimiento 'pendiente' — el estado pasa a
 // 'disponible' en un proceso de un prompt posterior (ver comentario en la
 // migración sobre fecha_disponible). puntos = floor(monto / monto_por_punto):
@@ -197,11 +199,17 @@ export interface RegisterPurchaseResult {
 // mismos datos que ya captura un pedido real (product_name/sku en
 // order_items) — para que el historial de un cliente diga QUÉ compró, no
 // solo cuánto.
+//
+// requestId: llave que el formulario genera una vez por compra. Si llega
+// dos veces (doble clic, reintento de red), el índice único de
+// club57_points_ledger.request_id rechaza el segundo INSERT y aquí se
+// responde con la compra que ya quedó registrada, sin duplicarla.
 export async function registerClub57ManualPurchase(
   memberId: string,
   montoRaw: string,
   productoNombre: string,
-  productoSku: string
+  productoSku: string,
+  requestId?: string
 ): Promise<RegisterPurchaseResult> {
   const staff = await requireStaff();
   if (!staff) return { error: "No autorizado." };
@@ -240,6 +248,9 @@ export async function registerClub57ManualPurchase(
     };
   }
 
+  const validRequestId = requestId && UUID_RE.test(requestId) ? requestId : null;
+  const montoRedondeado = Math.round(monto * 100) / 100;
+
   const { error: insertError } = await supabase.from("club57_points_ledger").insert({
     member_id: memberId,
     cantidad: puntos,
@@ -249,9 +260,21 @@ export async function registerClub57ManualPurchase(
     referencia: `Compra en tienda: $${monto.toFixed(2)} MXN`,
     producto_nombre: nombre,
     producto_sku: sku || null,
+    monto: montoRedondeado,
+    request_id: validRequestId,
   });
 
-  if (insertError) return { error: `No se pudo registrar la compra: ${insertError.message}` };
+  if (insertError) {
+    if (insertError.code === "23505" && validRequestId) {
+      const { data: existente } = await supabase
+        .from("club57_points_ledger")
+        .select("cantidad")
+        .eq("request_id", validRequestId)
+        .maybeSingle();
+      if (existente) return { puntos: existente.cantidad as number };
+    }
+    return { error: `No se pudo registrar la compra: ${insertError.message}` };
+  }
 
   // Mismo bono de referido que ya aplica create_order (ver migración
   // 20260926010000) — se llama DESPUÉS de insertar la compra: si esta es
@@ -267,4 +290,176 @@ export async function registerClub57ManualPurchase(
   revalidatePath(`/admin/lealtad/clientes/${memberId}`);
   revalidatePath(`/admin/vendedor/clientes/${memberId}`);
   return { puntos };
+}
+
+export interface CorrectPurchaseInput {
+  compraId: string;
+  accion: "cancelar" | "corregir";
+  motivo: string;
+  motivoNota?: string;
+  monto?: string;
+  productoNombre?: string;
+  productoSku?: string;
+  fueraDePolitica?: boolean;
+  justificacion?: string;
+}
+
+export interface CorrectPurchaseResult {
+  error?: string;
+  /** Admin: la compra está fuera del plazo y falta confirmar la excepción. */
+  requiereExcepcion?: boolean;
+  puntosAnulados?: number;
+  puntosNuevos?: number | null;
+  fueraDePolitica?: boolean;
+}
+
+// Cancelar o corregir una compra en tienda. Toda la regla (quién, plazo de
+// 7 días, excepción del admin, saldo negativo) vive en
+// club57_corregir_compra(); aquí solo se valida la forma de los datos y se
+// traducen los errores. Se usa el cliente normal (RLS + auth.uid()), nunca
+// service_role: la función necesita saber quién la llama.
+export async function correctClub57Purchase(input: CorrectPurchaseInput): Promise<CorrectPurchaseResult> {
+  const staff = await requireStaff();
+  if (!staff) return { error: "No autorizado." };
+
+  if (!UUID_RE.test(input.compraId)) return { error: "Compra no encontrada." };
+  if (input.accion !== "cancelar" && input.accion !== "corregir") return { error: "Acción inválida." };
+  if (!input.motivo) return { error: "Elige el motivo." };
+
+  let monto: number | null = null;
+  if (input.accion === "corregir") {
+    monto = Number.parseFloat(input.monto ?? "");
+    if (Number.isNaN(monto) || monto <= 0) return { error: "El monto debe ser un número mayor a 0." };
+  }
+
+  const { data, error } = await staff.supabase.rpc("club57_corregir_compra", {
+    p_compra_id: input.compraId,
+    p_accion: input.accion,
+    p_motivo: input.motivo,
+    p_motivo_nota: input.motivoNota?.trim() || null,
+    p_monto_nuevo: monto,
+    p_producto_nombre: input.accion === "corregir" ? input.productoNombre ?? "" : null,
+    p_producto_sku: input.accion === "corregir" ? input.productoSku ?? "" : null,
+    p_fuera_de_politica: Boolean(input.fueraDePolitica),
+    p_justificacion: input.justificacion?.trim() || null,
+  });
+
+  if (error) {
+    if (error.code === "F57FP") return { error: error.message, requiereExcepcion: true };
+    return { error: error.message || "No se pudo guardar el cambio." };
+  }
+
+  const result = (data ?? {}) as {
+    puntos_anulados?: number;
+    puntos_nuevos?: number | null;
+    fuera_de_politica?: boolean;
+  };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  revalidatePath("/admin/vendedor/clientes", "layout");
+  revalidatePath("/admin/lealtad/correcciones");
+
+  return {
+    puntosAnulados: result.puntos_anulados,
+    puntosNuevos: result.puntos_nuevos ?? null,
+    fueraDePolitica: Boolean(result.fuera_de_politica),
+  };
+}
+
+// Asignar o cambiar el vendedor de un cliente (admin u operador). Toda la
+// regla vive en club57_asignar_vendedor(): quién puede, que el vendedor
+// exista y esté activo, y el registro del cambio. vendedorId "" = sin
+// vendedor.
+export async function assignClub57Vendedor(memberId: string, vendedorId: string): Promise<{ error?: string }> {
+  const staff = await requireStaff();
+  if (!staff || staff.role !== "admin") return { error: "No autorizado." };
+  if (!UUID_RE.test(memberId)) return { error: "Cliente no encontrado." };
+  if (vendedorId && !UUID_RE.test(vendedorId)) return { error: "Elige un vendedor de la lista." };
+
+  const { error } = await staff.supabase.rpc("club57_asignar_vendedor", {
+    p_member_id: memberId,
+    p_vendedor_id: vendedorId || null,
+  });
+  if (error) return { error: error.message || "No se pudo cambiar el vendedor." };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  revalidatePath("/admin/vendedor/clientes", "layout");
+  return {};
+}
+
+export interface GrantCortesiaInput {
+  memberId: string;
+  puntos: string;
+  motivo: string;
+  motivoNota?: string;
+  requestId?: string;
+}
+
+export interface GrantCortesiaResult {
+  error?: string;
+  puntos?: number;
+  saldoDisponible?: number;
+}
+
+// Otorgar puntos de cortesía (admin u operador). Toda la regla vive en
+// club57_otorgar_puntos(): quién puede, el máximo por otorgamiento, el
+// motivo y la idempotencia por requestId (un doble clic devuelve el
+// otorgamiento ya hecho). Aquí solo se valida la forma de los datos.
+export async function grantClub57CortesiaPoints(input: GrantCortesiaInput): Promise<GrantCortesiaResult> {
+  const staff = await requireStaff();
+  if (!staff || staff.role !== "admin") return { error: "No autorizado." };
+  if (!UUID_RE.test(input.memberId)) return { error: "Cliente no encontrado." };
+
+  const texto = input.puntos.trim();
+  if (!/^\d+$/.test(texto) || Number(texto) <= 0) return { error: "Los puntos deben ser un número entero mayor a 0." };
+  if (!input.motivo) return { error: "Elige el motivo." };
+
+  const { data, error } = await staff.supabase.rpc("club57_otorgar_puntos", {
+    p_member_id: input.memberId,
+    p_cantidad: Number(texto),
+    p_motivo: input.motivo,
+    p_motivo_nota: input.motivoNota?.trim() || null,
+    p_request_id: input.requestId && UUID_RE.test(input.requestId) ? input.requestId : null,
+  });
+  if (error) return { error: error.message || "No se pudieron otorgar los puntos." };
+
+  const result = (data ?? {}) as { puntos?: number; saldo_disponible?: number };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  revalidatePath("/admin/vendedor/clientes", "layout");
+  revalidatePath("/admin/lealtad/cortesias");
+  return { puntos: result.puntos, saldoDisponible: result.saldo_disponible };
+}
+
+export interface AnnulCortesiaResult {
+  error?: string;
+  puntosAnulados?: number;
+  saldoDisponible?: number;
+}
+
+// Anular un otorgamiento de cortesía (admin u operador): un movimiento que
+// compensa, nunca un borrado. La regla vive en club57_anular_cortesia().
+export async function annulClub57Cortesia(input: {
+  cortesiaId: string;
+  motivo: string;
+  motivoNota?: string;
+}): Promise<AnnulCortesiaResult> {
+  const staff = await requireStaff();
+  if (!staff || staff.role !== "admin") return { error: "No autorizado." };
+  if (!UUID_RE.test(input.cortesiaId)) return { error: "Movimiento no encontrado." };
+  if (!input.motivo) return { error: "Elige el motivo." };
+
+  const { data, error } = await staff.supabase.rpc("club57_anular_cortesia", {
+    p_cortesia_id: input.cortesiaId,
+    p_motivo: input.motivo,
+    p_motivo_nota: input.motivoNota?.trim() || null,
+  });
+  if (error) return { error: error.message || "No se pudo anular." };
+
+  const result = (data ?? {}) as { puntos_anulados?: number; saldo_disponible?: number };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  revalidatePath("/admin/vendedor/clientes", "layout");
+  revalidatePath("/admin/lealtad/cortesias");
+  return { puntosAnulados: result.puntos_anulados, saldoDisponible: result.saldo_disponible };
 }

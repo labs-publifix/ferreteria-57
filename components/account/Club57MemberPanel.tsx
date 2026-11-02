@@ -1,14 +1,19 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { buttonClassName, ConfirmDialog, ProductImagePlaceholder, SimplePagination, TabPanel, Tabs } from "@/components/ui";
 import { requestClub57Redemption } from "@/app/(site)/cuenta/actions";
 import { CLUB57_REDEMPTION_ESTADO_LABEL, CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
+import { club57AnotarCorrecciones, club57MotivoTexto } from "@/lib/club57/correcciones";
+import { club57MotivoCortesiaCliente, esMovimientoCortesia } from "@/lib/club57/cortesias";
 import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
+import { MisGuias } from "./MisGuias";
+import type { MiGuia } from "@/lib/blog/mis-guias";
 import { Club57PromoCards } from "@/components/account/Club57PromoCards";
 import type { MemberPromoCard } from "@/lib/club57/promociones/vigencia";
 
@@ -20,6 +25,11 @@ export interface Club57LedgerRow {
   fecha_disponible?: string | null;
   created_at: string;
   referencia: string | null;
+  producto_nombre?: string | null;
+  anula_a?: string | null;
+  corrige_a?: string | null;
+  motivo?: string | null;
+  motivo_nota?: string | null;
 }
 
 export interface Club57CatalogItem {
@@ -69,11 +79,18 @@ const REDEMPTION_ESTADO_STYLE: Record<string, string> = {
   cancelado: "bg-red-100 text-red-700",
 };
 
+// El historial va primero: es lo que más consulta el cliente después de
+// una compra en tienda (qué se le registró y cuántos puntos le dio).
 const TABS = [
-  { id: "catalogo", label: "Catálogo de canje" },
+  { id: "puntos", label: "Historial de compras y puntos" },
   { id: "pedidos", label: "Mis pedidos" },
-  { id: "puntos", label: "Historial de puntos" },
+  { id: "catalogo", label: "Catálogo de canje" },
 ];
+
+// Filtros del catálogo que viven en la URL (ver syncCatalogFiltersToUrl):
+// si alguno viene, la persona estaba en el catálogo (p. ej. recargó la
+// página), así que se abre esa pestaña en vez del historial.
+const CATALOG_URL_PARAMS = ["cq", "cmin", "cmax", "csolo", "corden"];
 
 const CATALOGO_PAGE_SIZE = 9;
 const PEDIDOS_PAGE_SIZE = 10;
@@ -91,6 +108,7 @@ export function Club57MemberPanel({
   pedidos,
   promociones,
   hoy,
+  guias,
 }: {
   referralCode: string | null;
   saldoDisponible: number;
@@ -105,11 +123,16 @@ export function Club57MemberPanel({
   promociones: MemberPromoCard[];
   /** Hoy en America/Mexico_City ("YYYY-MM-DD"), resuelto en el servidor. */
   hoy: string;
+  /** Guías PDF de los artículos publicados del blog («Mis guías»). */
+  guias: MiGuia[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchInputId = useId();
-  const [activeTab, setActiveTab] = useState("catalogo");
+  const [activeTab, setActiveTab] = useState(() =>
+    CATALOG_URL_PARAMS.some((param) => searchParams.has(param)) ? "catalogo" : "puntos"
+  );
+  const correccionesHistorial = useMemo(() => club57AnotarCorrecciones(historial, hoy), [historial, hoy]);
   const [confirmTarget, setConfirmTarget] = useState<Club57CatalogItem | null>(null);
   const [quickViewItem, setQuickViewItem] = useState<Club57CatalogItem | null>(null);
   const [orderDetail, setOrderDetail] = useState<Club57OrderRow | null>(null);
@@ -265,8 +288,19 @@ export function Club57MemberPanel({
         <p className="font-display text-xs uppercase tracking-wide text-brand-slate/60 sm:text-left">Club 57</p>
         <div className="mt-1 flex flex-col items-center gap-1 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
           <div>
-            <p className="font-display text-4xl text-brand-black">{saldoDisponible} pts</p>
+            <p className={`font-display text-4xl ${saldoDisponible < 0 ? "text-red-700" : "text-brand-black"}`}>
+              {saldoDisponible} pts
+            </p>
             <p className="font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
+            {saldoDisponible < 0 && (
+              <p className="mt-1 max-w-sm font-sans text-sm text-brand-slate">
+                Tu saldo es negativo porque se canceló o corrigió una compra, o se anuló una cortesía, cuyos puntos ya
+                tenías. Se compensa con los puntos de tus próximas compras.{" "}
+                <Link href="/terminos" className="underline underline-offset-2 hover:text-brand-black">
+                  Ver términos
+                </Link>
+              </p>
+            )}
             {puntosPendientes > 0 && (
               <p className="mt-1 font-sans text-sm text-brand-slate">
                 +{puntosPendientes} pts pendientes
@@ -309,6 +343,8 @@ export function Club57MemberPanel({
       {/* Promociones descargables: fuera de las pestañas (como la franja de
           saldo) para no empujar el contenido de ninguna pestaña. */}
       <Club57PromoCards cards={promociones} hoy={hoy} />
+
+      <MisGuias guias={guias} />
 
       <Tabs idPrefix="cuenta" tabs={TABS} activeId={activeTab} onChange={setActiveTab} />
 
@@ -396,7 +432,12 @@ export function Club57MemberPanel({
                   </div>
 
                   <p className="font-sans text-xs text-brand-slate/60">
-                    {catalogFiltered.length} {catalogFiltered.length === 1 ? "artículo" : "artículos"}
+                    {catalogFiltered.length} {catalogFiltered.length === 1 ? "artículo" : "artículos"} · Los artículos
+                    canjeados no tienen devolución ni cambio (
+                    <Link href="/terminos" className="underline underline-offset-2 hover:text-brand-black">
+                      ver términos
+                    </Link>
+                    ).
                   </p>
                 </div>
 
@@ -411,7 +452,7 @@ export function Club57MemberPanel({
                     {catalogVisible.map((item) => {
                       const canRedeem = saldoDisponible >= item.costo_puntos && item.stock > 0;
                       const faltante = Math.max(0, item.costo_puntos - saldoDisponible);
-                      const progresoPct = Math.min(100, Math.round((saldoDisponible / item.costo_puntos) * 100));
+                      const progresoPct = Math.max(0, Math.min(100, Math.round((saldoDisponible / item.costo_puntos) * 100)));
                       return (
                         <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-brand-slate/10 p-4">
                           <button
@@ -589,28 +630,70 @@ export function Club57MemberPanel({
                   </tr>
                 </thead>
                 <tbody>
-                  {historial.map((row) => (
-                    <tr key={row.id} className="border-b border-brand-slate/10 last:border-0">
-                      <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
-                      <td className="py-2 text-brand-black">{CLUB57_TIPO_LABEL[row.tipo] ?? row.tipo}</td>
-                      <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>
-                        {row.cantidad > 0 ? "+" : ""}
-                        {row.cantidad} pts
-                        <span className="block text-xs font-normal text-brand-slate/60">
-                          ~{pesosFormatter.format(Math.abs(row.cantidad) * montoPorPunto)}
-                        </span>
-                      </td>
-                      <td className="py-2">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            row.estado === "disponible" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {row.estado === "disponible" ? "Disponible" : "Pendiente"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {historial.map((row) => {
+                    const correccion = correccionesHistorial.get(row.id);
+                    const cortesia = esMovimientoCortesia(row.tipo);
+                    const motivoTexto = cortesia
+                      ? club57MotivoCortesiaCliente(row.motivo)
+                      : club57MotivoTexto(row.motivo, row.motivo_nota);
+                    const anuladaEsCorreccion =
+                      correccion?.compraAnulada &&
+                      correccionesHistorial.get(correccion.compraAnulada.id)?.estadoCompra === "corregida";
+                    const tipoLabel =
+                      row.tipo === "cancelacion_compra"
+                        ? anuladaEsCorreccion
+                          ? "Ajuste por compra corregida"
+                          : "Compra cancelada"
+                        : CLUB57_TIPO_LABEL[row.tipo] ?? row.tipo;
+                    return (
+                      <tr key={row.id} className="border-b border-brand-slate/10 align-top last:border-0">
+                        <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
+                        <td className="py-2 pr-3 text-brand-black">
+                          {tipoLabel}
+                          {row.producto_nombre && (
+                            <span className="block text-xs text-brand-slate/70">{row.producto_nombre}</span>
+                          )}
+                          {correccion?.estadoCompra && (
+                            <span className="mt-1 block">
+                              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
+                                {row.tipo === "cortesia"
+                                  ? "Anulada"
+                                  : correccion.estadoCompra === "cancelada"
+                                    ? "Cancelada"
+                                    : "Corregida"}
+                              </span>
+                            </span>
+                          )}
+                          {correccion?.original && (
+                            <span className="block text-xs text-brand-slate/70">
+                              Corrección de tu compra del {dateFormatter.format(new Date(correccion.original.created_at))}
+                            </span>
+                          )}
+                          {(row.tipo === "cancelacion_compra" || cortesia) && motivoTexto && (
+                            <span className="block text-xs text-brand-slate/70">
+                              {row.tipo === "cortesia" ? motivoTexto : `Motivo: ${motivoTexto}`}
+                            </span>
+                          )}
+                        </td>
+                        <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>
+                          {row.cantidad > 0 ? "+" : ""}
+                          {row.cantidad} pts
+                          <span className="block text-xs font-normal text-brand-slate/60">
+                            ~{pesosFormatter.format(Math.abs(row.cantidad) * montoPorPunto)}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              row.estado === "disponible" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {row.estado === "disponible" ? "Disponible" : "Pendiente"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -623,7 +706,7 @@ export function Club57MemberPanel({
         title="Canjear artículo"
         description={
           confirmTarget
-            ? `¿Canjear "${confirmTarget.nombre}" por ${confirmTarget.costo_puntos} puntos? Se descuentan al momento — recoge el artículo en tienda.`
+            ? `¿Canjear "${confirmTarget.nombre}" por ${confirmTarget.costo_puntos} puntos? Se descuentan al momento — recoge el artículo en tienda. Los artículos canjeados no tienen devolución ni cambio, y los puntos no se reintegran.`
             : undefined
         }
         confirmLabel={isSubmitting ? "Canjeando…" : "Canjear"}

@@ -12,12 +12,17 @@ function normalizeQuery(raw: string | string[] | undefined): string {
   return value?.trim() ?? "";
 }
 
+// Resultados de búsqueda: noindex, follow. Cada ?q= genera una página que
+// repite productos de las categorías, y Google la reportaba como duplicada
+// sin canónica; con noindex no compite con las categorías ni los
+// productos, y follow deja que el rastreo siga los enlaces a productos.
 export function generateMetadata({ searchParams }: BuscarPageProps): Metadata {
   const query = normalizeQuery(searchParams.q);
   return {
     title: query
       ? `Resultados para "${query}" — Ferretería 57`
       : "Buscar productos — Ferretería 57",
+    robots: { index: false, follow: true },
   };
 }
 

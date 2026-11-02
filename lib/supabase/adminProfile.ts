@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 export interface AdminProfile {
   fullName: string | null;
   email: string;
+  role: "admin" | "operador";
 }
 
 // Reutilizado por app/(admin)/admin/(protected)/layout.tsx (para el shell
@@ -11,7 +12,9 @@ export interface AdminProfile {
 // admin?". Devuelve null si no hay sesión o si el usuario no es admin: el
 // middleware ya debería haber redirigido antes de llegar aquí, esto es la
 // segunda capa de verificación del lado del servidor (nunca confiar solo
-// en el middleware para algo tan crítico como esto).
+// en el middleware para algo tan crítico como esto). Admite admin y
+// operador: el operador usa el mismo panel, salvo los módulos que solo
+// administra el admin (ver isFullAdminRole).
 export async function getAdminProfile(): Promise<AdminProfile | null> {
   const supabase = await createClient();
   const {
@@ -26,15 +29,15 @@ export async function getAdminProfile(): Promise<AdminProfile | null> {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin") return null;
+  if (!profile || (profile.role !== "admin" && profile.role !== "operador")) return null;
 
-  return { fullName: profile.full_name, email: user.email ?? "" };
+  return { fullName: profile.full_name, email: user.email ?? "", role: profile.role };
 }
 
 export interface StaffProfile {
   fullName: string | null;
   email: string;
-  role: "admin" | "vendedor";
+  role: "admin" | "operador" | "vendedor";
 }
 
 // Mismo criterio que getAdminProfile(), pero para el layout de
@@ -56,7 +59,9 @@ export async function getStaffProfile(): Promise<StaffProfile | null> {
     .eq("id", user.id)
     .single();
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "vendedor")) return null;
+  if (!profile || (profile.role !== "admin" && profile.role !== "operador" && profile.role !== "vendedor")) {
+    return null;
+  }
 
   return { fullName: profile.full_name, email: user.email ?? "", role: profile.role };
 }

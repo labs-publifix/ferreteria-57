@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gift, Megaphone, RefreshCw, Settings, Users } from "lucide-react";
+import { Gift, HandCoins, History, Megaphone, RefreshCw, Settings, Users } from "lucide-react";
+import { getAdminProfile } from "@/lib/supabase/adminProfile";
 
 export const metadata: Metadata = { title: "Club 57 — Panel de administración" };
 
@@ -10,6 +11,7 @@ const SECTIONS = [
     label: "Configuración",
     description: "Reglas de puntos, canje y referidos.",
     icon: Settings,
+    fullAdminOnly: true,
   },
   {
     href: "/admin/lealtad/clientes",
@@ -30,6 +32,18 @@ const SECTIONS = [
     icon: RefreshCw,
   },
   {
+    href: "/admin/lealtad/correcciones",
+    label: "Correcciones",
+    description: "Bitácora de compras en tienda canceladas o corregidas, con motivo y quién lo hizo.",
+    icon: History,
+  },
+  {
+    href: "/admin/lealtad/cortesias",
+    label: "Puntos de cortesía",
+    description: "Bitácora de puntos otorgados a clientes y sus anulaciones, con motivo y quién lo hizo.",
+    icon: HandCoins,
+  },
+  {
     href: "/admin/lealtad/promociones",
     label: "Promociones",
     description: "Promo Truper, Temporada y Liquidaciones del Mes: PDFs con vigencia que los miembros descargan.",
@@ -41,7 +55,11 @@ const SECTIONS = [
 // que el resto del admin usa para agrupar sub-secciones (ver /admin
 // mismo), en vez de anidar un segundo nivel dentro del sidebar (que hoy
 // es una lista plana, ver components/admin/AdminShell.tsx).
-export default function AdminClub57Page() {
+export default async function AdminClub57Page() {
+  // El operador no administra las reglas de Club 57 (ver middleware).
+  const admin = await getAdminProfile();
+  const sections = SECTIONS.filter((section) => admin?.role === "admin" || !section.fullAdminOnly);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -52,7 +70,7 @@ export default function AdminClub57Page() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SECTIONS.map((section) => {
+        {sections.map((section) => {
           const Icon = section.icon;
           return (
             <Link

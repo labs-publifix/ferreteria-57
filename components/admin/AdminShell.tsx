@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ADMIN_NAV_ITEMS } from "./nav-items";
+import { ADMIN_NAV_ITEMS, type AdminNavItem } from "./nav-items";
 
 // Ancho de la barra colapsada: suficiente para centrar un ícono de size-4
 // con algo de aire (5rem = 80px) — no el mínimo posible, para que siga
@@ -36,11 +36,15 @@ const STORAGE_KEY = "admin:sidebarCollapsed";
 // colapsarlo no resolvería nada y solo restaría claridad).
 export function AdminShell({
   adminName,
+  isFullAdmin,
   children,
 }: {
   adminName: string;
+  /** false para el operador: no ve Accesos ni Configuración. */
+  isFullAdmin: boolean;
   children: React.ReactNode;
 }) {
+  const navItems = isFullAdmin ? ADMIN_NAV_ITEMS : ADMIN_NAV_ITEMS.filter((item) => !item.fullAdminOnly);
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -75,6 +79,7 @@ export function AdminShell({
         }`}
       >
         <SidebarContent
+          navItems={navItems}
           pathname={pathname}
           adminName={adminName}
           collapsed={collapsed}
@@ -127,6 +132,7 @@ export function AdminShell({
               </button>
             </div>
             <SidebarContent
+              navItems={navItems}
               pathname={pathname}
               adminName={adminName}
               collapsed={false}
@@ -163,6 +169,7 @@ interface TooltipState {
 }
 
 function SidebarContent({
+  navItems,
   pathname,
   adminName,
   collapsed,
@@ -170,6 +177,7 @@ function SidebarContent({
   onToggleCollapsed,
   onNavigate,
 }: {
+  navItems: AdminNavItem[];
   pathname: string;
   adminName: string;
   collapsed: boolean;
@@ -274,7 +282,7 @@ function SidebarContent({
 
       <nav aria-label="Navegación del panel" className="flex-1 px-3">
         <ul className="flex flex-col gap-0.5">
-          {ADMIN_NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (

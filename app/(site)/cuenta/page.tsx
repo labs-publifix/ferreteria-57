@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { redirect } from "next/navigation";
+import { safeNextPath } from "@/lib/safeNext";
 import { createClient } from "@/lib/supabase/server";
 import { AuthTabs } from "@/components/account/AuthTabs";
 import { ProfileView } from "@/components/account/ProfileView";
@@ -15,6 +17,10 @@ import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 import type { PromoTipo } from "@/lib/club57/promociones/config";
 import { buildMemberPromoCards, type MemberPromoCard } from "@/lib/club57/promociones/vigencia";
+import { getAllArticles } from "@/lib/blog/content";
+import { getAllGuides } from "@/lib/blog/guide-content";
+import { buildMisGuias, type MiGuia } from "@/lib/blog/mis-guias";
+import { getNow } from "@/lib/blog/now";
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
 // app/layout.tsx.
@@ -32,8 +38,11 @@ export const metadata: Metadata = {
 export default async function CuentaPage({
   searchParams,
 }: {
-  searchParams: { passwordReset?: string };
+  searchParams: { passwordReset?: string; next?: string | string[]; registro?: string };
 }) {
+  // ?next=: regreso tras entrar/registrarse (solo rutas internas permitidas,
+  // ver lib/safeNext.ts). ?registro=1 abre directo la pestaña "Crear cuenta".
+  const next = safeNextPath(searchParams.next);
   // Si todavía no se agregaron las variables de entorno en Vercel, esta
   // página es la única que depende de ellas de forma directa (el resto
   // del sitio sigue funcionando, ver AuthProvider/middleware) — mejor un
@@ -59,6 +68,10 @@ export default async function CuentaPage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Ya tiene sesión y viene de un enlace con ?next= (p. ej. la guía de un
+  // artículo del blog): no hay nada que hacer aquí, de regreso al destino.
+  if (user && next) redirect(next);
+
   let profile: { full_name: string | null; referral_code: string | null } | null = null;
   let saldoDisponible = 0;
   let puntosPendientes = 0;
@@ -71,6 +84,7 @@ export default async function CuentaPage({
   let bonoReferidoPendientePts: number | null = null;
   const hoy = todayInStoreTimezone();
   let promociones: MemberPromoCard[] = buildMemberPromoCards([], hoy);
+  let guias: MiGuia[] = [];
 
   if (user) {
     // Los puntos 'pendiente' cuya fecha_disponible ya llegó se pasan a
@@ -89,12 +103,15 @@ export default async function CuentaPage({
       ordersResult,
       configResult,
       promocionesResult,
+      guiaDescargasResult,
     ] = await Promise.all([
         supabase.from("profiles").select("full_name, referral_code").eq("id", user.id).single(),
         supabase.from("club57_members").select("referred_by").eq("id", user.id).maybeSingle(),
         supabase
           .from("club57_points_ledger")
-          .select("id, cantidad, tipo, estado, fecha_disponible, referencia, created_at")
+          .select(
+            "id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, anula_a, corrige_a, motivo, motivo_nota, created_at"
+          )
           .eq("member_id", user.id)
           .order("created_at", { ascending: false }),
         supabase
@@ -118,7 +135,11 @@ export default async function CuentaPage({
         // Solo id, tipo y fechas — la tabla base no es legible para el
         // miembro (ver migración 20261006010000).
         supabase.from("club57_promociones_vigentes").select("id, tipo, vigencia_inicio, vigencia_fin"),
+        // «Mis guías»: solo sus propias descargas (RLS).
+        supabase.from("blog_guide_downloads").select("slug, downloaded_at").eq("user_id", user.id),
       ]);
+
+    guias = buildMisGuias(getAllArticles(), getAllGuides(), guiaDescargasResult.data ?? [], getNow());
 
     profile = profileResult.data;
     promociones = buildMemberPromoCards(
@@ -226,6 +247,7 @@ export default async function CuentaPage({
             pedidos={pedidos}
             promociones={promociones}
             hoy={hoy}
+            guias={guias}
           />
         </>
       ) : (
@@ -252,7 +274,7 @@ export default async function CuentaPage({
               Tu contraseña se actualizó — ya puedes iniciar sesión con ella.
             </p>
           )}
-          <AuthTabs />
+          <AuthTabs next={next} initialTab={searchParams.registro === "1" ? "signup" : "login"} />
         </>
       )}
     </main>

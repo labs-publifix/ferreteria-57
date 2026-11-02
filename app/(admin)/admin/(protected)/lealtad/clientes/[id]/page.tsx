@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Club57AssignVendedor } from "@/components/admin/Club57AssignVendedor";
+import { Club57GrantCortesia } from "@/components/admin/Club57GrantCortesia";
 import { Club57RegisterPurchaseForm } from "@/components/admin/Club57RegisterPurchaseForm";
+import { Club57StaffLedgerHistory, type Club57StaffLedgerRow } from "@/components/admin/Club57StaffLedgerHistory";
 import { createClient } from "@/lib/supabase/server";
-import { CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
+import { todayInStoreTimezone } from "@/lib/marketing/visibility";
+import { club57VendedorLabel } from "@/lib/club57/labels";
+import { CLUB57_MAX_PUNTOS_CORTESIA_DEFAULT } from "@/lib/club57/cortesias";
 
 export const metadata: Metadata = { title: "Detalle de cliente — Club 57" };
 
@@ -14,25 +19,14 @@ interface MemberDetail {
   phone: string;
   referral_code: string;
   origen_alta: "vendedor" | "autoregistro";
-  created_at: string;
-}
-
-interface LedgerRow {
-  id: string;
-  cantidad: number;
-  tipo: string;
-  estado: "pendiente" | "disponible";
-  fecha_disponible: string | null;
-  referencia: string | null;
-  producto_nombre: string | null;
-  producto_sku: string | null;
+  creado_por_vendedor_id: string | null;
   created_at: string;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
 
 const ORIGEN_LABEL: Record<MemberDetail["origen_alta"], string> = {
-  vendedor: "Alta manual (vendedor)",
+  vendedor: "Alta manual",
   autoregistro: "Autoregistro",
 };
 
@@ -41,11 +35,35 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   const { data: member } = await supabase
     .from("club57_members")
-    .select("id, full_name, email, phone, referral_code, origen_alta, created_at")
+    .select("id, full_name, email, phone, referral_code, origen_alta, creado_por_vendedor_id, created_at")
     .eq("id", params.id)
     .maybeSingle();
 
   if (!member) notFound();
+
+  // Vendedor asignado y personal para nombres (perfiles: admin y operador
+  // los leen todos por RLS) + los últimos cambios de vendedor. Si alguna
+  // consulta falla, los nombres caen a «Sin nombre» en vez de romper la
+  // página.
+  const vendedorId = (member as MemberDetail).creado_por_vendedor_id;
+  const [{ data: personal }, { data: asignaciones }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "operador", "vendedor"]),
+    supabase
+      .from("club57_asignaciones_vendedor")
+      .select("id, vendedor_anterior_id, vendedor_nuevo_id, actor_id, created_at")
+      .eq("member_id", params.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+  const nombrePorId = new Map(
+    (personal ?? []).map((p) => [p.id as string, (p.full_name as string | null)?.trim() || "Sin nombre"])
+  );
+  const vendedores = (personal ?? [])
+    .filter((p) => p.role === "vendedor")
+    .map((p) => ({ id: p.id as string, nombre: nombrePorId.get(p.id as string)! }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  const vendedorNombre = vendedorId ? nombrePorId.get(vendedorId) ?? null : null;
+  const nombreVendedor = (id: string | null) => (id ? nombrePorId.get(id) ?? "Vendedor sin nombre" : "Sin vendedor");
 
   // Puntos 'pendiente' de ESTE cliente cuya fecha ya llegó se pasan a
   // 'disponible' aquí — así el saldo que ve el vendedor en mostrador ya
@@ -56,12 +74,26 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   const { data: ledger } = await supabase
     .from("club57_points_ledger")
-    .select("id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, created_at")
+    .select(
+      "id, cantidad, tipo, estado, fecha_disponible, referencia, producto_nombre, producto_sku, monto, anula_a, corrige_a, motivo, motivo_nota, registrado_por, created_at"
+    )
     .eq("member_id", params.id)
     .order("created_at", { ascending: false });
 
+  const { data: config } = await supabase
+    .from("club57_config")
+    .select("monto_por_punto, max_puntos_cortesia")
+    .maybeSingle();
+  const montoPorPunto = config?.monto_por_punto ? Number(config.monto_por_punto) : 50;
+  const maxPuntosCortesia = config?.max_puntos_cortesia
+    ? Number(config.max_puntos_cortesia)
+    : CLUB57_MAX_PUNTOS_CORTESIA_DEFAULT;
+
   const memberDetail = member as MemberDetail;
-  const ledgerRows = (ledger ?? []) as LedgerRow[];
+  const ledgerRows = ((ledger ?? []) as Club57StaffLedgerRow[]).map((row) => ({
+    ...row,
+    monto: row.monto === null ? null : Number(row.monto),
+  }));
 
   const saldoDisponible = ledgerRows
     .filter((row) => row.estado === "disponible")
@@ -112,13 +144,54 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
               <dt className="shrink-0 text-brand-slate/70">Código de referido</dt>
               <dd className="min-w-0 break-all text-right font-medium">{memberDetail.referral_code}</dd>
             </div>
+            <div className="flex justify-between gap-3 py-1">
+              <dt className="shrink-0 text-brand-slate/70">Vendedor</dt>
+              <Club57AssignVendedor
+                memberId={memberDetail.id}
+                memberName={memberDetail.full_name}
+                currentVendedorId={memberDetail.creado_por_vendedor_id}
+                currentLabel={club57VendedorLabel(
+                  memberDetail.origen_alta,
+                  memberDetail.creado_por_vendedor_id,
+                  vendedorNombre
+                )}
+                vendedores={vendedores}
+              />
+            </div>
           </dl>
+          {(asignaciones ?? []).length > 0 && (
+            <div className="mt-4 border-t border-brand-slate/10 pt-3">
+              <h3 className="font-sans text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
+                Cambios de vendedor
+              </h3>
+              <ul className="mt-2 flex flex-col gap-1.5 font-sans text-xs text-brand-slate">
+                {(asignaciones ?? []).map((cambio) => (
+                  <li key={cambio.id as string}>
+                    {dateFormatter.format(new Date(cambio.created_at as string))}:{" "}
+                    {nombreVendedor(cambio.vendedor_anterior_id as string | null)} →{" "}
+                    <span className="font-medium text-brand-black">
+                      {nombreVendedor(cambio.vendedor_nuevo_id as string | null)}
+                    </span>
+                    {cambio.actor_id && <> · por {nombrePorId.get(cambio.actor_id as string) ?? "personal"}</>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="rounded-lg bg-white p-5 shadow-sm">
           <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Saldo de puntos</h2>
-          <p className="font-display text-3xl text-brand-black">{saldoDisponible} pts</p>
+          <p className={`font-display text-3xl ${saldoDisponible < 0 ? "text-red-700" : "text-brand-black"}`}>
+            {saldoDisponible} pts
+          </p>
           <p className="mt-1 font-sans text-sm text-brand-slate/70">Disponibles para canje</p>
+          {saldoDisponible < 0 && (
+            <p className="mt-2 font-sans text-sm text-brand-slate">
+              Saldo negativo por una compra cancelada o corregida, o una cortesía anulada, cuyos puntos ya estaban
+              disponibles. Se compensa con sus próximas compras.
+            </p>
+          )}
           {puntosPendientes > 0 && (
             <p className="mt-3 font-sans text-sm text-brand-slate">
               + {puntosPendientes} pts pendientes (todavía no disponibles)
@@ -133,61 +206,24 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
       </div>
 
       <div className="rounded-lg bg-white p-5 shadow-sm">
+        <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Otorgar puntos de cortesía</h2>
+        <Club57GrantCortesia
+          memberId={memberDetail.id}
+          memberName={memberDetail.full_name}
+          saldoDisponible={saldoDisponible}
+          maxPuntos={maxPuntosCortesia}
+        />
+      </div>
+
+      <div className="rounded-lg bg-white p-5 shadow-sm">
         <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Historial de puntos</h2>
-        {ledgerRows.length === 0 ? (
-          <p className="font-sans text-sm text-brand-slate/70">Sin movimientos todavía.</p>
-        ) : (
-          <div className="min-w-0 overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left font-sans text-sm">
-              <thead>
-                <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
-                  <th className="py-2">Fecha</th>
-                  <th className="py-2">Tipo</th>
-                  <th className="py-2">Producto</th>
-                  <th className="py-2">Puntos</th>
-                  <th className="py-2">Estado</th>
-                  <th className="py-2">Referencia</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ledgerRows.map((row) => (
-                  <tr key={row.id} className="border-b border-brand-slate/10 last:border-0">
-                    <td className="py-2 text-brand-slate">{dateFormatter.format(new Date(row.created_at))}</td>
-                    <td className="py-2 text-brand-black">{CLUB57_TIPO_LABEL[row.tipo] ?? row.tipo}</td>
-                    <td className="max-w-[200px] py-2 text-brand-black">
-                      {row.producto_nombre ? (
-                        <>
-                          {row.producto_nombre}
-                          {row.producto_sku && (
-                            <span className="block text-xs text-brand-slate/60">Cód. {row.producto_sku}</span>
-                          )}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className={`py-2 font-medium ${row.cantidad < 0 ? "text-red-700" : "text-brand-black"}`}>
-                      {row.cantidad > 0 ? "+" : ""}
-                      {row.cantidad}
-                    </td>
-                    <td className="py-2">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          row.estado === "disponible"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {row.estado === "disponible" ? "Disponible" : "Pendiente"}
-                      </span>
-                    </td>
-                    <td className="max-w-[220px] py-2 text-brand-slate">{row.referencia ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <Club57StaffLedgerHistory
+          rows={ledgerRows}
+          role="admin"
+          hoy={todayInStoreTimezone()}
+          montoPorPunto={montoPorPunto}
+          nombrePersonal={Object.fromEntries(nombrePorId)}
+        />
       </div>
     </div>
   );

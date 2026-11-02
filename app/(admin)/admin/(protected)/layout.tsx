@@ -19,7 +19,7 @@ export default async function AdminProtectedLayout({
   }
 
   return (
-    <AdminShell adminName={admin.fullName?.trim() || admin.email}>
+    <AdminShell adminName={admin.fullName?.trim() || admin.email} isFullAdmin={admin.role === "admin"}>
       {children}
     </AdminShell>
   );

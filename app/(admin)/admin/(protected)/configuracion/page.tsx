@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { requireFullAdmin } from "@/lib/supabase/requireStaff";
 import Link from "next/link";
 import { CheckCircle2, CreditCard } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
@@ -14,6 +16,10 @@ export default async function AdminConfiguracionPage({
 }: {
   searchParams: { mp?: string; mp_message?: string };
 }) {
+  // Solo el admin completo (el operador no administra este módulo); el
+  // middleware ya lo redirige, esto es la segunda capa.
+  if (!(await requireFullAdmin())) redirect("/admin");
+
   const status = await getMercadoPagoConnectionStatus();
 
   return (

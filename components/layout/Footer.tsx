@@ -43,7 +43,7 @@ function InstagramIcon() {
 // la columna de categorías nunca pueda desincronizarse de lo que el admin
 // tiene activo/renombrado/reordenado en Supabase (sería una tercera fuente
 // de verdad además de Header y CategoryGrid).
-export function Footer({ categories }: { categories: Category[] }) {
+export function Footer({ categories, showBlog = false }: { categories: Category[]; showBlog?: boolean }) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -141,6 +141,19 @@ export function Footer({ categories }: { categories: Category[] }) {
           >
             Conoce Club 57
           </Link>
+
+          {showBlog && (
+            <>
+              <h2 className="mt-6 font-display text-sm uppercase text-white">Blog</h2>
+              <p className="mt-3 font-sans text-sm text-white/85">Guías y consejos de ferretería.</p>
+              <Link
+                href="/blog"
+                className="mt-2 inline-block font-sans text-sm font-semibold text-white underline underline-offset-2 hover:text-white/80"
+              >
+                Leer el blog
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

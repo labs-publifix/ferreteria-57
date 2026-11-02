@@ -40,7 +40,7 @@ export function Club57ItemQuickView({
   const titleId = useId();
   const canRedeem = saldoDisponible >= item.costo_puntos && item.stock > 0;
   const faltante = Math.max(0, item.costo_puntos - saldoDisponible);
-  const progresoPct = Math.min(100, Math.round((saldoDisponible / item.costo_puntos) * 100));
+  const progresoPct = Math.max(0, Math.min(100, Math.round((saldoDisponible / item.costo_puntos) * 100)));
 
   return (
     <Modal titleId={titleId} onClose={onClose}>
@@ -84,6 +84,9 @@ export function Club57ItemQuickView({
           >
             {canRedeem ? "Canjear" : "Puntos insuficientes"}
           </button>
+          <p className="font-sans text-xs text-brand-slate/70">
+            Los artículos canjeados no tienen devolución ni cambio, y los puntos no se reintegran.
+          </p>
         </div>
       </div>
     </Modal>

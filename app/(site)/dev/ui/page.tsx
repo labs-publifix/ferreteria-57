@@ -1,6 +1,14 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Badge, Button, PriceTag, RatingStars } from "@/components/ui";
 import { ProductCard } from "@/components/product/ProductCard";
 import type { Product } from "@/types/catalog";
+import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
+
+// Kit de componentes para desarrollo: en producción no existe (404) para
+// que Google no indexe una página con productos de muestra; en local y en
+// los previews sigue disponible, siempre con noindex.
+export const metadata: Metadata = { robots: NO_INDEX_NO_FOLLOW };
 
 // Fijos aquí mismo (nunca desde Supabase): esta página es un preview
 // estático del kit de componentes, no una pantalla real — no debe
@@ -75,6 +83,7 @@ function Section({
 }
 
 export default function DevUiPage() {
+  if (process.env.VERCEL_ENV === "production") notFound();
   return (
     <main className="mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-6 sm:pt-14 lg:px-8">
       <header>
