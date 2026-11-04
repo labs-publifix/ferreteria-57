@@ -15,7 +15,7 @@ export const CLUB57_MOTIVOS_CORTESIA: { value: Club57MotivoCortesia; label: stri
   { value: "compensacion", label: "Compensación por una mala experiencia", cliente: "Compensación" },
   { value: "promocion", label: "Promoción o dinámica", cliente: "Promoción" },
   { value: "agradecimiento", label: "Cliente frecuente / agradecimiento", cliente: "Agradecimiento por tu preferencia" },
-  { value: "ajuste_autorizado", label: "Ajuste autorizado", cliente: "Ajuste a tu saldo" },
+  { value: "ajuste_autorizado", label: "Bono mensual", cliente: "Ajuste a tu saldo" },
   { value: "otro", label: "Otro", cliente: null },
 ];
 
