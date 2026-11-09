@@ -23,7 +23,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: false,
   publishAt: "2026-10-22T08:00:00-06:00",
-  updatedAt: "2026-10-22T08:00:00-06:00",
+  updatedAt: "2026-10-31T08:00:00-06:00",
   intro:
     "La **cinta teflón** es una cinta delgada que se enrolla en la rosca macho de una conexión para que selle sin fugas al apretarla. Sirve en roscas de agua, como las de una llave de paso, un niple o el brazo de la regadera, y no se usa en conexiones que sellan con empaque. Para que funcione hay que enrollarla en el mismo sentido en que se aprieta la rosca, con la cinta estirada y con las vueltas suficientes para cubrir los hilos sin que sobre. Aquí te explicamos qué hace, dónde sí y dónde no se usa, cómo aplicarla paso a paso y los errores que provocan fugas.",
   blocks: [
@@ -51,7 +51,7 @@ export default defineArticle({
     },
     {
       type: "p",
-      text: "Donde ya hay un empaque, la cinta estorba: impide que el empaque asiente bien y termina causando la fuga que querías evitar. Por eso, al limpiar el sifón como te contamos en la guía de [[B11|cómo destapar un lavabo]], las tuercas se arman solo con su empaque. Si estás uniendo tubos de distinto material, revisa la [[B04|diferencia entre tubería ppr y pvc]] para saber qué conexión de transición lleva rosca.",
+      text: "Donde ya hay un empaque, la cinta estorba: impide que el empaque asiente bien y termina causando la fuga que querías evitar. Por eso, al limpiar el sifón como te contamos en la guía de [[B11|cómo destapar un lavabo]], las tuercas se arman solo con su empaque. Si estás uniendo tubos de distinto material, revisa la [[B04|diferencia entre tubería ppr y pvc]] para saber qué conexión de transición lleva rosca. También se usa en la válvula de drenado roscada del boiler, por ejemplo si la cambias al [[B17|purgar el boiler]].",
     },
     { type: "cta" },
     {

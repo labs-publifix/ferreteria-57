@@ -24,7 +24,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: false,
   publishAt: "2026-10-24T08:00:00-06:00",
-  updatedAt: "2026-10-24T08:00:00-06:00",
+  updatedAt: "2026-10-31T08:00:00-06:00",
   intro:
     "**Mantenimiento calentador solar** antes del frío: es una revisión sencilla que puedes hacer en una mañana para limpiar los tubos o el colector, buscar fugas y tubos dañados, revisar el aislamiento de la tubería, purgar el sarro y comprobar que las válvulas funcionen. La temporada de frío es justo cuando más agua caliente vas a necesitar y cuando el sol calienta menos horas, así que cualquier falla se nota más. Aquí te explicamos qué revisar, qué piezas se desgastan, qué es el ánodo de sacrificio y cómo trabajar en la azotea sin riesgos. Los intervalos y pasos exactos de tu equipo siempre los marca su manual.",
   blocks: [
@@ -83,7 +83,7 @@ export default defineArticle({
       type: "ul",
       items: [
         "**Señales:** el agua sale menos caliente o se acaba antes, baja la presión, hay ruidos en el tanque o salen partículas blancas por la regadera.",
-        "**Purga:** la mayoría de los termotanques tienen una válvula de drenado para sacar el agua con sedimento. Cuándo y cómo hacerlo lo indica el manual del equipo; hazlo con el agua fría, temprano.",
+        "**Purga:** la mayoría de los termotanques tienen una válvula de drenado para sacar el agua con sedimento. Cuándo y cómo hacerlo lo indica el manual del equipo; hazlo con el agua fría, temprano. Si además tienes boiler de gas, te explicamos cómo [[B17|purgar el boiler]] de depósito.",
         "**Prevención:** filtrar el agua antes del tinaco y revisar el sarro en cada mantenimiento ayuda a que el equipo dure más.",
       ],
     },

@@ -24,7 +24,7 @@ export default defineArticle({
   cluster: "plomeria-y-agua",
   pillar: true,
   publishAt: "2026-10-08T12:00:00-06:00",
-  updatedAt: "2026-10-26T08:00:00-06:00",
+  updatedAt: "2026-10-31T08:00:00-06:00",
   intro:
     "La principal **diferencia entre tubería PPR y PVC** está en la temperatura y en la forma de unirlas: el PVC hidráulico es para agua fría y se pega con cemento, mientras que el PPR sirve para agua fría y caliente y se une por termofusión, con calor. El CPVC es la opción pegada para agua caliente, y el cobre es el material tradicional que se suelda. Elegir bien depende de tres cosas: qué agua va a pasar por el tubo, qué herramienta tienes o estás dispuesto a conseguir y cuánto quieres invertir. Aquí te explicamos cada material con sus ventajas, sus límites y en qué casos conviene.",
   blocks: [
@@ -130,7 +130,7 @@ export default defineArticle({
     { type: "h2", text: "Qué conviene en una casa de Querétaro: agua dura y sarro" },
     {
       type: "p",
-      text: "En muchas zonas del Bajío el agua trae minerales que con el tiempo dejan sarro en llaves, regaderas, calentadores y tuberías. Eso no significa que un material esté prohibido, pero sí conviene tomarlo en cuenta: los materiales plásticos como el PPR, el CPVC y el PVC no se corroen, y las uniones por termofusión no tienen rosca donde el sarro se acumule.",
+      text: "En muchas zonas del Bajío el agua trae minerales que con el tiempo dejan sarro en llaves, regaderas, calentadores y tuberías. Eso no significa que un material esté prohibido, pero sí conviene tomarlo en cuenta: los materiales plásticos como el PPR, el CPVC y el PVC no se corroen, y las uniones por termofusión no tienen rosca donde el sarro se acumule. El sarro también se junta dentro del boiler: te explicamos cómo [[B17|purgar el boiler]] para sacarlo.",
     },
     {
       type: "p",
