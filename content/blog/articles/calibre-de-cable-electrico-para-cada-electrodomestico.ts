@@ -26,7 +26,7 @@ export default defineArticle({
   cluster: "electricidad-e-iluminacion",
   pillar: true,
   publishAt: "2026-10-08T16:00:00-06:00",
-  updatedAt: "2026-10-15T08:00:00-06:00",
+  updatedAt: "2026-10-27T08:00:00-06:00",
   intro:
     "El **calibre de cable para casa** se elige según la corriente, en amperes, que va a pasar por el circuito. Como regla práctica orientativa, el cable calibre 14 se usa en circuitos de 15 amperes (normalmente iluminación), el calibre 12 en circuitos de 20 amperes (contactos de uso general, cocina, lavadora) y el calibre 10 en circuitos de 30 amperes (equipos grandes como algunos minisplits o calentadores eléctricos). Para saber cuántos amperes pide un aparato basta una división: watts entre volts. En esta guía te explicamos cómo hacer ese cálculo, cómo leer el calibre en el forro del cable, qué tipo de cable conviene y en qué casos lo mejor es llamar a un electricista.",
   blocks: [
@@ -205,6 +205,10 @@ export default defineArticle({
         "**Ignorar la distancia.** En recorridos largos (un taller al fondo del terreno, una bomba en la azotea) conviene un calibre más grueso para evitar la caída de voltaje.",
         "**Reutilizar cable viejo sin revisarlo.** Si el forro está reseco, quebradizo o con zonas oscurecidas por calor, ya no es seguro.",
       ],
+    },
+    {
+      type: "p",
+      text: "Otro error frecuente es resolver la falta de contactos con adaptadores y extensiones encadenadas. Te explicamos por qué un [[B15|diablito eléctrico es un peligro]], cómo reconocer un falso contacto y en qué orden conviene actualizar la instalación.",
     },
 
     { type: "h2", text: "Cuándo llamar a un electricista" },
