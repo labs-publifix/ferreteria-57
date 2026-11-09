@@ -13,8 +13,9 @@ import a8 from "./articles/instalar-tinaco-o-cisterna-queretaro";
 import a9 from "./articles/kit-basico-herramientas-hogar";
 import a10 from "./articles/mantenimiento-calentador-solar-antes-del-frio";
 import a11 from "./articles/marcas-truper-pretul-foset-volteck-guia";
-import a12 from "./articles/salitre-y-humedad-en-muros-queretaro";
-import a13 from "./articles/tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco";
+import a12 from "./articles/peligro-diablitos-y-falsos-contactos-instalacion-electrica";
+import a13 from "./articles/salitre-y-humedad-en-muros-queretaro";
+import a14 from "./articles/tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco";
 
 export const ARTICLE_SOURCES: readonly ArticleSource[] = [
   { file: "brocha-o-rodillo-segun-pintura-vinilica-esmalte", article: a0 },
@@ -29,6 +30,7 @@ export const ARTICLE_SOURCES: readonly ArticleSource[] = [
   { file: "kit-basico-herramientas-hogar", article: a9 },
   { file: "mantenimiento-calentador-solar-antes-del-frio", article: a10 },
   { file: "marcas-truper-pretul-foset-volteck-guia", article: a11 },
-  { file: "salitre-y-humedad-en-muros-queretaro", article: a12 },
-  { file: "tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco", article: a13 },
+  { file: "peligro-diablitos-y-falsos-contactos-instalacion-electrica", article: a12 },
+  { file: "salitre-y-humedad-en-muros-queretaro", article: a13 },
+  { file: "tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco", article: a14 },
 ];
