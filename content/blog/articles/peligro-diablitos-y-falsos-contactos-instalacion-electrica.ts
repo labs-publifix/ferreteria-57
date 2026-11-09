@@ -26,7 +26,7 @@ export default defineArticle({
   cluster: "electricidad-e-iluminacion",
   pillar: false,
   publishAt: "2026-10-27T08:00:00-06:00",
-  updatedAt: "2026-10-27T08:00:00-06:00",
+  updatedAt: "2026-10-29T08:00:00-06:00",
   intro:
     "El **diablito eléctrico**, peligro poco visible en muchas casas, hace que un solo contacto, o un cable que no fue pensado para eso, cargue con más aparatos de los que puede alimentar. Lo mismo pasa con un falso contacto: una conexión floja que se calienta cada vez que pasa corriente. Ninguno de los dos avisa con un estruendo; avisan con contactos tibios, olor a plástico caliente, focos que parpadean o una pastilla que se bota seguido. En esta guía te explicamos qué son, qué riesgos generan, qué señales revisar en tu casa o negocio, en qué orden conviene actualizar la instalación y cuándo es momento de llamar a un electricista.",
   blocks: [
@@ -163,7 +163,7 @@ export default defineArticle({
         "[Extensiones](/buscar?q=extension) **de uso rudo** del calibre adecuado para lo que vas a conectar, lo más cortas posible y siempre extendidas por completo, nunca enrolladas mientras se usan.",
         "**Contactos y clavijas de repuesto** para cambiar los que están flojos o dañados.",
         "[Probadores de voltaje](/buscar?q=probador%20de%20voltaje) **sin contacto** para confirmar que no hay corriente antes de trabajar.",
-        "**Cinta de aislar** solo para aislar un empalme bien hecho, nunca como reparación de un cable dañado.",
+        "**Cinta de aislar** solo para aislar un empalme bien hecho, nunca como reparación de un cable dañado. Te explicamos cuándo usar cinta, capuchones o regletas en la guía de [[B16|conectores eléctricos]].",
         "[Centros de carga](/buscar?q=centro%20de%20carga) e [interruptores termomagnéticos](/buscar?q=interruptor%20termomagnetico), **solo cuando** el electricista ya te dijo exactamente cuáles necesitas.",
       ],
     },
