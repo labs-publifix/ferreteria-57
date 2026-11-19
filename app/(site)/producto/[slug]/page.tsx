@@ -8,7 +8,7 @@ import { getApprovedReviews } from "@/lib/reviews/queries";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductPurchasePanel } from "@/components/product/ProductPurchasePanel";
 import { ProductReviews } from "@/components/product/ProductReviews";
-import { ProductGrid } from "@/components/product/ProductGrid";
+import { ProductRail } from "@/components/product/ProductRail";
 import { buildBreadcrumbJsonLd, buildProductJsonLd, SITE_URL } from "@/lib/seo";
 
 interface ProductoPageProps {
@@ -180,13 +180,20 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
 
       {relatedProducts.length > 0 && (
         <section className="mt-14 sm:mt-20" aria-labelledby="relacionados-heading">
-          <h2
-            id="relacionados-heading"
-            className="mb-4 font-display text-lg uppercase text-brand-slate sm:mb-6 sm:text-xl"
-          >
-            Productos relacionados
-          </h2>
-          <ProductGrid products={relatedProducts} />
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 sm:mb-6">
+            <h2 id="relacionados-heading" className="font-display text-lg uppercase text-brand-slate sm:text-xl">
+              Productos relacionados
+            </h2>
+            {category && (
+              <Link
+                href={category.href}
+                className="inline-flex min-h-11 items-center font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
+              >
+                Ver todos en {category.label}
+              </Link>
+            )}
+          </div>
+          <ProductRail products={relatedProducts} />
         </section>
       )}
     </main>
