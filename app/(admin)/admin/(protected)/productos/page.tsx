@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus, Upload } from "lucide-react";
+import { Download, Plus, Upload } from "lucide-react";
 import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { ProductsTable, type ProductRow } from "@/components/admin/ProductsTable";
 import { buttonClassName } from "@/components/ui";
@@ -139,6 +139,11 @@ export default async function AdminProductosPage({
           </span>
         </div>
         <div className="flex flex-wrap gap-3">
+          {/* <a> y no <Link>: es una descarga de la ruta de API, no una página. */}
+          <a href="/api/admin/productos/exportar" download className={buttonClassName("secondary", "shrink-0")}>
+            <Download className="size-4" aria-hidden="true" strokeWidth={2} />
+            Exportar a Excel
+          </a>
           <Link href="/admin/productos/importar" className={buttonClassName("secondary", "shrink-0")}>
             <Upload className="size-4" aria-hidden="true" strokeWidth={2} />
             Importar desde Excel
