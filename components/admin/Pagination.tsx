@@ -8,10 +8,13 @@ export function Pagination({
   page,
   totalPages,
   buildHref,
+  label = "Paginación de pedidos",
 }: {
   page: number;
   totalPages: number;
   buildHref: (page: number) => string;
+  /** Nombre accesible del <nav>, para distinguir la paginación de cada listado. */
+  label?: string;
 }) {
   if (totalPages <= 1) return null;
 
@@ -20,7 +23,7 @@ export function Pagination({
 
   return (
     <nav
-      aria-label="Paginación de pedidos"
+      aria-label={label}
       className="flex items-center justify-between gap-3 rounded-lg bg-white px-4 py-3 shadow-sm"
     >
       <Link

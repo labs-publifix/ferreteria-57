@@ -2,12 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Download, Plus, Upload } from "lucide-react";
 import { FilterSelectField } from "@/components/admin/FilterSelectField";
+import { Pagination } from "@/components/admin/Pagination";
 import { ProductsTable, type ProductRow } from "@/components/admin/ProductsTable";
 import { buttonClassName } from "@/components/ui";
 import { hasLowStock, LOW_STOCK_THRESHOLD } from "@/lib/catalog/stockThresholds";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Productos — Panel de administración" };
+
+// Productos por página del listado. Los filtros se siguen resolviendo sobre
+// el catálogo completo; la página solo decide qué tramo se dibuja.
+const PAGE_SIZE = 25;
+// La API entrega máximo 1,000 filas por consulta: se lee por tramos para que
+// el listado no se quede corto cuando el catálogo pase de mil productos.
+const FETCH_BATCH = 1000;
 
 // Categoría y estado se filtran en la propia consulta; el buscador (por
 // código o nombre) se resuelve en memoria sobre ese resultado ya
@@ -26,25 +34,36 @@ async function getAdminProducts(filters: {
 }) {
   const supabase = await createClient();
 
-  let query = supabase
-    .from("products")
-    .select(
-      "id, name, slug, brand, active, featured, images, categories(name), product_variants(sku, price, stock)"
-    )
-    .order("created_at", { ascending: false });
+  // Se arma la consulta de nuevo en cada tramo: un builder de Supabase no
+  // se puede reutilizar una vez ejecutado.
+  function buildQuery() {
+    let query = supabase
+      .from("products")
+      .select(
+        "id, name, slug, brand, active, featured, images, categories(name), product_variants(sku, price, stock)"
+      )
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true });
 
-  if (filters.categoria) query = query.eq("category_id", filters.categoria);
-  if (filters.estado === "activo") query = query.eq("active", true);
-  if (filters.estado === "inactivo") query = query.eq("active", false);
-  if (filters.marca) query = query.eq("brand", filters.marca);
-  if (filters.soloDestacados) query = query.eq("featured", true);
+    if (filters.categoria) query = query.eq("category_id", filters.categoria);
+    if (filters.estado === "activo") query = query.eq("active", true);
+    if (filters.estado === "inactivo") query = query.eq("active", false);
+    if (filters.marca) query = query.eq("brand", filters.marca);
+    if (filters.soloDestacados) query = query.eq("featured", true);
+    return query;
+  }
 
-  const { data, error } = await query;
-  // Supabase nunca lanza una excepción por un error de la base — devuelve
-  // { data: null, error }. Sin este chequeo, cualquier error se
-  // convertiría en "no hay productos" en vez de mostrar el problema real.
-  if (error) throw new Error(error.message);
-  let rows = (data ?? []) as unknown as ProductRow[];
+  const data: unknown[] = [];
+  for (let from = 0; ; from += FETCH_BATCH) {
+    const { data: batch, error } = await buildQuery().range(from, from + FETCH_BATCH - 1);
+    // Supabase nunca lanza una excepción por un error de la base — devuelve
+    // { data: null, error }. Sin este chequeo, cualquier error se
+    // convertiría en "no hay productos" en vez de mostrar el problema real.
+    if (error) throw new Error(error.message);
+    data.push(...(batch ?? []));
+    if (!batch || batch.length < FETCH_BATCH) break;
+  }
+  let rows = data as ProductRow[];
 
   const q = filters.q.trim().toLowerCase();
   if (q) {
@@ -83,6 +102,7 @@ export default async function AdminProductosPage({
     sinImagen?: string;
     stockBajo?: string;
     destacados?: string;
+    page?: string;
   };
 }) {
   const supabase = await createClient();
@@ -127,6 +147,26 @@ export default async function AdminProductosPage({
     products = await getAdminProducts(filters);
   } catch (err) {
     loadError = `No se pudieron cargar los productos: ${err instanceof Error ? err.message : "error desconocido"}`;
+  }
+
+  // Si la página pedida ya no existe (por ejemplo, después de borrar los
+  // últimos productos de la última página), se muestra la última que sí.
+  const totalCount = products.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Number.parseInt(searchParams.page ?? "1", 10) || 1), totalPages);
+  const firstIndex = (page - 1) * PAGE_SIZE;
+  const visibleProducts = products.slice(firstIndex, firstIndex + PAGE_SIZE);
+
+  // Cada link de página conserva los filtros aplicados; cambiar un filtro
+  // (el formulario no manda `page`) regresa a la página 1.
+  function buildHref(target: number) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (key !== "page" && value) params.set(key, value);
+    }
+    if (target > 1) params.set("page", String(target));
+    const query = params.toString();
+    return query ? `/admin/productos?${query}` : "/admin/productos";
   }
 
   return (
@@ -261,7 +301,18 @@ export default async function AdminProductosPage({
           {loadError}
         </p>
       ) : (
-        <ProductsTable products={products} />
+        <>
+          {totalCount > 0 && (
+            <p className="font-sans text-sm text-brand-slate">
+              {totalCount <= PAGE_SIZE
+                ? `${totalCount} ${totalCount === 1 ? "producto" : "productos"}`
+                : `Mostrando ${firstIndex + 1}–${firstIndex + visibleProducts.length} de ${totalCount} productos`}
+            </p>
+          )}
+          {/* key por página: la selección de filas no se arrastra a otra página. */}
+          <ProductsTable key={page} products={visibleProducts} />
+          <Pagination page={page} totalPages={totalPages} buildHref={buildHref} label="Paginación de productos" />
+        </>
       )}
     </div>
   );

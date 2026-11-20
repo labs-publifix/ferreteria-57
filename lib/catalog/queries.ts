@@ -54,16 +54,46 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
   return data ? mapRowToProduct(data) : undefined;
 }
 
+/** Cuántos productos relacionados muestra la ficha de producto. */
+export const RELATED_PRODUCTS_LIMIT = 8;
+
 // categoryId aquí es en realidad el slug de la categoría (ver el
 // comentario en types/catalog.ts) — el nombre del parámetro se conserva
 // tal cual porque /producto/[slug] ya lo llama así:
 // getRelatedProducts(product.categoryId, product.id).
+//
+// Solo trae un tramo corto de la misma categoría (antes cargaba la
+// categoría completa y la mostraba toda, y con el catálogo creciendo el
+// scroll de la ficha se volvía interminable): primero los destacados, luego
+// los más recientes. El resto de la categoría queda a un clic con el enlace
+// «Ver todos» de la ficha.
 export async function getRelatedProducts(
   categoryId: string,
-  excludeProductId: string
+  excludeProductId: string,
+  limit = RELATED_PRODUCTS_LIMIT
 ): Promise<Product[]> {
-  const products = await getCategoryProducts(categoryId);
-  return products.filter((product) => product.id !== excludeProductId);
+  const supabase = await createClient();
+
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", categoryId)
+    .maybeSingle();
+  if (!category) return [];
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("category_id", category.id)
+    .eq("active", true)
+    .neq("id", excludeProductId)
+    .order("featured", { ascending: false })
+    .order("featured_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  logCatalogError("getRelatedProducts", error);
+
+  return (data ?? []).map(mapRowToProduct);
 }
 
 // Home (FeaturedProducts): #11 — primero los que el admin marcó como
