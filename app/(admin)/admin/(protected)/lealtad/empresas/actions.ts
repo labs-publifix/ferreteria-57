@@ -9,7 +9,7 @@ import { buildAccesoResponsableEmail } from "@/lib/email/empresarialEmails";
 import { appUrl } from "@/lib/club57/empresas/notificaciones";
 import { describirCambiosConvenio } from "@/lib/club57/empresas/cambios";
 import { FACTURAS_BUCKET } from "@/lib/club57/empresas/cortes";
-import { notificarCorteCerrado, notificarMovimientoCorte } from "@/lib/club57/empresas/cortesNotificaciones";
+import { notificarCorteCerrado, notificarMovimientoCorte, notificarSuspension } from "@/lib/club57/empresas/cortesNotificaciones";
 import {
   validarConvenio,
   validarDatosEmpresa,
@@ -168,12 +168,20 @@ export async function cambiarEstadoEmpresa(
   const staff = await requireCatalogStaff();
   if (!staff) return { error: "No autorizado." };
   if (!UUID_RE.test(id)) return { error: "Empresa no encontrada." };
+  const { data: antes } = await staff.supabase.from("club57_empresas").select("estado").eq("id", id).maybeSingle();
+  const motivoLimpio = motivo.trim().slice(0, 500) || null;
   const { data, error } = await staff.supabase.rpc("club57_empresa_cambiar_estado", {
     p_empresa_id: id,
     p_estado: estado,
-    p_motivo: motivo.trim().slice(0, 500) || null,
+    p_motivo: motivoLimpio,
   });
   if (error) return { error: error.message || "No se pudo cambiar el estado." };
+  // Aviso al responsable y a los colaboradores activos (la activación de una
+  // solicitud no avisa: el acceso al portal se envía con «Dar acceso»).
+  const previo = antes?.estado as EstadoEmpresa | undefined;
+  if (estado === "suspendida") await notificarSuspension(id, "suspendida", null, { motivo: motivoLimpio });
+  else if (estado === "activa" && previo === "suspendida") await notificarSuspension(id, "reactivada", null);
+  else if (estado === "baja" && (previo === "activa" || previo === "suspendida")) await notificarSuspension(id, "baja", null, { motivo: motivoLimpio });
   revalidar(id);
   return { codigo: (data as string | null) ?? null };
 }

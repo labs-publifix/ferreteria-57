@@ -3,6 +3,7 @@
 // correos (renderEmailLayout).
 import { STORE_WHATSAPP_PHONE } from "@/lib/store-info";
 import { ultimoDiaPlazo } from "@/lib/club57/empresas/pedidos";
+import { NO_ENCUENTRAS_TEXTO, NO_ENCUENTRAS_TITULO, noEncuentrasWhatsAppUrl } from "@/lib/whatsapp/noEncuentras";
 import { COLOR_BLACK, COLOR_GRAY, COLOR_ORANGE, COLOR_SLATE, escapeHtml, renderEmailLayout } from "./orderEmails";
 
 export interface SolicitudEmpresaEmailData {
@@ -174,10 +175,22 @@ export function buildVinculoResueltoEmail(data: {
     data.motivo && data.estado !== "activo"
       ? `<p style="margin:0 0 16px; font-size:14px; color:${COLOR_BLACK};"><strong>Motivo:</strong> ${escapeHtml(data.motivo)}</p>`
       : "";
+  // Bienvenida: cómo comprar y el aviso de WhatsApp para lo que no esté en la tienda.
+  const bienvenida =
+    data.estado === "activo"
+      ? `<p style="margin:0 0 12px; font-size:14px; color:${COLOR_BLACK};">
+        Al pagar en la tienda en línea, elige <strong>«Cargo a mi empresa»</strong>. Tu empresa autoriza el pedido y te lo descuenta vía nómina.
+      </p>
+      <p style="margin:0 0 16px; font-size:14px; color:${COLOR_BLACK};">
+        <strong>${escapeHtml(NO_ENCUENTRAS_TITULO)}</strong> ${escapeHtml(NO_ENCUENTRAS_TEXTO)}
+        <a href="${escapeHtml(noEncuentrasWhatsAppUrl({ empresa: data.empresa }))}" style="color:${COLOR_BLACK}; font-weight:bold;">Escríbenos por WhatsApp</a>.
+      </p>`
+      : "";
   const body = `
     <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">Hola, ${escapeHtml(firstName)}</h1>
     <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">${textos.cuerpo}</p>
     ${linea}
+    ${bienvenida}
     ${motivo}
     ${boton(data.cuentaUrl, "Ver mi cuenta")}
   `;
@@ -497,34 +510,56 @@ export function buildCorteMovimientoEmail(data: {
   };
 }
 
-/** Empresa suspendida por pago vencido o reactivada (al responsable o a un colaborador). */
+/**
+ * Cambio de estado de la empresa (al responsable o a un colaborador):
+ * suspendida (por pago vencido o por Ferretería 57), reactivada o baja.
+ */
 export function buildEmpresaSuspensionEmail(data: {
-  tipo: "suspendida" | "reactivada";
+  tipo: "suspendida" | "reactivada" | "baja";
   destino: "responsable" | "empleado";
   nombre: string;
   empresa: string;
+  /** Periodo del corte vencido (suspensión por pago). */
   periodo: string | null;
+  /** Motivo capturado por Ferretería 57 (suspensión o baja desde el panel). */
+  motivo?: string | null;
   url: string;
 }): { subject: string; html: string } {
   const firstName = data.nombre.split(" ")[0] || data.nombre;
-  const texto =
-    data.tipo === "suspendida"
-      ? data.destino === "responsable"
-        ? `Venció el plazo de pago del corte ${escapeHtml(data.periodo ?? "")} y no tenemos registrado el pago. Pausamos las compras con cargo a ${escapeHtml(data.empresa)} hasta recibirlo. Si ya pagaste, escríbenos con el comprobante.`
-        : `Las compras con cargo a ${escapeHtml(data.empresa)} están pausadas por el momento. Puedes seguir comprando con tarjeta y conservas tus puntos Club 57.`
-      : `Las compras con cargo a ${escapeHtml(data.empresa)} ya están activas de nuevo.`;
+  const empresa = escapeHtml(data.empresa);
+  const porPago = data.tipo === "suspendida" && Boolean(data.periodo);
+  let texto: string;
+  if (data.tipo === "suspendida") {
+    texto =
+      data.destino === "responsable"
+        ? porPago
+          ? `Venció el plazo de pago del corte ${escapeHtml(data.periodo ?? "")} y no tenemos registrado el pago. Pausamos las compras con cargo a ${empresa} hasta recibirlo. Si ya pagaste, escríbenos con el comprobante.`
+          : `Pausamos por el momento las compras con cargo a ${empresa} en Club 57 Empresarial.`
+        : `Las compras con cargo a ${empresa} están pausadas por el momento. Puedes seguir comprando con tarjeta y conservas tus puntos Club 57.`;
+  } else if (data.tipo === "reactivada") {
+    texto = `Las compras con cargo a ${empresa} ya están activas de nuevo.`;
+  } else {
+    texto =
+      data.destino === "responsable"
+        ? `${empresa} terminó su participación en Club 57 Empresarial. Los pedidos en espera de autorización se cancelaron; lo ya autorizado se cobra en su corte.`
+        : `${empresa} dejó Club 57 Empresarial, así que ya no podrás elegir «Cargo a mi empresa». Tu cuenta de Club 57 sigue activa con tus puntos y beneficios.`;
+  }
+  const motivo =
+    data.motivo && data.destino === "responsable" && !porPago && data.tipo !== "reactivada"
+      ? `<p style="margin:0 0 16px; font-size:14px; color:${COLOR_BLACK};"><strong>Motivo:</strong> ${escapeHtml(data.motivo)}</p>`
+      : "";
   const body = `
     <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">Hola, ${escapeHtml(firstName)}</h1>
     <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">${texto}</p>
-    ${boton(data.url, data.destino === "responsable" ? "Ir al Portal Empresa" : "Ver mi cuenta")}
+    ${motivo}
+    ${boton(data.url, data.destino === "responsable" && data.tipo !== "baja" ? "Ir al Portal Empresa" : "Ver mi cuenta")}
     <p style="margin:0; font-size:13px; color:${COLOR_SLATE};">
       ¿Dudas? Escríbenos por <a href="https://wa.me/${STORE_WHATSAPP_PHONE}" style="color:${COLOR_BLACK}; font-weight:bold;">WhatsApp</a>.
     </p>`;
-  return {
-    subject:
-      data.tipo === "suspendida"
-        ? `Compras con cargo a ${data.empresa} en pausa · Club 57 Empresarial`
-        : `Compras con cargo a ${data.empresa} reactivadas · Club 57 Empresarial`,
-    html: renderEmailLayout(body),
-  };
+  const subject = {
+    suspendida: `Compras con cargo a ${data.empresa} en pausa · Club 57 Empresarial`,
+    reactivada: `Compras con cargo a ${data.empresa} reactivadas · Club 57 Empresarial`,
+    baja: `${data.empresa} dejó Club 57 Empresarial`,
+  }[data.tipo];
+  return { subject, html: renderEmailLayout(body) };
 }

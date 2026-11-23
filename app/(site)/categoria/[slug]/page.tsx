@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { NoEncuentrasWhatsApp } from "@/components/catalog/NoEncuentrasWhatsApp";
 import { notFound } from "next/navigation";
 import { getActiveCategories } from "@/lib/navigation/categories";
 import { getCategoryProducts } from "@/lib/catalog/queries";
@@ -91,6 +92,7 @@ export default async function CategoriaPage({ params }: CategoriaPageProps) {
       ) : (
         <CategoryProductBrowser products={products} />
       )}
+      <NoEncuentrasWhatsApp variante="discreto" categoria={category.label} />
     </main>
   );
 }
