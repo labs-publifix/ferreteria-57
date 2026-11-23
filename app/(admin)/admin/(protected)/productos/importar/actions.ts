@@ -14,6 +14,7 @@ import { findTakenSkus } from "@/lib/catalog/skuAvailability";
 import { findExampleColumnIndex, isExampleMarkerRow } from "@/lib/importTemplates/buildTemplate";
 import { PRODUCT_CREATE_COLUMNS, PRODUCT_UPDATE_COLUMNS } from "@/lib/importTemplates/columnDefs";
 import { normalizeText } from "@/lib/normalizeText";
+import { fillLevels, isDescending, parseMoney, type PriceLevels } from "@/lib/catalog/priceLevels";
 import { slugify } from "@/lib/slugify";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,11 +42,14 @@ export interface ImportPreviewRow {
   categoryLabel: string;
   codigo: string;
   nombre: string;
-  precioRaw: string;
+  /** Precio 1 a Precio 4 tal cual vienen; vacío = toma el Precio 1. */
+  precios: [string, string, string, string];
   marca: string;
   url: string;
   status: ImportRowStatus;
   reason?: string;
+  /** Aviso que no impide importar (p. ej. listas fuera de orden). */
+  warning?: string;
   existingProductId?: string;
 }
 
@@ -63,6 +67,30 @@ export interface ParseImportResult {
 // usan las keys para matchear encabezados.
 const COLUMNS = PRODUCT_CREATE_COLUMNS.map((column) => column.key);
 type ColumnKey = (typeof PRODUCT_CREATE_COLUMNS)[number]["key"];
+const REQUIRED_COLUMNS: ColumnKey[] = ["categoria", "codigo", "nombre", "precio 1"];
+const PRICE_KEYS = ["precio 1", "precio 2", "precio 3", "precio 4"] as const;
+
+/** Encabezado comparable: sin acentos, minúsculas y un solo espacio. */
+function headerKey(value: string): string {
+  return normalizeText(value).replace(/\s+/g, " ");
+}
+
+/**
+ * Valida las 4 listas de una fila: Precio 1 obligatorio, las demás opcionales
+ * (vacías = Precio 1) y todas mayores a 0. Devuelve las listas o el motivo.
+ */
+function validateCreatePrices(raw: readonly string[]): { levels: PriceLevels } | { error: string } {
+  const values = [0, 1, 2, 3].map((i) => parseMoney(raw[i] ?? ""));
+  if (!(raw[0] ?? "").trim()) return { error: "Falta el Precio 1." };
+  for (let i = 0; i < 4; i++) {
+    const text = (raw[i] ?? "").trim();
+    if (!text) continue;
+    const value = values[i];
+    if (value === null) return { error: `El Precio ${i + 1} no es un número.` };
+    if (!(value > 0)) return { error: `El Precio ${i + 1} debe ser mayor a 0.` };
+  }
+  return { levels: fillLevels(values)! };
+}
 
 // Una celda de ExcelJS puede traer un string/número plano, pero también un
 // objeto de fórmula ({ result }) o de hipervínculo ({ text, hyperlink }) —
@@ -127,26 +155,38 @@ export async function parseAndValidateImportFile(formData: FormData): Promise<Pa
   const columnIndex = new Map<ColumnKey, number>();
   const headerRow = sheet.getRow(1);
   headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
-    const normalized = normalizeText(cellToString(cell.value));
+    const normalized = headerKey(cellToString(cell.value));
     if ((COLUMNS as readonly string[]).includes(normalized)) {
       columnIndex.set(normalized as ColumnKey, colNumber);
+    } else if (normalized === "precio" && !columnIndex.has("precio 1")) {
+      // Plantilla anterior (una sola columna «Precio»): vale como Precio 1
+      // y las demás listas toman ese mismo precio.
+      columnIndex.set("precio 1", colNumber);
     }
   });
   const exampleColumnIndex = findExampleColumnIndex(headerRow, normalizeText, cellToString);
 
-  const missingColumns = COLUMNS.filter((key) => !columnIndex.has(key));
+  const missingColumns = REQUIRED_COLUMNS.filter((key) => !columnIndex.has(key));
   if (missingColumns.length > 0) {
+    const headers = PRODUCT_CREATE_COLUMNS.filter((column) => missingColumns.includes(column.key)).map(
+      (column) => column.header
+    );
     return {
-      error: `El archivo no tiene las columnas esperadas: ${missingColumns.join(", ")}. Se requieren Categoria, Codigo, Nombre, Precio y URL.`,
+      error: `El archivo no tiene las columnas esperadas: ${headers.join(", ")}. Se requieren Categoria, Codigo, Nombre y Precio 1 (Precio 2, 3, 4 y URL son opcionales).`,
     };
   }
+
+  const readCell = (row: ExcelJS.Row, key: ColumnKey) => {
+    const index = columnIndex.get(key);
+    return index ? cellToString(row.getCell(index).value).trim() : "";
+  };
 
   interface RawRow {
     rowNumber: number;
     categoria: string;
     codigo: string;
     nombre: string;
-    precioRaw: string;
+    precios: [string, string, string, string];
     url: string;
   }
 
@@ -157,18 +197,18 @@ export async function parseAndValidateImportFile(formData: FormData): Promise<Pa
     // el usuario: se ignora igual que una fila vacía (#8, punto 5).
     if (isExampleMarkerRow(row, exampleColumnIndex)) continue;
 
-    const categoria = cellToString(row.getCell(columnIndex.get("categoria")!).value).trim();
-    const codigo = cellToString(row.getCell(columnIndex.get("codigo")!).value).trim();
-    const nombre = cellToString(row.getCell(columnIndex.get("nombre")!).value).trim();
-    const precioRaw = cellToString(row.getCell(columnIndex.get("precio")!).value).trim();
-    const url = cellToString(row.getCell(columnIndex.get("url")!).value).trim();
+    const categoria = readCell(row, "categoria");
+    const codigo = readCell(row, "codigo");
+    const nombre = readCell(row, "nombre");
+    const precios = PRICE_KEYS.map((key) => readCell(row, key)) as RawRow["precios"];
+    const url = readCell(row, "url");
 
     // Filas completamente vacías (rastro de filas en blanco al final del
     // archivo) se ignoran del todo — no son un error del usuario, no
     // deberían ni aparecer en la vista previa.
-    if (!categoria && !codigo && !nombre && !precioRaw && !url) continue;
+    if (!categoria && !codigo && !nombre && precios.every((p) => !p) && !url) continue;
 
-    rawRows.push({ rowNumber, categoria, codigo, nombre, precioRaw, url });
+    rawRows.push({ rowNumber, categoria, codigo, nombre, precios, url });
   }
 
   if (rawRows.length === 0) {
@@ -187,7 +227,7 @@ export async function parseAndValidateImportFile(formData: FormData): Promise<Pa
   const seenInFile = new Set<string>();
   const rows: ImportPreviewRow[] = rawRows.map((raw) => {
     const category = resolveCategory(categories, raw.categoria);
-    const precioNumber = raw.precioRaw ? Number.parseFloat(raw.precioRaw.replace(",", ".")) : NaN;
+    const prices = validateCreatePrices(raw.precios);
     const marca = raw.nombre ? detectBrandFromName(raw.nombre) : "";
 
     const base: ImportPreviewRow = {
@@ -197,17 +237,19 @@ export async function parseAndValidateImportFile(formData: FormData): Promise<Pa
       categoryLabel: category?.name ?? raw.categoria,
       codigo: raw.codigo,
       nombre: raw.nombre,
-      precioRaw: raw.precioRaw,
+      precios: raw.precios,
       marca,
       url: raw.url,
       status: "ready",
+      warning:
+        "levels" in prices && !isDescending(prices.levels)
+          ? "Precios fuera de orden (se esperaba Precio 1 ≥ 2 ≥ 3 ≥ 4). Se puede importar así."
+          : undefined,
     };
 
     if (!raw.codigo) return { ...base, status: "error", reason: "Falta el código." };
     if (!raw.nombre) return { ...base, status: "error", reason: "Falta el nombre." };
-    if (!raw.precioRaw || Number.isNaN(precioNumber) || precioNumber < 0) {
-      return { ...base, status: "error", reason: "El precio no es válido." };
-    }
+    if ("error" in prices) return { ...base, status: "error", reason: prices.error };
     if (!category) {
       return { ...base, status: "error", reason: `Categoría no encontrada: "${raw.categoria}".` };
     }
@@ -237,7 +279,7 @@ export interface ImportCommitRow {
   categoriaRaw: string;
   codigo: string;
   nombre: string;
-  precioRaw: string;
+  precios: [string, string, string, string];
   marca: string;
   url: string;
   status: ImportRowStatus;
@@ -285,7 +327,7 @@ export async function commitImportRows(rows: ImportCommitRow[]): Promise<CommitI
 
   for (const row of rows) {
     const category = resolveCategory(categories, row.categoriaRaw);
-    const precioNumber = Number.parseFloat(row.precioRaw.replace(",", "."));
+    const prices = validateCreatePrices(Array.isArray(row.precios) ? row.precios.map(String) : []);
     const marca = row.marca.trim() || detectBrandFromName(row.nombre);
 
     function fail(reason: string) {
@@ -293,8 +335,12 @@ export async function commitImportRows(rows: ImportCommitRow[]): Promise<CommitI
       summary.failedDetails.push({ rowNumber: row.rowNumber, reason });
     }
 
-    if (!row.codigo || !row.nombre || !row.precioRaw || Number.isNaN(precioNumber) || precioNumber < 0) {
-      fail("Faltan datos obligatorios o el precio no es válido.");
+    if (!row.codigo || !row.nombre) {
+      fail("Faltan datos obligatorios (código o nombre).");
+      continue;
+    }
+    if ("error" in prices) {
+      fail(prices.error);
       continue;
     }
     if (!category) {
@@ -322,7 +368,7 @@ export async function commitImportRows(rows: ImportCommitRow[]): Promise<CommitI
         name: row.nombre,
         brand: marca,
         specSheetUrl: row.url || null,
-        price: precioNumber,
+        levels: prices.levels,
         sku: row.codigo,
       });
       if (result.error) {
@@ -352,7 +398,7 @@ export async function commitImportRows(rows: ImportCommitRow[]): Promise<CommitI
       technicalSpecs: [],
       images: [],
       active: false,
-      variants: [{ sku: row.codigo, label: "Único", price: precioNumber, compareAtPrice: null, stock: 0 }],
+      variants: [{ sku: row.codigo, label: "Único", levels: prices.levels, compareAtPrice: null, stock: 0 }],
     };
 
     const result = await createProductRecord(supabase, input);

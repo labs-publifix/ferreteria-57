@@ -9,6 +9,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : undefined;
 
 const nextConfig = {
+  // Los importadores de Excel del admin suben el archivo por Server Action;
+  // el límite por defecto (1 MB) se queda corto para el archivo de listas
+  // de precio de Truper (~0.5 MB con 280 productos, crece con el catálogo).
+  experimental: {
+    serverActions: { bodySizeLimit: "10mb" },
+  },
   // Limpieza SEO por la migración del sitio anterior (misma arquitectura
   // de dominio ferreteria57.com, URLs distintas): solo rutas de SECCIÓN
   // del sitio viejo con equivalente claro acá (siempre "/", no existe hoy

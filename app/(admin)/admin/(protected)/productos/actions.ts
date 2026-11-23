@@ -10,6 +10,7 @@ import {
   type ProductWriteInput,
 } from "@/lib/catalog/productWrite";
 import { findTakenSkus } from "@/lib/catalog/skuAvailability";
+import { fillLevels, parseMoney, type PriceLevels } from "@/lib/catalog/priceLevels";
 import { createClient } from "@/lib/supabase/server";
 import type { TechnicalSpec } from "@/types/catalog";
 
@@ -21,7 +22,8 @@ interface VariantInput {
   id?: string;
   sku: string;
   label: string;
-  price: string;
+  /** Precio 1 a Precio 4 tal cual se escribieron; vacío = toma el Precio 1. */
+  prices: string[];
   compareAtPrice: string;
   stock: string;
 }
@@ -71,7 +73,7 @@ function parseProductForm(formData: FormData) {
     return { error: "Completa categoría, nombre, slug y marca." } as const;
   }
   if (variants.length === 0) {
-    return { error: "Agrega al menos una presentación con su código, precio y stock." } as const;
+    return { error: "Agrega al menos una presentación con su código, Precio 1 y stock." } as const;
   }
   if (active && images.length === 0) {
     return { error: "Agrega al menos una imagen para poder activar el producto." } as const;
@@ -81,7 +83,7 @@ function parseProductForm(formData: FormData) {
     id?: string;
     sku: string;
     label: string;
-    price: number;
+    levels: PriceLevels;
     compareAtPrice: number | null;
     stock: number;
   }[] = [];
@@ -89,16 +91,25 @@ function parseProductForm(formData: FormData) {
   for (const variant of variants) {
     const sku = variant.sku.trim();
     const label = variant.label.trim() || "Único";
-    const price = Number.parseFloat(variant.price);
+    const rawPrices = Array.isArray(variant.prices) ? variant.prices.slice(0, 4) : [];
+    const prices = [0, 1, 2, 3].map((i) => parseMoney(rawPrices[i] ?? ""));
     const compareAtPrice = variant.compareAtPrice.trim()
       ? Number.parseFloat(variant.compareAtPrice)
       : null;
     const stock = Number.parseInt(variant.stock, 10);
 
     if (!sku) return { error: "Cada presentación necesita un código (SKU)." } as const;
-    if (Number.isNaN(price) || price < 0) {
-      return { error: `Precio inválido para "${sku}".` } as const;
+    if (prices[0] === null || !(prices[0] > 0)) {
+      return { error: `Escribe el Precio 1 de "${sku}" (mayor a 0).` } as const;
     }
+    const badList = prices.findIndex((value, i) => {
+      const raw = String(rawPrices[i] ?? "").trim();
+      return raw !== "" && (value === null || !(value > 0));
+    });
+    if (badList !== -1) {
+      return { error: `El Precio ${badList + 1} de "${sku}" no es válido (debe ser mayor a 0).` } as const;
+    }
+    const levels = fillLevels(prices)!;
     if (compareAtPrice !== null && (Number.isNaN(compareAtPrice) || compareAtPrice < 0)) {
       return { error: `Precio anterior inválido para "${sku}".` } as const;
     }
@@ -106,7 +117,7 @@ function parseProductForm(formData: FormData) {
       return { error: `Stock inválido para "${sku}".` } as const;
     }
 
-    parsedVariants.push({ id: variant.id, sku, label, price, compareAtPrice, stock });
+    parsedVariants.push({ id: variant.id, sku, label, levels, compareAtPrice, stock });
   }
 
   return {
@@ -157,10 +168,10 @@ export async function createProduct(formData: FormData): Promise<ProductActionRe
     technicalSpecs: parsed.technicalSpecs,
     images: parsed.images,
     active: parsed.active,
-    variants: parsed.variants.map(({ sku, label, price, compareAtPrice, stock }) => ({
+    variants: parsed.variants.map(({ sku, label, levels, compareAtPrice, stock }) => ({
       sku,
       label,
-      price,
+      levels,
       compareAtPrice,
       stock,
     })),
@@ -209,10 +220,10 @@ export async function updateProduct(
     technicalSpecs: parsed.technicalSpecs,
     images: parsed.images,
     active: parsed.active,
-    variants: parsed.variants.map(({ sku, label, price, compareAtPrice, stock }) => ({
+    variants: parsed.variants.map(({ sku, label, levels, compareAtPrice, stock }) => ({
       sku,
       label,
-      price,
+      levels,
       compareAtPrice,
       stock,
     })),

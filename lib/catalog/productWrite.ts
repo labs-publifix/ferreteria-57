@@ -1,4 +1,12 @@
 import type { createClient } from "@/lib/supabase/server";
+import {
+  DEFAULT_STORE_LIST,
+  levelsToRow,
+  priceForList,
+  toPriceList,
+  type PriceLevels,
+  type PriceList,
+} from "@/lib/catalog/priceLevels";
 import type { TechnicalSpec } from "@/types/catalog";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -6,9 +14,37 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 export interface VariantWriteInput {
   sku: string;
   label: string;
-  price: number;
+  /** Precio 1 a Precio 4. El precio de tienda sale de aquí. */
+  levels: PriceLevels;
+  /** «Precio antes» (oferta): se compara contra el precio de tienda. */
   compareAtPrice: number | null;
   stock: number;
+}
+
+/** Qué lista es hoy el precio de tienda (Configuración → Precios). */
+export async function getStoreList(supabase: SupabaseServerClient): Promise<PriceList> {
+  const { data } = await supabase.from("price_settings").select("lista_tienda").maybeSingle();
+  return data ? toPriceList(data.lista_tienda) : DEFAULT_STORE_LIST;
+}
+
+/**
+ * Guarda las 4 listas de cada presentación. El trigger de la base ajusta
+ * product_variants.price a la lista de tienda, así que ese precio nunca
+ * queda distinto de su lista aunque la configuración cambie a la mitad.
+ */
+export async function saveVariantLevels(
+  supabase: SupabaseServerClient,
+  rows: { variantId: string; levels: PriceLevels }[]
+): Promise<{ error?: string }> {
+  if (rows.length === 0) return {};
+  const { error } = await supabase
+    .from("product_price_levels")
+    .upsert(
+      rows.map((row) => ({ variant_id: row.variantId, ...levelsToRow(row.levels) })),
+      { onConflict: "variant_id" }
+    );
+  if (error) return { error: describeDbError("No se pudieron guardar los precios", error) };
+  return {};
 }
 
 export interface ProductWriteInput {
@@ -73,17 +109,35 @@ export async function createProductRecord(
     };
   }
 
-  const { error: variantsError } = await supabase.from("product_variants").insert(
-    input.variants.map((variant, index) => ({
-      product_id: product.id,
-      sku: variant.sku,
-      label: variant.label,
-      price: variant.price,
-      compare_at_price: variant.compareAtPrice,
-      stock: variant.stock,
-      position: index,
-    }))
-  );
+  const storeList = await getStoreList(supabase);
+  const { data: insertedVariants, error: variantsError } = await supabase
+    .from("product_variants")
+    .insert(
+      input.variants.map((variant, index) => ({
+        product_id: product.id,
+        sku: variant.sku,
+        label: variant.label,
+        price: priceForList(variant.levels, storeList),
+        compare_at_price: variant.compareAtPrice,
+        stock: variant.stock,
+        position: index,
+      }))
+    )
+    .select("id, sku");
+
+  if (!variantsError) {
+    const idBySku = new Map((insertedVariants ?? []).map((v) => [v.sku, v.id]));
+    const levels = await saveVariantLevels(
+      supabase,
+      input.variants
+        .filter((variant) => idBySku.has(variant.sku))
+        .map((variant) => ({ variantId: idBySku.get(variant.sku)!, levels: variant.levels }))
+    );
+    if (levels.error) {
+      await supabase.from("products").delete().eq("id", product.id);
+      return { error: levels.error };
+    }
+  }
 
   if (variantsError) {
     // El producto ya se creó pero sus variantes no — se borra para no
@@ -165,6 +219,7 @@ export async function updateProductRecord(
     return { error: describeDbError("No se pudieron leer las presentaciones actuales", existingError) };
   }
 
+  const storeList = await getStoreList(supabase);
   const existingIdBySku = new Map((existingVariants ?? []).map((v) => [v.sku, v.id]));
   const incomingSkus = new Set(input.variants.map((variant) => variant.sku));
 
@@ -185,21 +240,26 @@ export async function updateProductRecord(
   const toInsert = input.variants
     .map((variant, index) => ({ variant, index }))
     .filter(({ variant }) => !existingIdBySku.has(variant.sku));
+  const variantIdBySku = new Map(existingIdBySku);
   if (toInsert.length > 0) {
-    const { error } = await supabase.from("product_variants").insert(
-      toInsert.map(({ variant, index }) => ({
-        product_id: productId,
-        sku: variant.sku,
-        label: variant.label,
-        price: variant.price,
-        compare_at_price: variant.compareAtPrice,
-        stock: variant.stock,
-        position: index,
-      }))
-    );
+    const { data: inserted, error } = await supabase
+      .from("product_variants")
+      .insert(
+        toInsert.map(({ variant, index }) => ({
+          product_id: productId,
+          sku: variant.sku,
+          label: variant.label,
+          price: priceForList(variant.levels, storeList),
+          compare_at_price: variant.compareAtPrice,
+          stock: variant.stock,
+          position: index,
+        }))
+      )
+      .select("id, sku");
     if (error) {
       return { error: describeDbError("No se pudieron guardar las presentaciones", error) };
     }
+    for (const row of inserted ?? []) variantIdBySku.set(row.sku, row.id);
   }
 
   // Las que sí ya existían (mismo SKU) se actualizan sobre su fila
@@ -212,7 +272,7 @@ export async function updateProductRecord(
       .from("product_variants")
       .update({
         label: variant.label,
-        price: variant.price,
+        price: priceForList(variant.levels, storeList),
         compare_at_price: variant.compareAtPrice,
         stock: variant.stock,
         position: index,
@@ -223,7 +283,14 @@ export async function updateProductRecord(
     }
   }
 
-  return {};
+  // Al final, las 4 listas de cada presentación (las nuevas y las que ya
+  // existían). El precio de tienda queda alineado por el trigger.
+  return saveVariantLevels(
+    supabase,
+    input.variants
+      .filter((variant) => variantIdBySku.has(variant.sku))
+      .map((variant) => ({ variantId: variantIdBySku.get(variant.sku)!, levels: variant.levels }))
+  );
 }
 
 export interface ImportUpdateInput {
@@ -231,7 +298,7 @@ export interface ImportUpdateInput {
   name: string;
   brand: string;
   specSheetUrl: string | null;
-  price: number;
+  levels: PriceLevels;
   sku: string;
 }
 
@@ -241,7 +308,8 @@ export interface ImportUpdateInput {
 // ejemplo) y esta fila solo coincide con una de ellas, reemplazar TODAS
 // las variantes borraría las demás presentaciones que el Excel ni siquiera
 // menciona. Por eso aquí solo se actualiza el precio de la variante cuyo
-// SKU coincidió, dejando stock y el resto de presentaciones intactos.
+// SKU coincidió (sus 4 listas), dejando stock y el resto de presentaciones
+// intactos.
 export async function updateProductFromImportRow(
   supabase: SupabaseServerClient,
   productId: string,
@@ -261,14 +329,16 @@ export async function updateProductFromImportRow(
     return { error: describeDbError("No se pudo actualizar el producto", productError) };
   }
 
-  const { error: variantError } = await supabase
+  const { data: variant, error: variantError } = await supabase
     .from("product_variants")
-    .update({ price: input.price })
+    .select("id")
     .eq("product_id", productId)
-    .eq("sku", input.sku);
+    .eq("sku", input.sku)
+    .maybeSingle();
   if (variantError) {
     return { error: describeDbError("No se pudo actualizar el precio", variantError) };
   }
+  if (!variant) return { error: "No se encontró la presentación con ese código." };
 
-  return {};
+  return saveVariantLevels(supabase, [{ variantId: variant.id, levels: input.levels }]);
 }

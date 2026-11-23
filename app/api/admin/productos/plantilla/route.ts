@@ -52,10 +52,22 @@ export async function GET(request: NextRequest) {
     dropdowns: categoryNames.length > 0 ? { categoria: categoryNames } : undefined,
     exampleRows:
       categoryNames.length > 0
-        ? [{ categoria: categoryNames[0], codigo: "MAR-100", nombre: "Martillo de Carpintero 16oz", precio: "150.00", url: "" }]
+        ? [
+            {
+              categoria: categoryNames[0],
+              codigo: "MAR-100",
+              nombre: "Martillo de Carpintero 16oz",
+              "precio 1": "150.00",
+              "precio 2": "138.00",
+              "precio 3": "126.00",
+              "precio 4": "104.00",
+              url: "",
+            },
+          ]
         : undefined,
     extraNotes: [
-      "Este archivo crea productos NUEVOS. Si el Código ya existe, la fila se ofrece para actualizar su precio en vez de duplicarlo.",
+      "Este archivo crea productos NUEVOS. Si el Código ya existe, la fila se ofrece para actualizar sus precios en vez de duplicarlo.",
+      "Precio 1 es obligatorio; Precio 2, 3 y 4 son opcionales: si se dejan vacíos se usará el Precio 1. La tienda muestra la lista elegida en Configuración → Precios.",
       "Para actualizar solo la Clave de productos ya existentes, usa el otro modo del importador (\"Actualizar Clave de productos existentes\") — trae su propia plantilla con solo las columnas Codigo y Clave.",
     ],
   });

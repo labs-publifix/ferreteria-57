@@ -1,11 +1,20 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Copy, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui";
 import { ProductImageUploader } from "@/components/admin/ProductImageUploader";
 import { detectBrandFromName, KNOWN_BRANDS } from "@/lib/catalog/detectBrandFromName";
 import { slugify } from "@/lib/slugify";
+import { formatPrice } from "@/lib/formatPrice";
+import {
+  fillLevels,
+  isDescending,
+  parseMoney,
+  PRICE_LISTS,
+  priceForList,
+  type PriceList,
+} from "@/lib/catalog/priceLevels";
 import {
   createProduct,
   updateProduct,
@@ -13,16 +22,17 @@ import {
 } from "@/app/(admin)/admin/(protected)/productos/actions";
 import type { TechnicalSpec } from "@/types/catalog";
 
-interface VariantValues {
+export interface VariantValues {
   id?: string;
   sku: string;
   label: string;
-  price: string;
+  /** Precio 1 a Precio 4; vacío = se usará el Precio 1. */
+  prices: [string, string, string, string];
   compareAtPrice: string;
   stock: string;
 }
 
-interface ProductFormValues {
+export interface ProductFormValues {
   categoryId: string;
   name: string;
   slug: string;
@@ -36,10 +46,10 @@ interface ProductFormValues {
   images: string[];
 }
 
-const EMPTY_VARIANT: VariantValues = {
+export const EMPTY_VARIANT: VariantValues = {
   sku: "",
   label: "Único",
-  price: "",
+  prices: ["", "", "", ""],
   compareAtPrice: "",
   stock: "",
 };
@@ -70,12 +80,15 @@ export function ProductForm({
   categories,
   defaultCategoryId,
   initialValues,
+  storeList,
 }: {
   mode: "create" | "edit";
   productId?: string;
   categories: { id: string; name: string }[];
   defaultCategoryId?: string;
   initialValues?: ProductFormValues;
+  /** Lista que hoy es el precio de tienda (Configuración → Precios). */
+  storeList: PriceList;
 }) {
   const nameId = useId();
   const slugId = useId();
@@ -124,6 +137,29 @@ export function ProductForm({
     setValues((current) => ({
       ...current,
       variants: current.variants.map((variant, i) => (i === index ? { ...variant, ...patch } : variant)),
+    }));
+  }
+
+  function updateVariantPrice(index: number, list: PriceList, value: string) {
+    setValues((current) => ({
+      ...current,
+      variants: current.variants.map((variant, i) => {
+        if (i !== index) return variant;
+        const prices = [...variant.prices] as VariantValues["prices"];
+        prices[list - 1] = value;
+        return { ...variant, prices };
+      }),
+    }));
+  }
+
+  function copyFirstPrice(index: number) {
+    setValues((current) => ({
+      ...current,
+      variants: current.variants.map((variant, i) =>
+        i === index
+          ? { ...variant, prices: [variant.prices[0], variant.prices[0], variant.prices[0], variant.prices[0]] }
+          : variant
+      ),
     }));
   }
 
@@ -192,12 +228,13 @@ export function ProductForm({
     );
     formData.set("images", JSON.stringify(values.images));
 
-    const result: ProductActionResult =
+    // En éxito la acción redirige y no devuelve nada (undefined).
+    const result: ProductActionResult | undefined =
       mode === "create" ? await createProduct(formData) : await updateProduct(productId!, formData);
 
     // En éxito, la Server Action redirige a /admin/productos — solo se
     // llega aquí de vuelta si hubo un error.
-    if (result.error) {
+    if (result?.error) {
       setError(result.error);
       setIsSubmitting(false);
     }
@@ -374,7 +411,7 @@ export function ProductForm({
 
             <div
               className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${
-                values.variants.length > 1 ? "lg:grid-cols-5" : "lg:grid-cols-4"
+                values.variants.length > 1 ? "lg:grid-cols-3" : "lg:grid-cols-2"
               }`}
             >
               <div>
@@ -407,35 +444,6 @@ export function ProductForm({
                 </div>
               )}
               <div>
-                <label htmlFor={`${variantsBaseId}-${index}-price`} className={labelClass}>
-                  Precio (MXN)
-                </label>
-                <input
-                  id={`${variantsBaseId}-${index}-price`}
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={variant.price}
-                  onChange={(event) => updateVariant(index, { price: event.target.value })}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor={`${variantsBaseId}-${index}-compareAtPrice`} className={labelClass}>
-                  Precio anterior
-                </label>
-                <input
-                  id={`${variantsBaseId}-${index}-compareAtPrice`}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={variant.compareAtPrice}
-                  onChange={(event) => updateVariant(index, { compareAtPrice: event.target.value })}
-                  className={inputClass}
-                />
-              </div>
-              <div>
                 <label htmlFor={`${variantsBaseId}-${index}-stock`} className={labelClass}>
                   Stock
                 </label>
@@ -451,6 +459,15 @@ export function ProductForm({
                 />
               </div>
             </div>
+
+            <VariantPrices
+              baseId={`${variantsBaseId}-${index}`}
+              variant={variant}
+              storeList={storeList}
+              onPriceChange={(list, value) => updateVariantPrice(index, list, value)}
+              onCopyFirst={() => copyFirstPrice(index)}
+              onCompareAtChange={(value) => updateVariant(index, { compareAtPrice: value })}
+            />
           </div>
         ))}
 
@@ -554,5 +571,124 @@ export function ProductForm({
         {isSubmitting ? "Guardando…" : mode === "create" ? "Crear producto" : "Guardar cambios"}
       </Button>
     </form>
+  );
+}
+
+
+// Las 4 listas de una presentación. Solo el Precio 1 es obligatorio: las
+// vacías toman el Precio 1 al guardar. La lista de tienda se marca para que
+// quede claro cuál ve el público, y el «precio antes» (oferta) se compara
+// solo contra ella.
+function VariantPrices({
+  baseId,
+  variant,
+  storeList,
+  onPriceChange,
+  onCopyFirst,
+  onCompareAtChange,
+}: {
+  baseId: string;
+  variant: VariantValues;
+  storeList: PriceList;
+  onPriceChange: (list: PriceList, value: string) => void;
+  onCopyFirst: () => void;
+  onCompareAtChange: (value: string) => void;
+}) {
+  const parsed = variant.prices.map((value) => parseMoney(value));
+  const levels = fillLevels(parsed);
+  const storePrice = levels ? priceForList(levels, storeList) : null;
+  const outOfOrder = levels !== null && !isDescending(levels);
+  const compareAt = parseMoney(variant.compareAtPrice);
+  const compareAtHidden = compareAt !== null && storePrice !== null && compareAt <= storePrice;
+  const legendId = `${baseId}-prices-legend`;
+
+  return (
+    <fieldset aria-labelledby={legendId} className="flex flex-col gap-3 rounded-md bg-brand-slate/[0.04] p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p id={legendId} className="font-sans text-sm font-semibold text-brand-black">
+          Precios (MXN)
+        </p>
+        <button
+          type="button"
+          onClick={onCopyFirst}
+          disabled={!variant.prices[0].trim()}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-brand-slate/30 bg-white px-3 font-sans text-xs font-medium text-brand-black hover:border-brand-slate disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
+        >
+          <Copy className="size-3.5" aria-hidden="true" />
+          Copiar a los demás
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {PRICE_LISTS.map((list) => {
+          const id = `${baseId}-precio-${list}`;
+          const hintId = `${id}-hint`;
+          const value = variant.prices[list - 1];
+          const isStore = list === storeList;
+          const usesFirst = list !== 1 && !value.trim();
+          return (
+            <div key={list} className="min-w-0">
+              <label htmlFor={id} className="mb-1.5 flex h-5 items-center gap-1.5 whitespace-nowrap font-sans text-sm font-medium text-brand-black">
+                Precio {list}
+                {list === 1 && <span className="text-red-700" aria-hidden="true">*</span>}
+                {isStore && (
+                  <span title="Esta lista es la que ve el público en la tienda" className="rounded-full bg-brand-orange/15 px-2 text-[11px] font-semibold uppercase leading-5 tracking-wide text-brand-black">
+                    Tienda
+                  </span>
+                )}
+              </label>
+              <input
+                id={id}
+                type="number"
+                inputMode="decimal"
+                required={list === 1}
+                min="0"
+                step="0.01"
+                value={value}
+                placeholder={list === 1 ? "" : variant.prices[0]}
+                aria-describedby={usesFirst ? hintId : undefined}
+                onChange={(event) => onPriceChange(list, event.target.value)}
+                className={inputClass}
+              />
+              {usesFirst && (
+                <p id={hintId} className="mt-1 font-sans text-xs text-brand-slate/70">
+                  Se usará el Precio 1
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {outOfOrder && (
+        <p className="font-sans text-xs text-amber-800">
+          Revisa el orden: normalmente Precio 1 ≥ Precio 2 ≥ Precio 3 ≥ Precio 4. Se puede guardar así.
+        </p>
+      )}
+
+      <div className="sm:max-w-xs">
+        <label htmlFor={`${baseId}-compareAtPrice`} className={labelClass}>
+          Precio antes (oferta)
+        </label>
+        <input
+          id={`${baseId}-compareAtPrice`}
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="0.01"
+          value={variant.compareAtPrice}
+          aria-describedby={`${baseId}-compareAtPrice-hint`}
+          onChange={(event) => onCompareAtChange(event.target.value)}
+          className={inputClass}
+        />
+        <p id={`${baseId}-compareAtPrice-hint`} className={`mt-1 font-sans text-xs ${compareAtHidden ? "text-amber-800" : "text-brand-slate/70"}`}>
+          {compareAtHidden
+            ? `No se verá como oferta: debe ser mayor al precio de tienda (${formatPrice(storePrice!)}).`
+            : `Opcional. Se muestra tachado junto al precio de tienda (Precio ${storeList}${
+                storePrice !== null ? `: ${formatPrice(storePrice)}` : ""
+              }).`}
+        </p>
+      </div>
+    </fieldset>
   );
 }

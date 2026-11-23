@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { createClient } from "@/lib/supabase/server";
+import { getStoreList } from "@/lib/catalog/productWrite";
 
 export const metadata: Metadata = { title: "Nuevo producto — Panel de administración" };
 
@@ -12,10 +13,10 @@ export default async function AdminNuevoProductoPage({
   searchParams: { categoria?: string };
 }) {
   const supabase = await createClient();
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name")
-    .order("position");
+  const [{ data: categories }, storeList] = await Promise.all([
+    supabase.from("categories").select("id, name").order("position"),
+    getStoreList(supabase),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -26,6 +27,7 @@ export default async function AdminNuevoProductoPage({
         mode="create"
         categories={categories ?? []}
         defaultCategoryId={searchParams.categoria}
+        storeList={storeList}
       />
     </div>
   );
