@@ -16,12 +16,13 @@ import {
   type ImportUpdateCommitSummary,
   type ImportUpdatePreviewRow,
 } from "@/app/(admin)/admin/(protected)/productos/importar/actions";
+import { PriceUpdateWizard } from "@/components/admin/PriceUpdateWizard";
 
 interface EditableRow extends ImportPreviewRow {
   updateExisting: boolean;
 }
 
-type Mode = "create" | "update";
+type Mode = "create" | "prices" | "update";
 type Step = "upload" | "preview" | "summary";
 
 const inputClass =
@@ -81,6 +82,7 @@ function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => 
       {(
         [
           { value: "create" as const, label: "Crear productos nuevos" },
+          { value: "prices" as const, label: "Actualizar precios" },
           { value: "update" as const, label: "Actualizar Clave de productos existentes" },
         ]
       ).map((option) => {
@@ -216,7 +218,7 @@ export function ImportWizard() {
       categoriaRaw: row.categoriaRaw,
       codigo: row.codigo,
       nombre: row.nombre,
-      precioRaw: row.precioRaw,
+      precios: row.precios,
       marca: row.marca,
       url: row.url,
       status: row.status,
@@ -247,6 +249,12 @@ export function ImportWizard() {
     setStep("upload");
   }
 
+  // «Actualizar precios» tiene su propio flujo (vista previa precio actual
+  // contra nuevo, avisos y reporte); comparte solo el selector de modo.
+  if (mode === "prices") {
+    return <PriceUpdateWizard modeToggle={<ModeToggle mode={mode} onChange={setMode} />} />;
+  }
+
   if (step === "upload") {
     return (
       <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:p-6">
@@ -275,8 +283,9 @@ export function ImportWizard() {
         ) : (
           <p className="font-sans text-sm text-brand-slate">
             El archivo debe traer las columnas <strong>Categoria</strong>, <strong>Codigo</strong>,{" "}
-            <strong>Nombre</strong>, <strong>Precio</strong> y <strong>URL</strong> (el orden no importa,
-            espacios de más en el encabezado no afectan).
+            <strong>Nombre</strong> y <strong>Precio 1</strong>; <strong>Precio 2</strong>,{" "}
+            <strong>Precio 3</strong>, <strong>Precio 4</strong> y <strong>URL</strong> son opcionales (un precio
+            vacío toma el Precio 1). El orden no importa y los espacios de más en el encabezado no afectan.
           </p>
         )}
 
@@ -421,7 +430,7 @@ export function ImportWizard() {
                 <th className="px-3 py-2.5">Categoría</th>
                 <th className="px-3 py-2.5">Código</th>
                 <th className="px-3 py-2.5">Nombre</th>
-                <th className="px-3 py-2.5">Precio</th>
+                <th className="px-3 py-2.5">Precios 1 · 2 · 3 · 4</th>
                 <th className="px-3 py-2.5">Marca</th>
                 <th className="px-3 py-2.5">Ficha</th>
                 <th className="px-3 py-2.5">Estado</th>
@@ -436,7 +445,9 @@ export function ImportWizard() {
                   </td>
                   <td className="px-3 py-2 text-brand-slate">{row.codigo || "—"}</td>
                   <td className="max-w-[240px] px-3 py-2 text-brand-black">{row.nombre || "—"}</td>
-                  <td className="px-3 py-2 text-brand-slate">{row.precioRaw || "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 tabular-nums text-brand-slate">
+                    {row.precios.map((value, i) => (i > 0 && !value ? "=P1" : value || "—")).join(" · ")}
+                  </td>
                   <td className="px-3 py-2">
                     <input
                       type="text"
@@ -466,6 +477,9 @@ export function ImportWizard() {
                       {row.reason && (
                         <p className="max-w-[220px] font-sans text-xs text-brand-slate/70">{row.reason}</p>
                       )}
+                      {row.warning && row.status !== "error" && (
+                        <p className="max-w-[220px] font-sans text-xs text-amber-800">{row.warning}</p>
+                      )}
                       {row.status === "existing" && (
                         <label className="flex items-center gap-1.5 font-sans text-xs text-brand-black">
                           <input
@@ -474,7 +488,7 @@ export function ImportWizard() {
                             onChange={(event) => updateRow(row.rowNumber, { updateExisting: event.target.checked })}
                             className="size-4 rounded border-brand-slate/40 accent-brand-orange"
                           />
-                          Actualizar producto existente
+                          Actualizar producto existente (y sus precios)
                         </label>
                       )}
                     </div>

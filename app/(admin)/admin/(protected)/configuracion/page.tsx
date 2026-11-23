@@ -5,6 +5,9 @@ import Link from "next/link";
 import { CheckCircle2, CreditCard } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
 import { getMercadoPagoConnectionStatus } from "@/lib/mercadopago/connectionStatus";
+import { StoreListSettings, type StoreListLogEntry } from "@/components/admin/StoreListSettings";
+import { getStoreList } from "@/lib/catalog/productWrite";
+import { firstOf, toPriceList } from "@/lib/catalog/priceLevels";
 
 export const metadata: Metadata = { title: "Configuración — Panel de administración" };
 
@@ -18,9 +21,26 @@ export default async function AdminConfiguracionPage({
 }) {
   // Solo el admin completo (el operador no administra este módulo); el
   // middleware ya lo redirige, esto es la segunda capa.
-  if (!(await requireFullAdmin())) redirect("/admin");
+  const staff = await requireFullAdmin();
+  if (!staff) redirect("/admin");
 
-  const status = await getMercadoPagoConnectionStatus();
+  const [status, storeList, { data: logRows }] = await Promise.all([
+    getMercadoPagoConnectionStatus(),
+    getStoreList(staff.supabase),
+    staff.supabase
+      .from("price_settings_log")
+      .select("id, lista_anterior, lista_nueva, presentaciones_cambiadas, changed_at, profiles(full_name)")
+      .order("changed_at", { ascending: false })
+      .limit(10),
+  ]);
+  const log: StoreListLogEntry[] = (logRows ?? []).map((row) => ({
+    id: row.id,
+    listaAnterior: toPriceList(row.lista_anterior),
+    listaNueva: toPriceList(row.lista_nueva),
+    presentaciones: row.presentaciones_cambiadas,
+    quien: firstOf(row.profiles as { full_name: string | null } | { full_name: string | null }[] | null)?.full_name ?? null,
+    cuando: row.changed_at,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,6 +66,8 @@ export default async function AdminConfiguracionPage({
           {searchParams.mp_message ?? "No se pudo conectar con Mercado Pago. Intenta de nuevo."}
         </p>
       )}
+
+      <StoreListSettings current={storeList} log={log} />
 
       <section
         aria-labelledby="mercadopago-heading"

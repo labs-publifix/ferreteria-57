@@ -19,8 +19,38 @@ const base: ExportProductSource = {
 describe("buildProductExportRows", () => {
   it("arma una fila por código con los datos del producto", () => {
     expect(buildProductExportRows([base])).toEqual([
-      { codigo: "29010", producto: "Martillo de uña", categoria: "Herramienta", precio: 189.5, stock: 7, estado: "Activo", destacado: "No" },
+      {
+        codigo: "29010",
+        producto: "Martillo de uña",
+        categoria: "Herramienta",
+        precio1: 189.5,
+        precio2: 189.5,
+        precio3: 189.5,
+        precio4: 189.5,
+        precioTienda: 189.5,
+        stock: 7,
+        estado: "Activo",
+        destacado: "No",
+      },
     ]);
+  });
+
+  it("exporta las 4 listas y el precio de tienda", () => {
+    const [row] = buildProductExportRows([
+      {
+        ...base,
+        product_variants: [
+          {
+            sku: "10079",
+            label: "Único",
+            price: "165.00",
+            stock: 3,
+            product_price_levels: { precio_1: "180.00", precio_2: "165.00", precio_3: "150.00", precio_4: "125.00" },
+          },
+        ],
+      },
+    ]);
+    expect([row.precio1, row.precio2, row.precio3, row.precio4, row.precioTienda]).toEqual([180, 165, 150, 125, 165]);
   });
 
   it("incluye inactivos y destacados con su etiqueta", () => {
@@ -40,7 +70,7 @@ describe("buildProductExportRows", () => {
         ],
       },
     ]);
-    expect(rows.map((row) => [row.codigo, row.producto, row.precio, row.stock])).toEqual([
+    expect(rows.map((row) => [row.codigo, row.producto, row.precioTienda, row.stock])).toEqual([
       ["27169", "Cinta teflón — 1/2 pulgada", 25, 40],
       ["27170", "Cinta teflón — 3/4 pulgada", 32, 0],
     ]);
@@ -71,8 +101,9 @@ describe("buildProductExportWorkbook", () => {
     expect((sheet.getRow(1).values as unknown[]).slice(1)).toEqual([...PRODUCT_EXPORT_HEADERS]);
     expect(sheet.getCell("A2").value).toBe("29010");
     expect(sheet.getCell("D2").value).toBe(189.5);
-    expect(sheet.getCell("E2").value).toBe(7);
-    expect(sheet.getCell("F2").value).toBe("Activo");
+    expect(sheet.getCell("H2").value).toBe(189.5);
+    expect(sheet.getCell("I2").value).toBe(7);
+    expect(sheet.getCell("J2").value).toBe("Activo");
   });
 });
 

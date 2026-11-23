@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await staff.supabase
       .from("products")
-      .select("name, active, featured, categories(name), product_variants(sku, label, price, stock)")
+      .select("name, active, featured, categories(name), product_variants(sku, label, price, stock, product_price_levels(precio_1, precio_2, precio_3, precio_4))")
       .order("created_at", { ascending: true })
       .order("id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);

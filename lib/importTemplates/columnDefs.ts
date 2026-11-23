@@ -34,7 +34,7 @@ export const PRODUCT_CREATE_COLUMNS = [
     required: true,
     example: "MAR-100",
     format:
-      "Texto — código/SKU único del producto. Si ya existe un producto con este código, la fila se ofrece para actualizar precio en vez de crear uno nuevo.",
+      "Texto — código/SKU único del producto. Si ya existe un producto con este código, la fila se ofrece para actualizar sus precios en vez de crear uno nuevo.",
   },
   {
     key: "nombre",
@@ -44,11 +44,33 @@ export const PRODUCT_CREATE_COLUMNS = [
     format: "Texto libre — la marca se detecta sola a partir del nombre, no hace falta una columna aparte.",
   },
   {
-    key: "precio",
-    header: "Precio",
+    key: "precio 1",
+    header: "Precio 1",
     required: true,
     example: "150.00",
-    format: "Número — usa punto o coma como separador decimal. No incluyas el símbolo $ ni separadores de miles.",
+    format:
+      "Número mayor a 0 — usa punto como separador decimal, sin el símbolo $ ni separadores de miles. Es la lista más alta de Truper.",
+  },
+  {
+    key: "precio 2",
+    header: "Precio 2",
+    required: false,
+    example: "138.00",
+    format: "Número mayor a 0. Opcional: si se deja vacío se usará el Precio 1.",
+  },
+  {
+    key: "precio 3",
+    header: "Precio 3",
+    required: false,
+    example: "126.00",
+    format: "Número mayor a 0. Opcional: si se deja vacío se usará el Precio 1.",
+  },
+  {
+    key: "precio 4",
+    header: "Precio 4",
+    required: false,
+    example: "104.00",
+    format: "Número mayor a 0. Opcional: si se deja vacío se usará el Precio 1.",
   },
   {
     key: "url",
@@ -156,5 +178,53 @@ export const LIQUIDACIONES_COLUMNS = [
     required: true,
     example: "600",
     format: "Número mayor a 0 — precio de liquidación con impuestos. Es el precio que se imprime en el PDF.",
+  },
+] as const satisfies readonly ImportColumnDef[];
+
+// «Actualizar precios»: el mismo formato que la exportación de productos
+// (Código, Producto, Categoría, Precio 1–4, Stock, Estado, Destacado). Solo
+// se leen Código y Precio 1–4; las demás columnas se ignoran.
+export const PRICE_UPDATE_COLUMNS = [
+  {
+    key: "codigo",
+    header: "Código",
+    required: true,
+    example: "10079",
+    format: "Texto o número — debe coincidir EXACTO con el código (SKU) de una presentación que ya exista.",
+  },
+  {
+    key: "producto",
+    header: "Producto",
+    required: false,
+    example: "Martillo de uña 16 oz",
+    format: "Solo de referencia, no se modifica.",
+  },
+  {
+    key: "precio 1",
+    header: "Precio 1",
+    required: true,
+    example: "180.00",
+    format: "Número mayor a 0. Puede ser el resultado de una fórmula.",
+  },
+  {
+    key: "precio 2",
+    header: "Precio 2",
+    required: true,
+    example: "165.00",
+    format: "Número mayor a 0. Puede ser el resultado de una fórmula.",
+  },
+  {
+    key: "precio 3",
+    header: "Precio 3",
+    required: true,
+    example: "150.00",
+    format: "Número mayor a 0. Puede ser el resultado de una fórmula.",
+  },
+  {
+    key: "precio 4",
+    header: "Precio 4",
+    required: true,
+    example: "125.00",
+    format: "Número mayor a 0. Puede ser el resultado de una fórmula.",
   },
 ] as const satisfies readonly ImportColumnDef[];
