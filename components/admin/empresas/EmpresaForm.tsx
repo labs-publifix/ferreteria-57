@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 import {
   actualizarEmpresa,
   crearEmpresa,
@@ -41,6 +41,17 @@ export const EMPRESA_VACIA: EmpresaFormValues = {
 const inputClass =
   "min-h-11 w-full rounded-md border bg-white px-3 py-2.5 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate";
 const labelClass = "mb-1.5 block font-sans text-sm font-medium text-brand-black";
+const DIAS_MES = Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `Día ${i + 1}` }));
+const OPCIONES_CORTE = [{ value: "", label: "Sin definir" }, { value: "0", label: "Último día del mes" }, ...DIAS_MES];
+const OPCIONES_FRECUENCIA = [
+  { value: "", label: "Sin definir" },
+  { value: "semanal", label: "Semanal" },
+  { value: "quincenal", label: "Quincenal (días 15 y último)" },
+  { value: "mensual", label: "Mensual" },
+];
+const OPCIONES_DIA_SEMANA = DIAS_SEMANA.map((dia, i) => ({ value: String(i + 1), label: dia }));
+const OPCIONES_DIA_MES = [{ value: "0", label: "Último día del mes" }, ...DIAS_MES];
+
 const sectionClass = "flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:p-6";
 const h2Class = "font-display text-base uppercase text-brand-slate";
 
@@ -203,23 +214,13 @@ export function EmpresaForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {convenioCampo("limite_credito", "Límite de crédito (MXN)", "Máximo que la empresa puede deber, sumando sus ciclos.", { inputMode: "decimal" })}
           <div>
-            <label htmlFor={`${baseId}-dia_corte`} className={labelClass}>
-              Día de corte
-            </label>
-            <select
-              id={`${baseId}-dia_corte`}
+            <span className={labelClass}>Día de corte</span>
+            <Select
               value={c.dia_corte}
-              onChange={(event) => setConvenio("dia_corte", event.target.value)}
-              className={`${inputClass} border-brand-slate/30`}
-            >
-              <option value="">Sin definir</option>
-              <option value="0">Último día del mes</option>
-              {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-                <option key={dia} value={String(dia)}>
-                  Día {dia}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setConvenio("dia_corte", value)}
+              options={OPCIONES_CORTE}
+              label="Día de corte"
+            />
             {errores.dia_corte && <p className="mt-1 font-sans text-xs text-red-700">{errores.dia_corte}</p>}
           </div>
           {convenioCampo("plazo_pago_dias", "Plazo de pago (días)", "Días para pagar después de recibir la factura.", { inputMode: "numeric" })}
@@ -246,58 +247,34 @@ export function EmpresaForm({
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label htmlFor={`${baseId}-nomina_frecuencia`} className={labelClass}>
-              Frecuencia de nómina
-            </label>
-            <select
-              id={`${baseId}-nomina_frecuencia`}
+            <span className={labelClass}>Frecuencia de nómina</span>
+            <Select
               value={c.nomina_frecuencia}
-              onChange={(event) => setConvenio("nomina_frecuencia", event.target.value)}
-              className={`${inputClass} border-brand-slate/30`}
-            >
-              <option value="">Sin definir</option>
-              <option value="semanal">Semanal</option>
-              <option value="quincenal">Quincenal (días 15 y último)</option>
-              <option value="mensual">Mensual</option>
-            </select>
+              onChange={(value) => setConvenio("nomina_frecuencia", value)}
+              options={OPCIONES_FRECUENCIA}
+              label="Frecuencia de nómina"
+            />
           </div>
           {c.nomina_frecuencia === "semanal" && (
             <div>
-              <label htmlFor={`${baseId}-nomina_dia_semana`} className={labelClass}>
-                Día de pago
-              </label>
-              <select
-                id={`${baseId}-nomina_dia_semana`}
+              <span className={labelClass}>Día de pago</span>
+              <Select
                 value={c.nomina_dia_semana}
-                onChange={(event) => setConvenio("nomina_dia_semana", event.target.value)}
-                className={`${inputClass} border-brand-slate/30`}
-              >
-                {DIAS_SEMANA.map((dia, i) => (
-                  <option key={dia} value={String(i + 1)}>
-                    {dia}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setConvenio("nomina_dia_semana", value)}
+                options={OPCIONES_DIA_SEMANA}
+                label="Día de pago"
+              />
             </div>
           )}
           {c.nomina_frecuencia === "mensual" && (
             <div>
-              <label htmlFor={`${baseId}-nomina_dia_mes`} className={labelClass}>
-                Día de pago
-              </label>
-              <select
-                id={`${baseId}-nomina_dia_mes`}
+              <span className={labelClass}>Día de pago</span>
+              <Select
                 value={c.nomina_dia_mes}
-                onChange={(event) => setConvenio("nomina_dia_mes", event.target.value)}
-                className={`${inputClass} border-brand-slate/30`}
-              >
-                <option value="0">Último día del mes</option>
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((dia) => (
-                  <option key={dia} value={String(dia)}>
-                    Día {dia}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setConvenio("nomina_dia_mes", value)}
+                options={OPCIONES_DIA_MES}
+                label="Día de pago"
+              />
             </div>
           )}
           {convenioCampo("descuentos_por_compra", "Descuentos por compra", "En cuántas nóminas se reparte cada compra.", { inputMode: "numeric" })}

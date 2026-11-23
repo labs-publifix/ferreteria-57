@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { buttonClassName, ConfirmDialog, ProductImagePlaceholder, SimplePagination, TabPanel, Tabs } from "@/components/ui";
+import { buttonClassName, ConfirmDialog, ProductImagePlaceholder, Select, SimplePagination, TabPanel, Tabs } from "@/components/ui";
 import { requestClub57Redemption } from "@/app/(site)/cuenta/actions";
 import { CLUB57_REDEMPTION_ESTADO_LABEL, CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
 import { club57AnotarCorrecciones, club57MotivoTexto } from "@/lib/club57/correcciones";
@@ -409,18 +409,18 @@ export function Club57MemberPanel({
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block font-sans text-xs font-medium text-brand-black">
-                        Ordenar por
-                      </label>
-                      <select
+                      <span className="mb-1 block font-sans text-xs font-medium text-brand-black">Ordenar por</span>
+                      <Select
                         value={orden}
-                        onChange={(event) => handleOrdenChange(event.target.value as typeof orden)}
-                        className="min-h-9 rounded-md border border-brand-slate/30 px-3 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-                      >
-                        <option value="puntos_asc">Puntos: menor a mayor</option>
-                        <option value="puntos_desc">Puntos: mayor a menor</option>
-                        <option value="nombre">Nombre</option>
-                      </select>
+                        onChange={(value) => handleOrdenChange(value as typeof orden)}
+                        label="Ordenar por"
+                        className="min-w-[210px]"
+                        options={[
+                          { value: "puntos_asc", label: "Puntos: menor a mayor" },
+                          { value: "puntos_desc", label: "Puntos: mayor a menor" },
+                          { value: "nombre", label: "Nombre" },
+                        ]}
+                      />
                     </div>
                     <label className="flex min-h-9 items-center gap-2 font-sans text-sm text-brand-black">
                       <input

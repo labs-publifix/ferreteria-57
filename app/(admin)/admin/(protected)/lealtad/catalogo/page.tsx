@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { Plus, Upload } from "lucide-react";
 import { Club57CatalogTable, type Club57CatalogRow } from "@/components/admin/Club57CatalogTable";
 import { buttonClassName } from "@/components/ui";
@@ -136,19 +137,19 @@ export default async function AdminClub57CatalogoPage({
         </div>
 
         <div>
-          <label htmlFor="orden" className="mb-1.5 block font-sans text-sm font-medium text-brand-black">
-            Ordenar por
-          </label>
-          <select
-            id="orden"
-            name="orden"
-            defaultValue={filters.orden}
-            className="min-h-11 rounded-md border border-brand-slate/30 px-3 font-sans text-sm text-brand-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate"
-          >
-            <option value="puntos_asc">Puntos: menor a mayor</option>
-            <option value="puntos_desc">Puntos: mayor a menor</option>
-            <option value="nombre">Nombre</option>
-          </select>
+          <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Ordenar por</span>
+          <div className="min-w-[220px]">
+            <FilterSelectField
+              name="orden"
+              defaultValue={filters.orden}
+              label="Ordenar por"
+              options={[
+                { value: "puntos_asc", label: "Puntos: menor a mayor" },
+                { value: "puntos_desc", label: "Puntos: mayor a menor" },
+                { value: "nombre", label: "Nombre" },
+              ]}
+            />
+          </div>
         </div>
 
         <button type="submit" className={buttonClassName("secondary")}>
