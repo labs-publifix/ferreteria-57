@@ -11,7 +11,7 @@ import {
   vincularEmpresa,
 } from "@/app/(site)/cuenta/empresarialActions";
 import { ESTADO_EMPLEADO_LABEL, textoAutorizacion, type EstadoEmpleado } from "@/lib/club57/empresas/empleados";
-import { STORE_WHATSAPP_PHONE } from "@/lib/store-info";
+import { noEncuentrasWhatsAppUrl } from "@/lib/whatsapp/noEncuentras";
 import { estadoPedidoEmpresaLabel, RESOLUCION_PEDIDO_LABEL, ultimoDiaPlazo } from "@/lib/club57/empresas/pedidos";
 import { fechaNominaCorta, fechaNominaLabel } from "@/lib/club57/empresas/nomina";
 
@@ -71,10 +71,6 @@ const pesos = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN
 const inputClass =
   "min-h-11 w-full rounded-md border border-brand-slate/30 bg-white px-3 py-2.5 font-sans text-base text-brand-black placeholder:text-brand-slate/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-slate sm:text-sm";
 
-const WHATSAPP_HREF = `https://wa.me/${STORE_WHATSAPP_PHONE}?text=${encodeURIComponent(
-  "Hola, soy colaborador de una empresa de Club 57 Empresarial y busco un producto que no encuentro en la tienda en línea."
-)}`;
-
 // Pestaña «Empresarial» de Mi cuenta: el vínculo del miembro con su empresa
 // (Club 57 Empresarial), su línea de crédito y su historial.
 export function EmpresarialPanel({
@@ -105,7 +101,12 @@ export function EmpresarialPanel({
             <strong>¿No encuentras un producto?</strong> Tenemos acceso a más de 15,000 productos Truper. Escríbenos y te lo
             conseguimos.
           </p>
-          <a href={WHATSAPP_HREF} target="_blank" rel="noreferrer" className={buttonClassName("secondary", "shrink-0")}>
+          <a
+            href={noEncuentrasWhatsAppUrl({ empresa: vigente.empresa_nombre })}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonClassName("secondary", "shrink-0")}
+          >
             <MessageCircle className="size-4" aria-hidden="true" strokeWidth={2} />
             WhatsApp
           </a>
@@ -177,7 +178,9 @@ function VinculoActivo({ vinculo, credito }: { vinculo: MiVinculoEmpresa; credit
         )}
       </dl>
       <p className="mt-3 font-sans text-sm text-brand-slate">
-        {suspendida
+        {vinculo.empresa_estado === "baja"
+          ? "Tu empresa dejó Club 57 Empresarial: ya no puedes comprar con cargo a ella. Tu cuenta de Club 57 sigue activa con tus puntos."
+          : suspendida
           ? "Las compras con cargo a tu empresa están pausadas por el momento. Puedes seguir comprando con tarjeta."
           : "Al pagar en la tienda en línea, elige «Cargo a mi empresa». Cada compra se descuenta en tu nómina y tu crédito se libera con cada descuento aplicado."}
       </p>

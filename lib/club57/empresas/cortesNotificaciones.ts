@@ -108,12 +108,12 @@ export async function notificarMovimientoCorte(cicloId: string, tipo: "factura" 
   }
 }
 
-/** Empresa suspendida por pago vencido o reactivada: responsable y colaboradores activos. */
+/** Empresa suspendida, reactivada o dada de baja: responsable y colaboradores activos. */
 export async function notificarSuspension(
   empresaId: string,
-  tipo: "suspendida" | "reactivada",
+  tipo: "suspendida" | "reactivada" | "baja",
   periodo: string | null,
-  opciones: { omitirResponsable?: boolean } = {}
+  opciones: { omitirResponsable?: boolean; motivo?: string | null } = {}
 ): Promise<void> {
   try {
     const supabase = createAdminClient();
@@ -126,7 +126,15 @@ export async function notificarSuspension(
       await enviar(
         `empresa ${tipo} (responsable)`,
         empresa.responsable_correo,
-        buildEmpresaSuspensionEmail({ tipo, destino: "responsable", nombre: empresa.responsable_nombre, empresa: empresa.nombre_comercial, periodo, url: appUrl("/empresa/cortes") })
+        buildEmpresaSuspensionEmail({
+          tipo,
+          destino: "responsable",
+          nombre: empresa.responsable_nombre,
+          empresa: empresa.nombre_comercial,
+          periodo,
+          motivo: opciones.motivo ?? null,
+          url: appUrl(tipo === "baja" ? "/cuenta" : "/empresa/cortes"),
+        })
       );
     }
     // Un correo por colaborador (nunca todos en el mismo «Para»).

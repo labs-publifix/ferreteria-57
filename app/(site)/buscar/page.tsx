@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { searchProducts } from "@/lib/catalog/queries";
 import { CategoryProductBrowser } from "@/components/category/CategoryProductBrowser";
+import { NoEncuentrasWhatsApp } from "@/components/catalog/NoEncuentrasWhatsApp";
+
+// Con menos resultados que esto, también se ofrece conseguir el producto por WhatsApp.
+const POCOS_RESULTADOS = 6;
 
 interface BuscarPageProps {
   searchParams: { q?: string | string[] };
@@ -55,19 +59,29 @@ export default async function BuscarPage({ searchParams }: BuscarPageProps) {
       </h1>
 
       {results.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg bg-brand-gray px-6 py-16 text-center">
-          <p className="font-sans text-base text-brand-black">
-            No encontramos resultados para “{query}”. Prueba con otro término.
-          </p>
-          <Link
-            href="/"
-            className="font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
-          >
-            Volver al inicio
-          </Link>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col items-center gap-3 rounded-lg bg-brand-gray px-6 py-12 text-center">
+            <p className="font-sans text-base text-brand-black">
+              No encontramos resultados para “{query}”. Prueba con otro término.
+            </p>
+            <Link
+              href="/"
+              className="font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
+            >
+              Volver al inicio
+            </Link>
+          </div>
+          <NoEncuentrasWhatsApp busqueda={query} />
         </div>
       ) : (
-        <CategoryProductBrowser products={results} />
+        <>
+          <CategoryProductBrowser products={results} />
+          {results.length < POCOS_RESULTADOS && (
+            <div className="mt-8">
+              <NoEncuentrasWhatsApp busqueda={query} />
+            </div>
+          )}
+        </>
       )}
     </main>
   );
