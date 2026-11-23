@@ -3,12 +3,14 @@ import { timingSafeEqual } from "node:crypto";
 import { procesarAvisos } from "@/lib/club57/avisos/processor";
 import { getAvisosBaseUrl, isAvisosEnabled } from "@/lib/club57/avisos/config";
 import { procesarPedidosEmpresaDiario } from "@/lib/club57/empresas/pedidosNotificaciones";
+import { procesarNominasDiario } from "@/lib/club57/empresas/nominaNotificaciones";
 
 // Cron diario (vercel.json, 15:00 UTC = 9:00 CDMX) que manda los avisos
 // por email de promociones de Club 57 que tocan hoy. En la primera
 // invocación del día también corre Club 57 Empresarial: vence los pedidos
-// con cargo a empresa que no se autorizaron a tiempo y recuerda a cada
-// empresa los que siguen en espera. Protegido con
+// con cargo a empresa que no se autorizaron a tiempo, recuerda a cada
+// empresa los que siguen en espera, aplica las nóminas que no se
+// confirmaron en 3 días hábiles y avisa de las nóminas que se acercan. Protegido con
 // CRON_SECRET (Vercel lo manda como "Authorization: Bearer <secreto>");
 // sin secreto configurado responde 401 siempre.
 //
@@ -53,13 +55,20 @@ export async function GET(request: NextRequest) {
   const eslabon = Number.parseInt(request.headers.get("x-club57-eslabon") ?? "0", 10) || 0;
   const inicio = Date.now();
 
-  let empresarial: Awaited<ReturnType<typeof procesarPedidosEmpresaDiario>> | { error: true } | undefined;
+  let empresarial: Record<string, unknown> | undefined;
   if (eslabon === 0) {
+    empresarial = {};
     try {
-      empresarial = await procesarPedidosEmpresaDiario();
+      empresarial.pedidos = await procesarPedidosEmpresaDiario();
     } catch (error) {
-      console.error("[cron club57-avisos] empresarial", error);
-      empresarial = { error: true };
+      console.error("[cron club57-avisos] empresarial · pedidos", error);
+      empresarial.pedidos = { error: true };
+    }
+    try {
+      empresarial.nomina = await procesarNominasDiario();
+    } catch (error) {
+      console.error("[cron club57-avisos] empresarial · nómina", error);
+      empresarial.nomina = { error: true };
     }
   }
 

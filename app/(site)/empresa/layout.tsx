@@ -5,6 +5,8 @@ import { Building2 } from "lucide-react";
 import { PortalNav } from "@/components/empresa/PortalNav";
 import { buttonClassName } from "@/components/ui";
 import { getPortalEmpresa } from "@/lib/club57/empresas/portal";
+import { agruparNominas, mapPortalDescuento } from "@/lib/club57/empresas/nomina";
+import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 import { NO_INDEX_NO_FOLLOW } from "@/lib/seo";
 
 export const metadata: Metadata = { title: "Portal Empresa — Club 57 Empresarial", robots: NO_INDEX_NO_FOLLOW };
@@ -37,10 +39,15 @@ export default async function PortalEmpresaLayout({ children }: { children: Reac
     );
   }
 
-  const [{ data: empleados }, { data: pedidos }] = await Promise.all([
+  const [{ data: empleados }, { data: pedidos }, { data: descuentos }] = await Promise.all([
     supabase.rpc("club57_portal_empleados"),
     supabase.rpc("club57_portal_pedidos"),
+    supabase.rpc("club57_portal_descuentos"),
   ]);
+  const nominasPorConfirmar = agruparNominas(
+    ((descuentos ?? []) as Record<string, unknown>[]).map(mapPortalDescuento),
+    todayInStoreTimezone()
+  ).porConfirmar.length;
   const pendientes = ((empleados ?? []) as { estado: string }[]).filter((e) => e.estado === "pendiente").length;
   const pedidosPendientes = ((pedidos ?? []) as { status: string }[]).filter((p) => p.status === "pendiente_autorizacion").length;
 
@@ -57,7 +64,7 @@ export default async function PortalEmpresaLayout({ children }: { children: Reac
         </p>
       )}
       <div className="mt-6">
-        <PortalNav pendientes={pendientes} pedidosPendientes={pedidosPendientes} />
+        <PortalNav pendientes={pendientes} pedidosPendientes={pedidosPendientes} nominasPorConfirmar={nominasPorConfirmar} />
       </div>
       <div className="mt-6">{children}</div>
     </main>

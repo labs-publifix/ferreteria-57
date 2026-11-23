@@ -13,7 +13,7 @@ import { ORDER_STATUS_BADGE_CLASS, orderStatusLabel, type FulfillmentType, type 
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
 import { MisGuias } from "./MisGuias";
-import { EmpresarialPanel, type MiCreditoEmpresa, type MiVinculoEmpresa } from "./EmpresarialPanel";
+import { EmpresarialPanel, type MiCreditoEmpresa, type MiDescuento, type MiVinculoEmpresa } from "./EmpresarialPanel";
 import { Club57PartnersDirectory } from "./Club57PartnersDirectory";
 import type { SociosCuenta } from "@/lib/club57/socios/member";
 import type { MiGuia } from "@/lib/blog/mis-guias";
@@ -122,6 +122,7 @@ export function Club57MemberPanel({
   socios,
   empresarial = [],
   creditoEmpresa = null,
+  descuentosEmpresa = [],
 }: {
   referralCode: string | null;
   saldoDisponible: number;
@@ -144,6 +145,8 @@ export function Club57MemberPanel({
   empresarial?: MiVinculoEmpresa[];
   /** Club 57 Empresarial: crédito del vínculo activo. */
   creditoEmpresa?: MiCreditoEmpresa | null;
+  /** Club 57 Empresarial: calendario e historial de descuentos de nómina. */
+  descuentosEmpresa?: MiDescuento[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -738,6 +741,7 @@ export function Club57MemberPanel({
         <EmpresarialPanel
           vinculos={empresarial}
           credito={creditoEmpresa}
+          descuentos={descuentosEmpresa}
           pedidos={pedidos.filter((pedido) => pedido.metodo_pago === "empresa")}
         />
       </TabPanel>

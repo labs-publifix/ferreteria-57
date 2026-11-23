@@ -22,7 +22,7 @@ import { getAllGuides } from "@/lib/blog/guide-content";
 import { buildMisGuias, type MiGuia } from "@/lib/blog/mis-guias";
 import { getNow } from "@/lib/blog/now";
 import type { MemberPartner, SociosCuenta } from "@/lib/club57/socios/member";
-import type { MiCreditoEmpresa, MiVinculoEmpresa } from "@/components/account/EmpresarialPanel";
+import type { MiCreditoEmpresa, MiDescuento, MiVinculoEmpresa } from "@/components/account/EmpresarialPanel";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
@@ -93,6 +93,7 @@ export default async function CuentaPage({
   let socios: SociosCuenta = { acceso: "sin_membresia" };
   let empresarial: MiVinculoEmpresa[] = [];
   let creditoEmpresa: MiCreditoEmpresa | null = null;
+  let descuentosEmpresa: MiDescuento[] = [];
   let empresaResponsable: string | null = null;
 
   if (user) {
@@ -162,7 +163,7 @@ export default async function CuentaPage({
 
     // Club 57 Empresarial: sus vínculos con empresas y, si es el responsable
     // de una, el acceso al Portal Empresa.
-    const [vinculosResult, responsableResult, creditoResult] = await Promise.all([
+    const [vinculosResult, responsableResult, creditoResult, descuentosResult] = await Promise.all([
       supabase.rpc("club57_mis_empresas"),
       supabase
         .from("club57_empresas")
@@ -172,13 +173,29 @@ export default async function CuentaPage({
         .limit(1)
         .maybeSingle(),
       supabase.rpc("club57_mi_credito_empresa"),
+      supabase.rpc("club57_mis_descuentos"),
     ]);
+    descuentosEmpresa = ((descuentosResult.data ?? []) as Record<string, unknown>[]).map((d) => ({
+      id: String(d.id),
+      empresa_nombre: String(d.empresa_nombre),
+      order_number: String(d.order_number),
+      fecha_nomina: String(d.fecha_nomina),
+      numero: Number(d.numero),
+      de_total: Number(d.de_total),
+      monto: Number(d.monto),
+      monto_aplicado: d.monto_aplicado === null ? null : Number(d.monto_aplicado),
+      estado: String(d.estado) as MiDescuento["estado"],
+    }));
     const credito = ((creditoResult.data ?? []) as Record<string, unknown>[])[0];
     creditoEmpresa = credito
       ? {
           linea: Number(credito.linea_credito),
           comprometido: Number(credito.comprometido),
           disponible: Number(credito.disponible),
+          enEspera: Number(credito.en_espera ?? 0),
+          porDescontar: Number(credito.por_descontar ?? 0),
+          proximoFecha: (credito.proximo_fecha as string | null) ?? null,
+          proximoMonto: credito.proximo_monto === null || credito.proximo_monto === undefined ? null : Number(credito.proximo_monto),
         }
       : null;
     empresarial = ((vinculosResult.data ?? []) as MiVinculoEmpresa[]).map((v) => ({
@@ -310,6 +327,7 @@ export default async function CuentaPage({
             socios={socios}
             empresarial={empresarial}
             creditoEmpresa={creditoEmpresa}
+            descuentosEmpresa={descuentosEmpresa}
           />
         </>
       ) : (

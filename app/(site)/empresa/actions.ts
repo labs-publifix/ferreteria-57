@@ -270,3 +270,27 @@ export async function rechazarPedido(orderId: string, motivo: string): Promise<{
   revalidar();
   return {};
 }
+
+// ---------------------------------------------------------------------
+// Nómina: confirmar los descuentos aplicados
+// ---------------------------------------------------------------------
+/**
+ * Confirma una nómina. Por omisión todos se descuentan completos; las
+ * excepciones dicen cuánto se le descontó a un empleado (0 = no se aplicó).
+ * Lo que falte se reprograma a su siguiente nómina.
+ */
+export async function confirmarNomina(
+  fecha: string,
+  excepciones: { empleado_id: string; monto_aplicado: number }[]
+): Promise<{ error?: string; empleados?: number }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { error: "Fecha de nómina inválida." };
+  const limpias = excepciones
+    .filter((e) => UUID_RE.test(e.empleado_id) && Number.isFinite(e.monto_aplicado) && e.monto_aplicado >= 0)
+    .map((e) => ({ empleado_id: e.empleado_id, monto_aplicado: Math.round(e.monto_aplicado * 100) / 100 }));
+  if (limpias.length !== excepciones.length) return { error: "Revisa los montos de las excepciones." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("club57_portal_confirmar_nomina", { p_fecha: fecha, p_excepciones: limpias });
+  if (error) return { error: error.message || "No se pudo confirmar la nómina." };
+  revalidar();
+  return { empleados: Number(data ?? 0) };
+}

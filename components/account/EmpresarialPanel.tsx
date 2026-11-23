@@ -13,13 +13,33 @@ import {
 import { ESTADO_EMPLEADO_LABEL, textoAutorizacion, type EstadoEmpleado } from "@/lib/club57/empresas/empleados";
 import { STORE_WHATSAPP_PHONE } from "@/lib/store-info";
 import { estadoPedidoEmpresaLabel, RESOLUCION_PEDIDO_LABEL, ultimoDiaPlazo } from "@/lib/club57/empresas/pedidos";
+import { fechaNominaCorta, fechaNominaLabel } from "@/lib/club57/empresas/nomina";
 
 /** Crédito del vínculo activo (club57_mi_credito_empresa). */
 export interface MiCreditoEmpresa {
   linea: number;
-  /** Pedidos con cargo a la empresa en espera o autorizados. */
+  /** Pedidos en espera + lo que falta por descontar de los autorizados. */
   comprometido: number;
   disponible: number;
+  /** Pedidos que esperan la autorización de la empresa. */
+  enEspera?: number;
+  /** Lo que falta por descontarle vía nómina de sus pedidos autorizados. */
+  porDescontar?: number;
+  proximoFecha?: string | null;
+  proximoMonto?: number | null;
+}
+
+/** Descuento de nómina (club57_mis_descuentos). */
+export interface MiDescuento {
+  id: string;
+  empresa_nombre: string;
+  order_number: string;
+  fecha_nomina: string;
+  numero: number;
+  de_total: number;
+  monto: number;
+  monto_aplicado: number | null;
+  estado: "programado" | "aplicado" | "no_aplicado" | "baja";
 }
 
 /** Pedido con cargo a la empresa, tal como lo lee Mi cuenta. */
@@ -61,10 +81,12 @@ export function EmpresarialPanel({
   vinculos,
   credito = null,
   pedidos = [],
+  descuentos = [],
 }: {
   vinculos: MiVinculoEmpresa[];
   credito?: MiCreditoEmpresa | null;
   pedidos?: MiPedidoEmpresa[];
+  descuentos?: MiDescuento[];
 }) {
   const vigente = vinculos.find((v) => v.estado === "activo" || v.estado === "pendiente") ?? null;
   const anteriores = vinculos.filter((v) => v !== vigente);
@@ -72,6 +94,7 @@ export function EmpresarialPanel({
   return (
     <div className="flex flex-col gap-4 text-left">
       {vigente?.estado === "activo" && <VinculoActivo vinculo={vigente} credito={credito} />}
+      {descuentos.length > 0 && <DescuentosNomina descuentos={descuentos} />}
       {pedidos.length > 0 && <PedidosEmpresa pedidos={pedidos} />}
       {vigente?.estado === "pendiente" && <VinculoPendiente vinculo={vigente} />}
       {!vigente && <VincularForm />}
@@ -127,25 +150,36 @@ function VinculoActivo({ vinculo, credito }: { vinculo: MiVinculoEmpresa; credit
       </div>
       <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-md bg-brand-gray px-4 py-3">
-          <dt className="font-sans text-xs text-brand-slate/70">Línea de crédito</dt>
-          <dd className="font-display text-2xl text-brand-black">
-            {vinculo.linea_credito === null ? "—" : pesos.format(vinculo.linea_credito)}
-          </dd>
-        </div>
-        <div className="rounded-md bg-brand-gray px-4 py-3">
           <dt className="font-sans text-xs text-brand-slate/70">Crédito disponible</dt>
           <dd className="font-display text-2xl text-brand-black">
             {credito ? pesos.format(credito.disponible) : vinculo.linea_credito === null ? "—" : pesos.format(vinculo.linea_credito)}
           </dd>
-          {credito && credito.comprometido > 0 && (
-            <dd className="font-sans text-xs text-brand-slate">{pesos.format(credito.comprometido)} en pedidos con cargo a tu empresa</dd>
+          <dd className="font-sans text-xs text-brand-slate">
+            de tu línea de {vinculo.linea_credito === null ? "—" : pesos.format(vinculo.linea_credito)}
+          </dd>
+        </div>
+        <div className="rounded-md bg-brand-gray px-4 py-3">
+          <dt className="font-sans text-xs text-brand-slate/70">Por descontar vía nómina</dt>
+          <dd className="font-display text-2xl text-brand-black">{pesos.format(credito?.porDescontar ?? 0)}</dd>
+          {credito?.proximoFecha && credito.proximoMonto !== null && credito.proximoMonto !== undefined ? (
+            <dd className="font-sans text-xs text-brand-slate">
+              Próximo descuento: {pesos.format(credito.proximoMonto)} el {fechaNominaLabel(credito.proximoFecha)}
+            </dd>
+          ) : (
+            <dd className="font-sans text-xs text-brand-slate">Sin descuentos programados</dd>
           )}
         </div>
+        {credito && (credito.enEspera ?? 0) > 0 && (
+          <div className="rounded-md border border-orange-200 bg-orange-50 px-4 py-3 sm:col-span-2">
+            <dt className="font-sans text-xs text-orange-900">En espera de autorización de tu empresa</dt>
+            <dd className="font-sans text-sm font-semibold text-brand-black">{pesos.format(credito.enEspera ?? 0)}</dd>
+          </div>
+        )}
       </dl>
       <p className="mt-3 font-sans text-sm text-brand-slate">
         {suspendida
           ? "Las compras con cargo a tu empresa están pausadas por el momento. Puedes seguir comprando con tarjeta."
-          : "Al pagar en la tienda en línea, elige «Cargo a mi empresa». Tu crédito se renueva conforme tu empresa te descuenta vía nómina."}
+          : "Al pagar en la tienda en línea, elige «Cargo a mi empresa». Cada compra se descuenta en tu nómina y tu crédito se libera con cada descuento aplicado."}
       </p>
     </div>
   );
@@ -382,6 +416,59 @@ function PedidosEmpresa({ pedidos }: { pedidos: MiPedidoEmpresa[] }) {
         onConfirm={cancelar}
         onCancel={() => setConfirmar(null)}
       />
+    </div>
+  );
+}
+
+const DESCUENTO_ESTADO: Record<MiDescuento["estado"], { label: string; clase: string }> = {
+  programado: { label: "Programado", clase: "bg-brand-gray text-brand-slate" },
+  aplicado: { label: "Aplicado", clase: "bg-green-100 text-green-800" },
+  no_aplicado: { label: "No se aplicó · pasó a la siguiente nómina", clase: "bg-orange-100 text-orange-800" },
+  baja: { label: "Pendiente al salir de la empresa", clase: "bg-red-100 text-red-800" },
+};
+
+// Calendario de descuentos de nómina: los que vienen y los ya aplicados.
+function DescuentosNomina({ descuentos }: { descuentos: MiDescuento[] }) {
+  const programados = descuentos
+    .filter((d) => d.estado === "programado")
+    .sort((a, b) => a.fecha_nomina.localeCompare(b.fecha_nomina) || a.order_number.localeCompare(b.order_number) || a.numero - b.numero);
+  const historial = descuentos.filter((d) => d.estado !== "programado");
+  const fila = (d: MiDescuento) => {
+    const parcial = d.estado === "aplicado" && d.monto_aplicado !== null && d.monto_aplicado < d.monto - 0.005;
+    return (
+      <li key={d.id} className="flex flex-col gap-1 py-2.5 font-sans text-sm sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-brand-black">
+          <span className="font-semibold">{fechaNominaCorta(d.fecha_nomina)}</span> · {d.order_number}
+          <span className="text-brand-slate"> · {d.numero} de {d.de_total}</span>
+        </span>
+        <span className="flex items-center gap-2">
+          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${DESCUENTO_ESTADO[d.estado].clase}`}>
+            {parcial ? "Aplicado parcial" : DESCUENTO_ESTADO[d.estado].label}
+          </span>
+          <span className="tabular-nums text-brand-black">
+            {d.estado === "aplicado" && d.monto_aplicado !== null ? pesos.format(d.monto_aplicado) : pesos.format(d.monto)}
+          </span>
+        </span>
+      </li>
+    );
+  };
+  return (
+    <div className="rounded-lg bg-white p-5 shadow-sm">
+      <h3 className="font-display text-sm uppercase text-brand-slate">Descuentos de nómina</h3>
+      {programados.length > 0 && (
+        <>
+          <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-wide text-brand-slate/70">Próximos</p>
+          <ul className="flex flex-col divide-y divide-brand-slate/10">{programados.map(fila)}</ul>
+        </>
+      )}
+      {historial.length > 0 && (
+        <details className="group mt-2">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center font-sans text-sm font-semibold text-brand-slate hover:text-brand-black [&::-webkit-details-marker]:hidden">
+            Historial de descuentos ({historial.length})
+          </summary>
+          <ul className="flex flex-col divide-y divide-brand-slate/10">{historial.map(fila)}</ul>
+        </details>
+      )}
     </div>
   );
 }

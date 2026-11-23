@@ -16,6 +16,7 @@ import {
 } from "@/lib/email/empresarialEmails";
 import type { FulfillmentType } from "@/lib/orders/status";
 import { appUrl } from "./notificaciones";
+import { fechaNominaLabel } from "./nomina";
 
 // Correos de los pedidos con cargo a la empresa. Igual que el resto de los
 // avisos de Club 57 Empresarial: corren con la llave de servicio después de
@@ -132,6 +133,19 @@ export async function notificarPedidoEmpresaCreado(orderId: string): Promise<voi
 export async function notificarPedidosAutorizados(orderIds: string[]): Promise<void> {
   try {
     const pedidos = await leerPedidos(orderIds);
+    // Plan de descuentos de nómina (se programa al autorizar).
+    const { data: descuentos } = await createAdminClient()
+      .from("club57_descuentos_nomina")
+      .select("order_id, fecha_nomina, monto, de_total")
+      .in("order_id", orderIds)
+      .eq("estado", "programado")
+      .order("fecha_nomina");
+    const planPorPedido = new Map<string, { partes: number; primeraFecha: string; monto: number }>();
+    for (const d of (descuentos ?? []) as { order_id: string; fecha_nomina: string; monto: number | string; de_total: number }[]) {
+      if (!planPorPedido.has(d.order_id)) {
+        planPorPedido.set(d.order_id, { partes: d.de_total, primeraFecha: fechaNominaLabel(d.fecha_nomina), monto: Number(d.monto) });
+      }
+    }
     await Promise.all(
       pedidos
         .filter((p) => p.empresa_resolucion === "autorizado" && p.empresa)
@@ -150,6 +164,7 @@ export async function notificarPedidosAutorizados(orderIds: string[]): Promise<v
             shippingCost: pedido.shipping_cost,
             total: pedido.total,
             cargoEmpresa: pedido.empresa?.nombre_comercial ?? null,
+            descuentosNomina: planPorPedido.get(pedido.id) ?? null,
           };
           return Promise.all([
             enviar("pedido autorizado (empleado)", pedido.customer_email, buildCustomerConfirmationEmail(data)),

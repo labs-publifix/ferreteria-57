@@ -5,6 +5,8 @@ import { NominaForm } from "@/components/empresa/NominaForm";
 import { getPortalEmpresa, mapPortalEmpleado, mapPortalPedido } from "@/lib/club57/empresas/portal";
 import { diaCorteLabel } from "@/lib/club57/empresas/datos";
 import { appUrl } from "@/lib/club57/empresas/notificaciones";
+import { agruparNominas, fechaNominaLabel, mapPortalDescuento } from "@/lib/club57/empresas/nomina";
+import { todayInStoreTimezone } from "@/lib/marketing/visibility";
 
 const pesos = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -12,10 +14,16 @@ const pesos = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN
 export default async function PortalEmpresaInicio() {
   const { supabase, empresa } = await getPortalEmpresa();
   if (!empresa) return null;
-  const [{ data }, { data: pedidosData }] = await Promise.all([
+  const [{ data }, { data: pedidosData }, { data: descuentosData }] = await Promise.all([
     supabase.rpc("club57_portal_empleados"),
     supabase.rpc("club57_portal_pedidos"),
+    supabase.rpc("club57_portal_descuentos"),
   ]);
+  const nominas = agruparNominas(
+    ((descuentosData ?? []) as Record<string, unknown>[]).map(mapPortalDescuento),
+    todayInStoreTimezone()
+  );
+  const proximaNomina = nominas.proximas[0] ?? null;
   const empleados = ((data ?? []) as Record<string, unknown>[]).map(mapPortalEmpleado);
   const pedidos = ((pedidosData ?? []) as Record<string, unknown>[]).map(mapPortalPedido);
   const pedidosPorAutorizar = pedidos.filter((p) => p.status === "pendiente_autorizacion");
@@ -52,6 +60,19 @@ export default async function PortalEmpresaInicio() {
         </Link>
       )}
 
+      {nominas.porConfirmar.map((n) => (
+        <Link
+          key={n.fecha}
+          href="/empresa/nomina"
+          className="flex items-center justify-between gap-3 rounded-lg border-l-4 border-brand-orange bg-white px-4 py-3 font-sans text-sm text-brand-black shadow-sm hover:bg-brand-gray/50"
+        >
+          <span>
+            Confirma los descuentos de la nómina del {fechaNominaLabel(n.fecha)} ({pesos.format(n.total)}).
+          </span>
+          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
+      ))}
+
       {pendientes > 0 && (
         <Link
           href="/empresa/empleados"
@@ -76,6 +97,19 @@ export default async function PortalEmpresaInicio() {
 
       {empresa.codigo && (
         <CodigoEmpresaCard codigo={empresa.codigo} empresa={empresa.nombre_comercial} registroUrl={appUrl("/cuenta?registro=1")} />
+      )}
+
+      {proximaNomina && (
+        <Link
+          href="/empresa/nomina"
+          className="flex items-center justify-between gap-3 rounded-lg bg-white px-4 py-3 font-sans text-sm text-brand-black shadow-sm hover:bg-brand-gray/50"
+        >
+          <span>
+            Próxima nómina: <strong>{fechaNominaLabel(proximaNomina.fecha)}</strong> · {pesos.format(proximaNomina.total)} a descontar
+            a {proximaNomina.empleados.length} {proximaNomina.empleados.length === 1 ? "colaborador" : "colaboradores"}.
+          </span>
+          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
       )}
 
       <NominaForm

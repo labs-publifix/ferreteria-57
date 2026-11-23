@@ -6,7 +6,8 @@ import { Button, buttonClassName, Modal, Select } from "@/components/ui";
 import { cerrarEmpleado, guardarEmpleado } from "@/app/(site)/empresa/actions";
 import { DIAS_SEMANA, FRECUENCIA_LABEL, nominaLabel, type FrecuenciaNomina } from "@/lib/club57/empresas/datos";
 import { calcularLinea, ESTADO_EMPLEADO_LABEL, parseNumero, type LineaTipo } from "@/lib/club57/empresas/empleados";
-import type { PortalEmpleado } from "@/lib/club57/empresas/portal";
+import type { PortalEmpleado, PortalSaldo } from "@/lib/club57/empresas/portal";
+import { fechaNominaCorta } from "@/lib/club57/empresas/nomina";
 
 type Vista = "solicitudes" | "activos" | "historial";
 
@@ -24,7 +25,15 @@ export interface EmpresaPortalInfo {
   nomina: { frecuencia: FrecuenciaNomina | null; diaSemana: number | null; diaMes: number | null };
 }
 
-export function EmpleadosManager({ empleados, empresa }: { empleados: PortalEmpleado[]; empresa: EmpresaPortalInfo }) {
+export function EmpleadosManager({
+  empleados,
+  empresa,
+  saldos = {},
+}: {
+  empleados: PortalEmpleado[];
+  empresa: EmpresaPortalInfo;
+  saldos?: Record<string, PortalSaldo>;
+}) {
   const grupos = useMemo(
     () => ({
       solicitudes: empleados.filter((e) => e.estado === "pendiente"),
@@ -91,6 +100,21 @@ export function EmpleadosManager({ empleados, empresa }: { empleados: PortalEmpl
                       {` · ${e.nomina_frecuencia ? `nómina ${FRECUENCIA_LABEL[e.nomina_frecuencia].toLowerCase()}` : "nómina de la empresa"}`}
                     </span>
                     {e.aprobado_automatico && <span className="text-brand-slate/70"> · aprobado por precarga</span>}
+                  </p>
+                )}
+                {vista === "activos" && saldos[e.id] && (
+                  <p className="mt-1 font-sans text-sm text-brand-slate">
+                    Disponible <strong className="text-brand-black">{pesos.format(saldos[e.id].disponible)}</strong>
+                    {saldos[e.id].por_descontar > 0 && ` · por descontar ${pesos.format(saldos[e.id].por_descontar)}`}
+                    {saldos[e.id].en_espera > 0 && ` · en espera ${pesos.format(saldos[e.id].en_espera)}`}
+                    {saldos[e.id].proximo_fecha && saldos[e.id].proximo_monto !== null && (
+                      <> · próximo descuento {fechaNominaCorta(saldos[e.id].proximo_fecha!)}: {pesos.format(saldos[e.id].proximo_monto!)}</>
+                    )}
+                  </p>
+                )}
+                {vista === "historial" && saldos[e.id]?.saldo_baja && (
+                  <p className="mt-1 font-sans text-sm font-semibold text-orange-800">
+                    Saldo pendiente al momento de la baja: {pesos.format(saldos[e.id].saldo_baja!)} (para su finiquito)
                   </p>
                 )}
                 <p className="mt-1 font-sans text-xs text-brand-slate/70">
@@ -340,7 +364,7 @@ function CerrarModal({ empleado, onClose }: { empleado: PortalEmpleado; onClose:
         <p className="font-sans text-sm text-brand-slate">
           {esSolicitud
             ? "El colaborador recibirá un aviso con el motivo. Puede volver a solicitarlo más adelante."
-            : "Deja de poder comprar con cargo a tu empresa de inmediato y sus pedidos en espera de autorización se cancelan. Los que ya autorizaste se quedan en tu cuenta. Su cuenta de Club 57 sigue activa como cliente."}
+            : "Deja de poder comprar con cargo a tu empresa de inmediato y sus pedidos en espera de autorización se cancelan. Los que ya autorizaste se quedan en tu cuenta; lo que falte por descontarle queda como saldo pendiente para su finiquito. Su cuenta de Club 57 sigue activa como cliente."}
         </p>
         <div>
           <label htmlFor={`${baseId}-m`} className={labelClass}>
