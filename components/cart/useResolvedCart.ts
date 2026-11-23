@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useProductCatalog } from "@/components/cart/ProductCatalogProvider";
+import { useMemberPrices } from "@/components/club57/MemberPricesProvider";
 import { useCart } from "./CartProvider";
 import type { Product, ProductVariant } from "@/types/catalog";
 
@@ -16,6 +17,10 @@ export interface ResolvedCartLine {
    *  máximo real, esto solo indica que hubo que recortarla para que quien
    *  llama pueda avisarlo. */
   wasReduced: boolean;
+  /** Precio que se cobra: el Club 57 del miembro si le toca, si no el de tienda. */
+  unitPrice: number;
+  /** true cuando unitPrice es su precio Club 57. */
+  isMemberPrice: boolean;
 }
 
 // Resuelve las líneas del carrito (solo productId/variantId/cantidad) a
@@ -33,6 +38,11 @@ export function useResolvedCart() {
   const { lines, ...rest } = useCart();
   const { getProductById } = useProductCatalog();
 
+  const variantIds = useMemo(() => lines.map((line) => line.variantId), [lines]);
+  // Precio Club 57 (si quien compra es miembro con lista): el carrito y el
+  // checkout cobran el mismo precio que calcula el servidor.
+  const { getMemberPrice, ready: pricesReady } = useMemberPrices(variantIds);
+
   const items = useMemo<ResolvedCartLine[]>(() => {
     return lines.reduce<ResolvedCartLine[]>((acc, line) => {
       const product = getProductById(line.productId);
@@ -45,7 +55,16 @@ export function useResolvedCart() {
         // pedido (CheckoutView) es quien filtra las de quantity 0 antes de
         // mandarlas a create_order.
         const quantity = Math.max(0, Math.min(line.quantity, variant.stock));
-        acc.push({ product, variant, quantity, wasReduced: quantity < line.quantity });
+        const memberPrice = getMemberPrice(variant.id);
+        const isMemberPrice = memberPrice !== undefined && memberPrice < variant.price;
+        acc.push({
+          product,
+          variant,
+          quantity,
+          wasReduced: quantity < line.quantity,
+          unitPrice: isMemberPrice ? memberPrice : variant.price,
+          isMemberPrice,
+        });
       }
       return acc;
     }, []);
@@ -54,10 +73,10 @@ export function useResolvedCart() {
     // cálculo sin necesidad.
     // getProductById cambia cuando llegan datos vigentes del catálogo (precio
     // o stock actualizados): el carrito se vuelve a resolver con ellos.
-  }, [lines, getProductById]);
+  }, [lines, getProductById, getMemberPrice]);
 
   const subtotal = useMemo(
-    () => items.reduce((sum, { variant, quantity }) => sum + variant.price * quantity, 0),
+    () => Math.round(items.reduce((sum, { unitPrice, quantity }) => sum + unitPrice * quantity, 0) * 100) / 100,
     [items]
   );
 
@@ -69,5 +88,5 @@ export function useResolvedCart() {
   // valor crudo.
   const totalQuantity = useMemo(() => items.reduce((sum, { quantity }) => sum + quantity, 0), [items]);
 
-  return { ...rest, items, subtotal, totalQuantity };
+  return { ...rest, items, subtotal, totalQuantity, pricesReady };
 }

@@ -32,7 +32,7 @@ import { OrderSummary } from "./OrderSummary";
 export function CheckoutView() {
   const router = useRouter();
   const { isHydrated, clearCart } = useCart();
-  const { items, subtotal } = useResolvedCart();
+  const { items, subtotal, pricesReady } = useResolvedCart();
   const { refreshProducts } = useProductCatalog();
   const { zonas } = useZonasEnvio();
   // quantity 0 = se agotó por completo mientras estaba en el carrito
@@ -96,7 +96,10 @@ export function CheckoutView() {
   // sean válidos — requisito explícito del flujo 2. En foráneo con monto
   // excedido tampoco se puede completar el checkout estándar: ese caso lo
   // resuelve el CTA de WhatsApp dentro de DeliverySection, no este botón.
+  // pricesReady: un miembro con precio Club 57 no puede pagar hasta que se
+  // cargue su precio (si no, el servidor vería un precio distinto).
   const canSubmit =
+    pricesReady &&
     isContactValid(contact) &&
     (deliveryMethod === "retiro"
       ? true
@@ -119,12 +122,12 @@ export function CheckoutView() {
     setSubmitError(null);
     setIsSubmitting(true);
 
-    const orderItems = purchasableItems.map(({ product, variant, quantity }) => ({
+    const orderItems = purchasableItems.map(({ product, variant, quantity, unitPrice }) => ({
       productName: product.name,
       variantLabel: product.variants.length > 1 ? variant.label : null,
       sku: variant.sku,
       variantId: variant.id,
-      unitPrice: variant.price,
+      unitPrice,
       quantity,
     }));
 
@@ -197,11 +200,11 @@ export function CheckoutView() {
                 references: foraneoAddress.references,
               }
             : undefined,
-      items: purchasableItems.map(({ product, variant, quantity }) => ({
+      items: purchasableItems.map(({ product, variant, quantity, unitPrice }) => ({
         name: product.name,
         variantLabel: product.variants.length > 1 ? variant.label : null,
         quantity,
-        price: variant.price,
+        price: unitPrice,
       })),
       subtotal,
       shipping: result.shippingCost ?? 0,

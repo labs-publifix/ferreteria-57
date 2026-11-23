@@ -6,7 +6,11 @@ import { Button } from "@/components/ui";
 import { ProductCatalogAutocomplete } from "@/components/admin/ProductCatalogAutocomplete";
 import { club57CompraDesdeCatalogo } from "@/lib/club57/catalogoCompra";
 import type { SearchResultItem } from "@/lib/catalog/search";
-import { registerClub57ManualPurchase } from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
+import {
+  getClub57PrecioMiembro,
+  registerClub57ManualPurchase,
+} from "@/app/(admin)/admin/(protected)/lealtad/clientes/actions";
+import { formatPrice } from "@/lib/formatPrice";
 import { newRequestId } from "@/lib/club57/requestId";
 
 const inputClass =
@@ -25,6 +29,10 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<number | null>(null);
   const [delCatalogo, setDelCatalogo] = useState(false);
+  // Precio Club 57 del cliente para el producto elegido (si tiene lista y
+  // le sale más barato que la tienda).
+  const [precioClub, setPrecioClub] = useState<{ precio: number; tienda: number } | null>(null);
+  const seleccionRef = useRef(0);
   // Doble clic: el ref frena el segundo envío antes de que React vuelva a
   // pintar el botón deshabilitado, y la llave (una por compra, se renueva
   // solo al registrarse con éxito) hace que el servidor ignore un envío
@@ -56,15 +64,32 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
     setCodigo("");
     setMonto("");
     setDelCatalogo(false);
+    setPrecioClub(null);
     router.refresh();
   }
 
-  function elegirDelCatalogo(item: SearchResultItem) {
+  async function elegirDelCatalogo(item: SearchResultItem) {
     const datos = club57CompraDesdeCatalogo(item);
     setProducto(datos.producto);
     setCodigo(datos.codigo);
     if (datos.monto) setMonto(datos.monto);
     setDelCatalogo(true);
+    setPrecioClub(null);
+
+    // Si el cliente tiene lista de precio, el monto sugerido es su precio.
+    const seleccion = ++seleccionRef.current;
+    const result = await getClub57PrecioMiembro(memberId, item.id, item.sku);
+    if (seleccion !== seleccionRef.current || result.error || result.precio === undefined) return;
+    if (result.precioTienda !== undefined && result.precio < result.precioTienda - 0.005) {
+      setMonto(result.precio.toFixed(2));
+      setPrecioClub({ precio: result.precio, tienda: result.precioTienda });
+    }
+  }
+
+  function limpiarCatalogo() {
+    seleccionRef.current += 1;
+    setDelCatalogo(false);
+    setPrecioClub(null);
   }
 
   return (
@@ -91,7 +116,7 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
           value={producto}
           onChange={(value) => {
             setProducto(value);
-            setDelCatalogo(false);
+            limpiarCatalogo();
           }}
           onSelect={elegirDelCatalogo}
           inputClassName={inputClass}
@@ -103,7 +128,7 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
           value={codigo}
           onChange={(value) => {
             setCodigo(value);
-            setDelCatalogo(false);
+            limpiarCatalogo();
           }}
           onSelect={elegirDelCatalogo}
           minChars={1}
@@ -129,7 +154,10 @@ export function Club57RegisterPurchaseForm({ memberId }: { memberId: string }) {
       </div>
       {delCatalogo && (
         <p className="font-sans text-xs text-brand-slate/70">
-          Datos del catálogo en línea. Revisa el monto si fueron varias piezas o si el precio en tienda es otro.
+          {precioClub
+            ? `Monto con el precio Club 57 de este cliente: ${formatPrice(precioClub.precio)} (precio de tienda ${formatPrice(precioClub.tienda)}). `
+            : "Datos del catálogo en línea. "}
+          Revisa el monto si fueron varias piezas o si el precio en tienda es otro.
         </p>
       )}
       <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto sm:self-start">
