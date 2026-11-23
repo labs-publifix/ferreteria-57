@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Gift, HandCoins, History, Megaphone, RefreshCw, Settings, Store, Users } from "lucide-react";
+import { Building2, Gift, HandCoins, History, Megaphone, RefreshCw, Settings, Store, Users } from "lucide-react";
 import { getAdminProfile } from "@/lib/supabase/adminProfile";
 
 export const metadata: Metadata = { title: "Club 57 — Panel de administración" };
@@ -18,6 +18,12 @@ const SECTIONS = [
     label: "Clientes",
     description: "Alta manual, saldo de puntos y compras en tienda.",
     icon: Users,
+  },
+  {
+    href: "/admin/lealtad/empresas",
+    label: "Empresas",
+    description: "Club 57 Empresarial: solicitudes de afiliación, convenios, códigos y estado de cada empresa.",
+    icon: Building2,
   },
   {
     href: "/admin/lealtad/catalogo",
