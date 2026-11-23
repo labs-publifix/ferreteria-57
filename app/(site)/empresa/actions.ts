@@ -294,3 +294,30 @@ export async function confirmarNomina(
   revalidar();
   return { empleados: Number(data ?? 0) };
 }
+
+// ---------------------------------------------------------------------
+// Estados de cuenta (corte mensual con Ferretería 57)
+// ---------------------------------------------------------------------
+/** La empresa da su conformidad al estado de cuenta (sin observaciones abiertas). */
+export async function darConformidadCorte(cicloId: string): Promise<{ error?: string }> {
+  if (!UUID_RE.test(cicloId)) return { error: "Estado de cuenta no encontrado." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("club57_portal_conformidad_ciclo", { p_ciclo_id: cicloId });
+  if (error) return { error: error.message || "No se pudo registrar tu conformidad." };
+  revalidar();
+  return {};
+}
+
+/** La empresa observa un pedido del estado de cuenta; Ferretería 57 lo revisa. */
+export async function observarPedidoCorte(cicloId: string, orderId: string, comentario: string): Promise<{ error?: string }> {
+  if (!UUID_RE.test(cicloId) || !UUID_RE.test(orderId)) return { error: "Pedido no encontrado." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("club57_portal_observar_pedido", {
+    p_ciclo_id: cicloId,
+    p_order_id: orderId,
+    p_comentario: comentario.trim().slice(0, 500),
+  });
+  if (error) return { error: error.message || "No se pudo guardar la observación." };
+  revalidar();
+  return {};
+}

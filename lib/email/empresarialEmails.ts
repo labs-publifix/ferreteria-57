@@ -408,3 +408,123 @@ export function buildNominaPorAplicarEmail(data: {
   `;
   return { subject: `Descuentos para tu nómina del ${data.fechaLabel} · ${data.empresa}`, html: renderEmailLayout(body) };
 }
+
+// ---------------------------------------------------------------------
+// Etapa 5 · Corte mensual
+// ---------------------------------------------------------------------
+
+/** Corte cerrado: estado de cuenta listo (al responsable o a Ferretería 57). */
+export function buildCorteCerradoEmail(data: {
+  destino: "empresa" | "interno";
+  responsableNombre: string;
+  empresa: string;
+  periodo: string;
+  total: number;
+  pedidos: number;
+  revisionHasta: string;
+  url: string;
+}): { subject: string; html: string } {
+  const firstName = data.responsableNombre.split(" ")[0] || data.responsableNombre;
+  const body =
+    data.destino === "empresa"
+      ? `
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">Hola, ${escapeHtml(firstName)}</h1>
+    <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
+      Ya está listo el estado de cuenta de Club 57 Empresarial de <strong>${escapeHtml(data.empresa)}</strong> del periodo ${escapeHtml(data.periodo)}.
+    </p>
+    ${aviso(`${data.pedidos} ${data.pedidos === 1 ? "pedido" : "pedidos"}`, `Total del corte: ${pesos(data.total)}`)}
+    <p style="margin:0 0 4px; font-size:14px; color:${COLOR_BLACK};">
+      Revísalo en tu portal: descarga el PDF y los Excel, y da tu conformidad u observa algún pedido a más tardar el
+      <strong>${escapeHtml(data.revisionHasta)}</strong>. Si no hay observaciones, se toma como conforme y emitimos la factura.
+    </p>
+    ${boton(data.url, "Revisar estado de cuenta")}`
+      : `
+    <h1 style="margin:0 0 16px; font-size:18px; color:${COLOR_BLACK};">Corte cerrado · ${escapeHtml(data.empresa)}</h1>
+    ${aviso(`Periodo ${data.periodo}`, `${pesos(data.total)} · ${data.pedidos} ${data.pedidos === 1 ? "pedido" : "pedidos"}`)}
+    <p style="margin:0 0 4px; font-size:14px; color:${COLOR_BLACK};">
+      La empresa tiene hasta el ${escapeHtml(data.revisionHasta)} para dar su conformidad u observar. Después se registra la factura en el panel.
+    </p>
+    ${boton(data.url, "Ver en el panel")}`;
+  return {
+    subject:
+      data.destino === "empresa"
+        ? `Tu estado de cuenta de Club 57 Empresarial está listo (${data.periodo})`
+        : `Corte cerrado: ${data.empresa} · ${pesos(data.total)}`,
+    html: renderEmailLayout(body),
+  };
+}
+
+/** Factura o pago registrados (al responsable). */
+export function buildCorteMovimientoEmail(data: {
+  tipo: "factura" | "pago";
+  responsableNombre: string;
+  empresa: string;
+  periodo: string;
+  folio: string | null;
+  monto: number;
+  fechaLimite: string | null;
+  reactivada: boolean;
+  url: string;
+}): { subject: string; html: string } {
+  const firstName = data.responsableNombre.split(" ")[0] || data.responsableNombre;
+  const body =
+    data.tipo === "factura"
+      ? `
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">Hola, ${escapeHtml(firstName)}</h1>
+    <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
+      Registramos la factura del corte ${escapeHtml(data.periodo)} de Club 57 Empresarial de ${escapeHtml(data.empresa)}.
+    </p>
+    ${aviso(`Factura ${data.folio ?? ""}`, `${pesos(data.monto)}${data.fechaLimite ? ` · paga a más tardar el ${data.fechaLimite}` : ""}`)}
+    <p style="margin:0 0 4px; font-size:14px; color:${COLOR_BLACK};">Puedes descargarla desde tu portal.</p>
+    ${boton(data.url, "Ver estados de cuenta")}
+    <p style="margin:0; font-size:12px; color:${COLOR_SLATE};">Si el pago no se registra a tiempo, las compras con cargo a tu empresa se pausan hasta recibirlo.</p>`
+      : `
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">¡Gracias, ${escapeHtml(firstName)}!</h1>
+    <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
+      Registramos el pago del corte ${escapeHtml(data.periodo)} de ${escapeHtml(data.empresa)}.
+    </p>
+    ${aviso("Pago recibido", pesos(data.monto))}
+    <p style="margin:0 0 4px; font-size:14px; color:${COLOR_BLACK};">
+      ${data.reactivada ? "Las compras con cargo a tu empresa ya están activas de nuevo. " : ""}Los puntos Club 57 de las compras de este corte ya están disponibles para tus colaboradores.
+    </p>
+    ${boton(data.url, "Ver estados de cuenta")}`;
+  return {
+    subject:
+      data.tipo === "factura"
+        ? `Factura ${data.folio ?? ""} de tu corte ${data.periodo} · Club 57 Empresarial`
+        : `Pago registrado · corte ${data.periodo} · Club 57 Empresarial`,
+    html: renderEmailLayout(body),
+  };
+}
+
+/** Empresa suspendida por pago vencido o reactivada (al responsable o a un colaborador). */
+export function buildEmpresaSuspensionEmail(data: {
+  tipo: "suspendida" | "reactivada";
+  destino: "responsable" | "empleado";
+  nombre: string;
+  empresa: string;
+  periodo: string | null;
+  url: string;
+}): { subject: string; html: string } {
+  const firstName = data.nombre.split(" ")[0] || data.nombre;
+  const texto =
+    data.tipo === "suspendida"
+      ? data.destino === "responsable"
+        ? `Venció el plazo de pago del corte ${escapeHtml(data.periodo ?? "")} y no tenemos registrado el pago. Pausamos las compras con cargo a ${escapeHtml(data.empresa)} hasta recibirlo. Si ya pagaste, escríbenos con el comprobante.`
+        : `Las compras con cargo a ${escapeHtml(data.empresa)} están pausadas por el momento. Puedes seguir comprando con tarjeta y conservas tus puntos Club 57.`
+      : `Las compras con cargo a ${escapeHtml(data.empresa)} ya están activas de nuevo.`;
+  const body = `
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">Hola, ${escapeHtml(firstName)}</h1>
+    <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">${texto}</p>
+    ${boton(data.url, data.destino === "responsable" ? "Ir al Portal Empresa" : "Ver mi cuenta")}
+    <p style="margin:0; font-size:13px; color:${COLOR_SLATE};">
+      ¿Dudas? Escríbenos por <a href="https://wa.me/${STORE_WHATSAPP_PHONE}" style="color:${COLOR_BLACK}; font-weight:bold;">WhatsApp</a>.
+    </p>`;
+  return {
+    subject:
+      data.tipo === "suspendida"
+        ? `Compras con cargo a ${data.empresa} en pausa · Club 57 Empresarial`
+        : `Compras con cargo a ${data.empresa} reactivadas · Club 57 Empresarial`,
+    html: renderEmailLayout(body),
+  };
+}

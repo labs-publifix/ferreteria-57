@@ -5,6 +5,8 @@ import { EmpresaForm, type EmpresaFormValues } from "@/components/admin/empresas
 import { EmpresaEstadoAcciones } from "@/components/admin/empresas/EmpresaEstadoAcciones";
 import { EstadoEmpresaBadge } from "@/components/admin/empresas/EstadoEmpresaBadge";
 import { AccesoResponsable } from "@/components/admin/empresas/AccesoResponsable";
+import { CortesAdmin, type ObservacionAdmin } from "@/components/admin/empresas/CortesAdmin";
+import { mapCiclo } from "@/lib/club57/empresas/cortes";
 import { ESTADO_EMPLEADO_LABEL, type EstadoEmpleado } from "@/lib/club57/empresas/empleados";
 import { createClient } from "@/lib/supabase/server";
 import { CONVENIO_SUGERIDO, diaCorteLabel, nominaLabel, type EstadoEmpresa, type FrecuenciaNomina } from "@/lib/club57/empresas/datos";
@@ -41,7 +43,16 @@ export default async function AdminEmpresaPage({
 }) {
   if (!UUID_RE.test(params.id)) notFound();
   const supabase = await createClient();
-  const [{ data: e }, { data: bitacora }, { data: personal }, { data: empleadosData }, { data: pedidosData }] = await Promise.all([
+  const [
+    { data: e },
+    { data: bitacora },
+    { data: personal },
+    { data: empleadosData },
+    { data: pedidosData },
+    { data: ciclosData },
+    { data: obsData },
+    { data: creditoData },
+  ] = await Promise.all([
     supabase.from("club57_empresas").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("club57_empresas_bitacora")
@@ -58,7 +69,27 @@ export default async function AdminEmpresaPage({
       .order("solicitado_at", { ascending: false }),
     // Pedidos con cargo a la empresa (para el crédito comprometido).
     supabase.from("orders").select("status, total").eq("empresa_id", params.id).eq("metodo_pago", "empresa"),
+    supabase.rpc("club57_admin_ciclos", { p_empresa_id: params.id }),
+    supabase
+      .from("club57_ciclo_observaciones")
+      .select("id, ciclo_id, comentario, estado, respuesta, orders(order_number)")
+      .eq("empresa_id", params.id)
+      .order("created_at"),
+    supabase.rpc("club57_empresa_credito", { p_empresa_id: params.id }),
   ]);
+  const ciclos = ((ciclosData ?? []) as Record<string, unknown>[]).map(mapCiclo);
+  const observacionesCorte: ObservacionAdmin[] = ((obsData ?? []) as Record<string, unknown>[]).map((o) => {
+    const orden = Array.isArray(o.orders) ? o.orders[0] : o.orders;
+    return {
+      id: String(o.id),
+      ciclo_id: String(o.ciclo_id),
+      order_number: (orden as { order_number?: string } | null)?.order_number ?? null,
+      comentario: String(o.comentario),
+      estado: o.estado as ObservacionAdmin["estado"],
+      respuesta: (o.respuesta as string | null) ?? null,
+    };
+  });
+  const credito = ((creditoData ?? []) as Record<string, unknown>[])[0];
   if (!e) notFound();
 
   // Una solicitud del sitio llega sin convenio: se proponen los valores
@@ -69,7 +100,8 @@ export default async function AdminEmpresaPage({
 
   const pedidosEmpresa = (pedidosData ?? []) as { status: string; total: number | string }[];
   const enEspera = pedidosEmpresa.filter((p) => p.status === "pendiente_autorizacion");
-  const comprometido = pedidosEmpresa.filter((p) => p.status !== "cancelado").reduce((sum, p) => sum + Number(p.total), 0);
+  // Crédito comprometido con Ferretería 57: se libera al registrar el pago de cada corte.
+  const comprometido = credito ? Number(credito.comprometido) : 0;
 
   const empleados = (empleadosData ?? []).map((row) => {
     const m = (Array.isArray(row.club57_members) ? row.club57_members[0] : row.club57_members) as
@@ -208,8 +240,22 @@ export default async function AdminEmpresaPage({
           </div>
         </dl>
         <p className="mt-2 font-sans text-xs text-brand-slate/70">
-          Comprometido: pedidos con cargo a la empresa en espera o autorizados, sin contar los cancelados.
+          Comprometido: pedidos con cargo a la empresa en espera o autorizados cuyo corte aún no se paga (menos saldos a favor).
         </p>
+      </section>
+
+      <section id="cortes" className="scroll-mt-6 rounded-lg bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-base uppercase text-brand-slate">Cortes y facturación</h2>
+          <a href="/admin/lealtad/empresas/cortes" className="font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black">
+            Todos los cortes
+          </a>
+        </div>
+        <p className="mt-1 mb-3 font-sans text-xs text-brand-slate/70">
+          Corte {diaCorteLabel(e.dia_corte).toLowerCase()} · pago a {e.plazo_pago_dias ?? "—"} días de la factura. Si el pago vence, la empresa se
+          suspende sola y se reactiva al registrarlo.
+        </p>
+        <CortesAdmin empresaId={e.id} ciclos={ciclos} observaciones={observacionesCorte} />
       </section>
 
       <section className="rounded-lg bg-white p-4 shadow-sm sm:p-6">

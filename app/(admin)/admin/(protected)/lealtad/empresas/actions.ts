@@ -8,6 +8,8 @@ import { sendEmail } from "@/lib/email/sendEmail";
 import { buildAccesoResponsableEmail } from "@/lib/email/empresarialEmails";
 import { appUrl } from "@/lib/club57/empresas/notificaciones";
 import { describirCambiosConvenio } from "@/lib/club57/empresas/cambios";
+import { FACTURAS_BUCKET } from "@/lib/club57/empresas/cortes";
+import { notificarCorteCerrado, notificarMovimientoCorte } from "@/lib/club57/empresas/cortesNotificaciones";
 import {
   validarConvenio,
   validarDatosEmpresa,
@@ -259,4 +261,118 @@ export async function enviarAccesoResponsable(id: string): Promise<{ error?: str
     return { error: "El responsable quedó vinculado, pero no se pudo enviar el correo. Intenta de nuevo." };
   }
   return { correo };
+}
+
+// ---------------------------------------------------------------------
+// Corte mensual (Etapa 5): cerrar, resolver observaciones, factura y pago.
+// Las reglas viven en la base (club57_admin_*), que vuelve a validar.
+// ---------------------------------------------------------------------
+function revalidarCortes(empresaId?: string) {
+  revalidatePath("/admin/lealtad/empresas/cortes");
+  if (empresaId && UUID_RE.test(empresaId)) revalidatePath(`/admin/lealtad/empresas/${empresaId}`);
+  revalidatePath("/empresa", "layout");
+}
+
+export async function cerrarCorte(cicloId: string, empresaId: string): Promise<{ error?: string; resultado?: string }> {
+  const staff = await requireCatalogStaff();
+  if (!staff) return { error: "No autorizado." };
+  if (!UUID_RE.test(cicloId)) return { error: "Corte no encontrado." };
+  const { data, error } = await staff.supabase.rpc("club57_admin_cerrar_ciclo", { p_ciclo_id: cicloId });
+  if (error) return { error: error.message || "No se pudo cerrar el corte." };
+  if (data === "revision") await notificarCorteCerrado(cicloId);
+  revalidarCortes(empresaId);
+  return { resultado: data as string };
+}
+
+export async function resolverObservacion(observacionId: string, respuesta: string, empresaId: string): Promise<{ error?: string }> {
+  const staff = await requireCatalogStaff();
+  if (!staff) return { error: "No autorizado." };
+  if (!UUID_RE.test(observacionId)) return { error: "Observación no encontrada." };
+  const { error } = await staff.supabase.rpc("club57_admin_resolver_observacion", {
+    p_observacion_id: observacionId,
+    p_respuesta: respuesta.trim().slice(0, 500),
+  });
+  if (error) return { error: error.message || "No se pudo guardar la respuesta." };
+  revalidarCortes(empresaId);
+  return {};
+}
+
+// 2 MB por archivo: el PDF y el XML viajan juntos y Vercel corta peticiones de más de ~4.5 MB.
+const FACTURA_MAX_BYTES = 2 * 1024 * 1024;
+
+async function subirArchivoFactura(
+  file: File | null,
+  tipo: "pdf" | "xml",
+  empresaId: string,
+  cicloId: string
+): Promise<{ path?: string | null; error?: string }> {
+  if (!file || file.size === 0) return { path: null };
+  if (file.size > FACTURA_MAX_BYTES) return { error: `El ${tipo.toUpperCase()} pesa más de 2 MB.` };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const inicio = new TextDecoder().decode(bytes.slice(0, 64)).trimStart();
+  if (tipo === "pdf" && !inicio.startsWith("%PDF")) return { error: "El archivo de la factura no es un PDF." };
+  if (tipo === "xml" && !inicio.startsWith("<")) return { error: "El archivo de la factura no es un XML." };
+  const path = `${empresaId}/${cicloId}/factura-${crypto.randomUUID()}.${tipo}`;
+  const { error } = await createAdminClient()
+    .storage.from(FACTURAS_BUCKET)
+    .upload(path, bytes, { contentType: tipo === "pdf" ? "application/pdf" : "application/xml", upsert: false });
+  if (error) return { error: `No se pudo subir el ${tipo.toUpperCase()}: ${error.message}` };
+  return { path };
+}
+
+export async function registrarFactura(formData: FormData): Promise<{ error?: string }> {
+  const staff = await requireCatalogStaff();
+  if (!staff) return { error: "No autorizado." };
+  const cicloId = String(formData.get("ciclo_id") ?? "");
+  const empresaId = String(formData.get("empresa_id") ?? "");
+  if (!UUID_RE.test(cicloId) || !UUID_RE.test(empresaId)) return { error: "Corte no encontrado." };
+  const folio = String(formData.get("folio") ?? "").trim();
+  const fecha = String(formData.get("fecha") ?? "");
+  const monto = Number(String(formData.get("monto") ?? "").replace(/[$,\s]/g, ""));
+  if (!folio || !/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !Number.isFinite(monto) || monto < 0) {
+    return { error: "Captura folio, fecha y monto de la factura." };
+  }
+  const pdf = await subirArchivoFactura(formData.get("pdf") as File | null, "pdf", empresaId, cicloId);
+  if (pdf.error) return { error: pdf.error };
+  const xml = await subirArchivoFactura(formData.get("xml") as File | null, "xml", empresaId, cicloId);
+  if (xml.error) return { error: xml.error };
+
+  const { error } = await staff.supabase.rpc("club57_admin_registrar_factura", {
+    p_ciclo_id: cicloId,
+    p_folio: folio,
+    p_fecha: fecha,
+    p_monto: Math.round(monto * 100) / 100,
+    p_pdf_path: pdf.path ?? null,
+    p_xml_path: xml.path ?? null,
+  });
+  if (error) return { error: error.message || "No se pudo registrar la factura." };
+  await notificarMovimientoCorte(cicloId, "factura");
+  revalidarCortes(empresaId);
+  return {};
+}
+
+export async function registrarPago(input: {
+  cicloId: string;
+  empresaId: string;
+  fecha: string;
+  monto: string;
+  referencia: string;
+}): Promise<{ error?: string; reactivada?: boolean }> {
+  const staff = await requireCatalogStaff();
+  if (!staff) return { error: "No autorizado." };
+  if (!UUID_RE.test(input.cicloId)) return { error: "Corte no encontrado." };
+  const monto = Number(input.monto.replace(/[$,\s]/g, ""));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.fecha) || !Number.isFinite(monto) || monto <= 0) {
+    return { error: "Captura la fecha y el monto del pago." };
+  }
+  const { data, error } = await staff.supabase.rpc("club57_admin_registrar_pago", {
+    p_ciclo_id: input.cicloId,
+    p_fecha: input.fecha,
+    p_monto: Math.round(monto * 100) / 100,
+    p_referencia: input.referencia.trim().slice(0, 120),
+  });
+  if (error) return { error: error.message || "No se pudo registrar el pago." };
+  await notificarMovimientoCorte(input.cicloId, "pago", Boolean(data));
+  revalidarCortes(input.empresaId);
+  return { reactivada: Boolean(data) };
 }
