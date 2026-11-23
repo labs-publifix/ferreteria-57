@@ -22,6 +22,10 @@ import { getAllGuides } from "@/lib/blog/guide-content";
 import { buildMisGuias, type MiGuia } from "@/lib/blog/mis-guias";
 import { getNow } from "@/lib/blog/now";
 import type { MemberPartner, SociosCuenta } from "@/lib/club57/socios/member";
+import type { MiVinculoEmpresa } from "@/components/account/EmpresarialPanel";
+import Link from "next/link";
+import { Building2 } from "lucide-react";
+import { buttonClassName } from "@/components/ui";
 
 // Header y Footer no se repiten aquí, ya envuelven la página desde
 // app/layout.tsx.
@@ -87,6 +91,8 @@ export default async function CuentaPage({
   let promociones: MemberPromoCard[] = buildMemberPromoCards([], hoy);
   let guias: MiGuia[] = [];
   let socios: SociosCuenta = { acceso: "sin_membresia" };
+  let empresarial: MiVinculoEmpresa[] = [];
+  let empresaResponsable: string | null = null;
 
   if (user) {
     // Los puntos 'pendiente' cuya fecha_disponible ya llegó se pasan a
@@ -152,6 +158,24 @@ export default async function CuentaPage({
       const { data: sociosData, error: sociosError } = await supabase.rpc("club57_directorio_miembros");
       socios = { acceso: "miembro", socios: (sociosData ?? []) as MemberPartner[], error: Boolean(sociosError) };
     }
+
+    // Club 57 Empresarial: sus vínculos con empresas y, si es el responsable
+    // de una, el acceso al Portal Empresa.
+    const [vinculosResult, responsableResult] = await Promise.all([
+      supabase.rpc("club57_mis_empresas"),
+      supabase
+        .from("club57_empresas")
+        .select("nombre_comercial")
+        .eq("responsable_user_id", user.id)
+        .in("estado", ["activa", "suspendida"])
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    empresarial = ((vinculosResult.data ?? []) as MiVinculoEmpresa[]).map((v) => ({
+      ...v,
+      linea_credito: v.linea_credito === null ? null : Number(v.linea_credito),
+    }));
+    empresaResponsable = responsableResult.data?.nombre_comercial ?? null;
 
     profile = profileResult.data;
     promociones = buildMemberPromoCards(
@@ -246,6 +270,19 @@ export default async function CuentaPage({
             email={user.email ?? ""}
             fullName={profile?.full_name ?? null}
           />
+          {empresaResponsable && (
+            <div className="flex w-full max-w-3xl flex-col items-start gap-3 rounded-lg bg-brand-slate p-5 text-left text-white sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <Building2 className="size-6 shrink-0 text-brand-orange" aria-hidden="true" strokeWidth={1.75} />
+                <p className="font-sans text-sm sm:text-base">
+                  Administras Club 57 Empresarial de <strong>{empresaResponsable}</strong>.
+                </p>
+              </div>
+              <Link href="/empresa" className={buttonClassName("primary", "shrink-0")}>
+                Ir al Portal Empresa
+              </Link>
+            </div>
+          )}
           <Club57MemberPanel
             referralCode={profile?.referral_code ?? null}
             saldoDisponible={saldoDisponible}
@@ -261,6 +298,7 @@ export default async function CuentaPage({
             hoy={hoy}
             guias={guias}
             socios={socios}
+            empresarial={empresarial}
           />
         </>
       ) : (

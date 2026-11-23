@@ -13,6 +13,7 @@ import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL, type FulfillmentType, typ
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
 import { MisGuias } from "./MisGuias";
+import { EmpresarialPanel, type MiVinculoEmpresa } from "./EmpresarialPanel";
 import { Club57PartnersDirectory } from "./Club57PartnersDirectory";
 import type { SociosCuenta } from "@/lib/club57/socios/member";
 import type { MiGuia } from "@/lib/blog/mis-guias";
@@ -88,6 +89,7 @@ const TABS = [
   { id: "pedidos", label: "Mis pedidos" },
   { id: "catalogo", label: "Catálogo de canje" },
   { id: "socios", label: "Socios Comerciales" },
+  { id: "empresarial", label: "Empresarial" },
 ];
 
 // Filtros del catálogo que viven en la URL (ver syncCatalogFiltersToUrl):
@@ -113,6 +115,7 @@ export function Club57MemberPanel({
   hoy,
   guias,
   socios,
+  empresarial = [],
 }: {
   referralCode: string | null;
   saldoDisponible: number;
@@ -131,6 +134,8 @@ export function Club57MemberPanel({
   guias: MiGuia[];
   /** Directorio de socios comerciales: completo solo para miembros activos. */
   socios: SociosCuenta;
+  /** Club 57 Empresarial: vínculos del miembro con empresas. */
+  empresarial?: MiVinculoEmpresa[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -139,7 +144,9 @@ export function Club57MemberPanel({
   const [activeTab, setActiveTab] = useState(() =>
     searchParams.get("tab") === "socios"
       ? "socios"
-      : CATALOG_URL_PARAMS.some((param) => searchParams.has(param))
+      : searchParams.get("tab") === "empresarial"
+        ? "empresarial"
+        : CATALOG_URL_PARAMS.some((param) => searchParams.has(param))
         ? "catalogo"
         : "puntos"
   );
@@ -714,6 +721,10 @@ export function Club57MemberPanel({
 
       <TabPanel id="socios" idPrefix="cuenta" activeId={activeTab}>
         <Club57PartnersDirectory data={socios} initialQuery={(searchParams.get("q") ?? "").slice(0, 60)} />
+      </TabPanel>
+
+      <TabPanel id="empresarial" idPrefix="cuenta" activeId={activeTab}>
+        <EmpresarialPanel vinculos={empresarial} />
       </TabPanel>
 
       <ConfirmDialog

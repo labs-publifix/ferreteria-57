@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/lib/supabase/requireStaff";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { generateSecurePassword } from "@/lib/generatePassword";
+import { sendEmail } from "@/lib/email/sendEmail";
+import { buildAccesoResponsableEmail } from "@/lib/email/empresarialEmails";
+import { appUrl } from "@/lib/club57/empresas/notificaciones";
 import { describirCambiosConvenio } from "@/lib/club57/empresas/cambios";
 import {
   validarConvenio,
@@ -179,4 +184,79 @@ export async function regenerarCodigoEmpresa(id: string): Promise<{ error?: stri
   if (error || !data) return { error: error?.message ?? "No se pudo cambiar el código." };
   revalidar(id);
   return { codigo: data as string };
+}
+
+// Acceso del responsable al Portal Empresa: se crea su cuenta (o se usa la
+// que ya tenga con ese correo), se vincula a la empresa y se le manda un
+// correo con un enlace para crear su contraseña. Si la empresa ya tenía
+// otro responsable, ese pierde el acceso en el acto.
+export async function enviarAccesoResponsable(id: string): Promise<{ error?: string; correo?: string }> {
+  const staff = await requireCatalogStaff();
+  if (!staff) return { error: "No autorizado." };
+  if (!UUID_RE.test(id)) return { error: "Empresa no encontrada." };
+
+  const { data: empresa } = await staff.supabase
+    .from("club57_empresas")
+    .select("estado, nombre_comercial, codigo, responsable_nombre, responsable_correo, responsable_user_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!empresa) return { error: "Empresa no encontrada." };
+  if (empresa.estado !== "activa" && empresa.estado !== "suspendida") {
+    return { error: "Activa la empresa antes de dar acceso a su responsable." };
+  }
+
+  let admin: ReturnType<typeof createAdminClient>;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return { error: "Falta configurar el servidor para crear cuentas." };
+  }
+
+  const correo = empresa.responsable_correo.trim().toLowerCase();
+  const { error: createError } = await admin.auth.admin.createUser({
+    email: correo,
+    email_confirm: true,
+    password: generateSecurePassword(),
+    user_metadata: { full_name: empresa.responsable_nombre },
+  });
+  if (createError && createError.code !== "email_exists" && !/already (been )?registered/i.test(createError.message)) {
+    return { error: `No se pudo crear la cuenta del responsable: ${createError.message}` };
+  }
+
+  // El enlace usa el mismo flujo que «¿Olvidaste tu contraseña?».
+  const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "recovery", email: correo });
+  if (linkError || !link?.user || !link.properties?.hashed_token) {
+    return { error: `No se pudo generar el enlace de acceso: ${linkError?.message ?? "sin respuesta"}` };
+  }
+
+  const anterior = empresa.responsable_user_id;
+  const { error: updateError } = await staff.supabase
+    .from("club57_empresas")
+    .update({ responsable_user_id: link.user.id })
+    .eq("id", id);
+  if (updateError) return { error: describirError(updateError.message, "No se pudo vincular al responsable.") };
+
+  await staff.supabase.from("club57_empresas_bitacora").insert({
+    empresa_id: id,
+    accion: "responsable",
+    detalle: `${anterior && anterior !== link.user.id ? "Nuevo responsable" : "Acceso enviado"}: ${correo}`,
+    actor_id: staff.userId,
+  });
+
+  const enlace = appUrl(
+    `/cuenta/restablecer-contrasena?token_hash=${encodeURIComponent(link.properties.hashed_token)}&type=recovery`
+  );
+  const email = buildAccesoResponsableEmail({
+    responsableNombre: empresa.responsable_nombre,
+    empresa: empresa.nombre_comercial,
+    codigo: empresa.codigo,
+    enlace,
+  });
+  const sent = await sendEmail({ to: correo, ...email });
+  revalidar(id);
+  if (sent.error) {
+    console.error("[club57 empresarial] acceso responsable", sent.error);
+    return { error: "El responsable quedó vinculado, pero no se pudo enviar el correo. Intenta de nuevo." };
+  }
+  return { correo };
 }

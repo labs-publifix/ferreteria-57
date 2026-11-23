@@ -228,3 +228,36 @@ export const PRICE_UPDATE_COLUMNS = [
     format: "Número mayor a 0. Puede ser el resultado de una fórmula.",
   },
 ] as const satisfies readonly ImportColumnDef[];
+
+// Club 57 Empresarial: precarga de empleados desde el Portal Empresa.
+export const EMPLEADOS_PRECARGA_COLUMNS = [
+  { key: "nombre", header: "Nombre", required: false, example: "Rosa Díaz", format: "Texto, solo de referencia." },
+  {
+    key: "correo",
+    header: "Correo",
+    required: false,
+    example: "rosa@empresa.mx",
+    format: "El correo con el que el empleado se registrará en Club 57. Se pide el correo o el número de empleado.",
+  },
+  {
+    key: "numero de empleado",
+    header: "Número de empleado",
+    required: false,
+    example: "E-1024",
+    format: "Tal como aparece en tu nómina. Obligatorio si tu empresa lo exige.",
+  },
+  {
+    key: "salario mensual neto",
+    header: "Salario mensual neto",
+    required: false,
+    example: "12000",
+    format: "Número, sin $ ni comas. Obligatorio si la línea es un porcentaje. Solo lo ve tu empresa.",
+  },
+  {
+    key: "linea",
+    header: "Línea",
+    required: true,
+    example: "50%",
+    format: "Porcentaje del salario (por ejemplo 50%) o monto fijo (por ejemplo 3000). Nunca más del salario.",
+  },
+] as const satisfies readonly ImportColumnDef[];
