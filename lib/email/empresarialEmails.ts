@@ -371,3 +371,40 @@ export function buildPedidoEmpresaCanceladoEmail(data: {
   `;
   return { subject: `Tu pedido ${data.orderNumber} se canceló`, html: renderEmailLayout(body) };
 }
+
+// ---------------------------------------------------------------------
+// Etapa 4 · Nómina
+// ---------------------------------------------------------------------
+
+/** Al responsable: se acerca una nómina con descuentos de Club 57 Empresarial. */
+export function buildNominaPorAplicarEmail(data: {
+  responsableNombre: string;
+  empresa: string;
+  fechaLabel: string;
+  empleados: number;
+  total: number;
+  portalUrl: string;
+  excelUrl: string;
+}): { subject: string; html: string } {
+  const firstName = data.responsableNombre.split(" ")[0] || data.responsableNombre;
+  const body = `
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">Hola, ${escapeHtml(firstName)}</h1>
+    <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
+      Estos son los descuentos de Club 57 Empresarial para la nómina del <strong>${escapeHtml(data.fechaLabel)}</strong>.
+    </p>
+    ${aviso(
+      `${data.empleados} ${data.empleados === 1 ? "colaborador" : "colaboradores"}`,
+      `${pesos(data.total)} a descontar`
+    )}
+    <p style="margin:0 0 4px; font-size:14px; color:${COLOR_BLACK};">
+      Descarga el Excel para cargarlo a tu sistema de nómina. Después de pagar, confirma en el portal lo que se descontó
+      (puedes marcar excepciones); así se libera el crédito de tus colaboradores.
+    </p>
+    ${boton(data.excelUrl, "Descargar Excel")}
+    <p style="margin:0; font-size:13px; color:${COLOR_SLATE};">
+      Si no la confirmas en 3 días hábiles después de la fecha de pago, se toma como aplicada completa.
+      <a href="${escapeHtml(data.portalUrl)}" style="color:${COLOR_BLACK}; font-weight:bold;">Ir al Portal Empresa</a>
+    </p>
+  `;
+  return { subject: `Descuentos para tu nómina del ${data.fechaLabel} · ${data.empresa}`, html: renderEmailLayout(body) };
+}

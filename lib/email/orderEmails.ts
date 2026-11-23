@@ -68,6 +68,8 @@ export interface OrderEmailData {
    *  cargo a ella (ya autorizado). En ese caso createdAt es el momento de
    *  la autorización, que es cuando empieza a correr la preparación. */
   cargoEmpresa?: string | null;
+  /** Club 57 Empresarial: cómo se le descontará vía nómina. */
+  descuentosNomina?: { partes: number; primeraFecha: string; monto: number } | null;
 }
 
 // Contenido de usuario (nombre, dirección) va siempre a través de esto
@@ -343,6 +345,13 @@ export function buildCustomerConfirmationEmail(data: OrderEmailData): { subject:
     ${
       data.cargoEmpresa && data.fulfillmentType === "pickup"
         ? `<p style="margin:8px 0 0; font-size:14px; color:${COLOR_BLACK}; font-weight:bold;">Al recoger, presenta una identificación oficial: la compra va con cargo a tu empresa.</p>`
+        : ""
+    }
+    ${
+      data.cargoEmpresa && data.descuentosNomina
+        ? `<p style="margin:16px 0 0; font-size:14px; color:${COLOR_BLACK};">Se te descontará vía nómina en <strong>${data.descuentosNomina.partes} ${
+            data.descuentosNomina.partes === 1 ? "pago" : "pagos"
+          }</strong>, el primero de ${formatPrice(data.descuentosNomina.monto)} el ${escapeHtml(data.descuentosNomina.primeraFecha)}. Tu crédito se libera con cada descuento.</p>`
         : ""
     }
 

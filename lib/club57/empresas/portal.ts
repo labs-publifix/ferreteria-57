@@ -118,3 +118,33 @@ export function mapPortalPedido(row: Record<string, unknown>): PortalPedido {
     })),
   };
 }
+
+// Saldo de cada empleado (club57_portal_saldos): activos y, de las bajas,
+// el saldo que quedó pendiente al salir.
+export interface PortalSaldo {
+  empleado_id: string;
+  en_espera: number;
+  por_descontar: number;
+  disponible: number;
+  proximo_fecha: string | null;
+  proximo_monto: number | null;
+  saldo_baja: number | null;
+}
+
+export function mapPortalSaldos(rows: Record<string, unknown>[]): Record<string, PortalSaldo> {
+  const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  return Object.fromEntries(
+    rows.map((row) => [
+      String(row.empleado_id),
+      {
+        empleado_id: String(row.empleado_id),
+        en_espera: Number(row.en_espera ?? 0),
+        por_descontar: Number(row.por_descontar ?? 0),
+        disponible: Number(row.disponible ?? 0),
+        proximo_fecha: (row.proximo_fecha as string | null) ?? null,
+        proximo_monto: num(row.proximo_monto),
+        saldo_baja: num(row.saldo_baja),
+      },
+    ])
+  );
+}

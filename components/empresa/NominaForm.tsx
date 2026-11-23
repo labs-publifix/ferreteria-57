@@ -60,7 +60,8 @@ export function NominaForm({
         <h2 className="font-display text-base uppercase text-brand-slate">Nómina y crédito</h2>
         <p className="mt-1 max-w-prose font-sans text-sm text-brand-slate/80">
           Así sabremos cuándo vuelve a estar disponible el crédito de cada empleado conforme le descuentas en nómina.
-          Puedes asignar una frecuencia distinta a un empleado desde su ficha.
+          Puedes asignar una frecuencia distinta a un empleado desde su ficha. Los cambios aplican a las compras que autorices
+          desde ahora; los descuentos ya programados conservan su fecha.
         </p>
       </div>
       {error && (
