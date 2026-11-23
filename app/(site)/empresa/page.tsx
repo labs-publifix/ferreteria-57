@@ -7,6 +7,8 @@ import { diaCorteLabel } from "@/lib/club57/empresas/datos";
 import { appUrl } from "@/lib/club57/empresas/notificaciones";
 import { agruparNominas, fechaNominaLabel, mapPortalDescuento } from "@/lib/club57/empresas/nomina";
 import { todayInStoreTimezone } from "@/lib/marketing/visibility";
+import { fechaCorta, mapCiclo, periodoLabel } from "@/lib/club57/empresas/cortes";
+import { ultimoDiaPlazo } from "@/lib/club57/empresas/pedidos";
 
 const pesos = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -14,11 +16,16 @@ const pesos = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN
 export default async function PortalEmpresaInicio() {
   const { supabase, empresa } = await getPortalEmpresa();
   if (!empresa) return null;
-  const [{ data }, { data: pedidosData }, { data: descuentosData }] = await Promise.all([
+  const [{ data }, { data: pedidosData }, { data: descuentosData }, { data: ciclosData }, { data: creditoData }] = await Promise.all([
     supabase.rpc("club57_portal_empleados"),
     supabase.rpc("club57_portal_pedidos"),
     supabase.rpc("club57_portal_descuentos"),
+    supabase.rpc("club57_portal_ciclos"),
+    supabase.rpc("club57_empresa_credito", { p_empresa_id: empresa.id }),
   ]);
+  const ciclos = ((ciclosData ?? []) as Record<string, unknown>[]).map(mapCiclo);
+  const cortesAtencion = ciclos.filter((c) => c.estado === "revision" || c.estado === "vencido" || c.estado === "facturado");
+  const credito = ((creditoData ?? []) as Record<string, unknown>[])[0];
   const nominas = agruparNominas(
     ((descuentosData ?? []) as Record<string, unknown>[]).map(mapPortalDescuento),
     todayInStoreTimezone()
@@ -27,9 +34,8 @@ export default async function PortalEmpresaInicio() {
   const empleados = ((data ?? []) as Record<string, unknown>[]).map(mapPortalEmpleado);
   const pedidos = ((pedidosData ?? []) as Record<string, unknown>[]).map(mapPortalPedido);
   const pedidosPorAutorizar = pedidos.filter((p) => p.status === "pendiente_autorizacion");
-  // Crédito con Ferretería 57 comprometido: pedidos con cargo a la empresa
-  // no cancelados (en espera o autorizados).
-  const comprometido = pedidos.filter((p) => p.status !== "cancelado").reduce((sum, p) => sum + p.total, 0);
+  // Crédito con Ferretería 57: se libera al pagar cada corte.
+  const disponibleF57 = credito ? Number(credito.disponible) : null;
   const activos = empleados.filter((e) => e.estado === "activo");
   const pendientes = empleados.filter((e) => e.estado === "pendiente").length;
   const lineaAsignada = activos.reduce((sum, e) => sum + (e.linea_credito ?? 0), 0);
@@ -40,7 +46,7 @@ export default async function PortalEmpresaInicio() {
     { label: "Líneas asignadas", value: pesos.format(lineaAsignada) },
     {
       label: "Crédito disponible con Ferretería 57",
-      value: empresa.limite_credito === null ? "—" : pesos.format(Math.max(empresa.limite_credito - comprometido, 0)),
+      value: disponibleF57 === null ? "—" : pesos.format(disponibleF57),
       nota: empresa.limite_credito === null ? null : `de ${pesos.format(empresa.limite_credito)}`,
     },
   ];
@@ -59,6 +65,25 @@ export default async function PortalEmpresaInicio() {
           <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
         </Link>
       )}
+
+      {cortesAtencion.map((c) => (
+        <Link
+          key={c.id}
+          href="/empresa/cortes"
+          className={`flex items-center justify-between gap-3 rounded-lg border-l-4 bg-white px-4 py-3 font-sans text-sm text-brand-black shadow-sm hover:bg-brand-gray/50 ${
+            c.estado === "vencido" ? "border-red-600" : "border-brand-orange"
+          }`}
+        >
+          <span>
+            {c.estado === "revision"
+              ? `Revisa tu estado de cuenta del corte ${periodoLabel(c.periodo_inicio, c.periodo_fin)} (${pesos.format(c.total)}) antes del ${c.revision_vence_at ? ultimoDiaPlazo(c.revision_vence_at) : "—"}.`
+              : c.estado === "facturado"
+                ? `Factura ${c.factura_folio ?? ""} por ${pesos.format(c.factura_monto ?? 0)}: paga a más tardar el ${c.pago_vence ? fechaCorta(c.pago_vence) : "—"}.`
+                : `El pago del corte ${periodoLabel(c.periodo_inicio, c.periodo_fin)} está vencido: las compras con cargo a tu empresa están pausadas.`}
+          </span>
+          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
+      ))}
 
       {nominas.porConfirmar.map((n) => (
         <Link

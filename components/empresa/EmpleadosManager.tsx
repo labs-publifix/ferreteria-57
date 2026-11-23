@@ -282,12 +282,13 @@ function EmpleadoModal({
               onChange={setFrecuencia}
               label="Nómina"
               options={[
-                { value: "", label: `Igual que la empresa (${nominaEmpresa})` },
+                { value: "", label: "Igual que la empresa" },
                 { value: "semanal", label: "Semanal" },
-                { value: "quincenal", label: "Quincenal (días 15 y último)" },
+                { value: "quincenal", label: "Quincenal (15 y último)" },
                 { value: "mensual", label: "Mensual" },
               ]}
             />
+            {frecuencia === "" && <p className="mt-1 font-sans text-xs text-brand-slate/70">La de tu empresa: {nominaEmpresa.toLowerCase()}.</p>}
           </div>
           {frecuencia === "semanal" && (
             <div>

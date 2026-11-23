@@ -81,10 +81,15 @@ export default async function AdminEmpresasPage({ searchParams }: { searchParams
               Club 57 Empresarial: solicitudes de afiliación y empresas con convenio.
             </p>
           </div>
-          <Link href="/admin/lealtad/empresas/nueva" className={buttonClassName("primary")}>
-            <Plus className="size-4" aria-hidden="true" strokeWidth={2} />
-            Nueva empresa
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/lealtad/empresas/cortes" className={buttonClassName("secondary")}>
+              Cortes y facturación
+            </Link>
+            <Link href="/admin/lealtad/empresas/nueva" className={buttonClassName("primary")}>
+              <Plus className="size-4" aria-hidden="true" strokeWidth={2} />
+              Nueva empresa
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -39,11 +39,13 @@ export default async function PortalEmpresaLayout({ children }: { children: Reac
     );
   }
 
-  const [{ data: empleados }, { data: pedidos }, { data: descuentos }] = await Promise.all([
+  const [{ data: empleados }, { data: pedidos }, { data: descuentos }, { data: ciclos }] = await Promise.all([
     supabase.rpc("club57_portal_empleados"),
     supabase.rpc("club57_portal_pedidos"),
     supabase.rpc("club57_portal_descuentos"),
+    supabase.rpc("club57_portal_ciclos"),
   ]);
+  const cortesPorRevisar = ((ciclos ?? []) as { estado: string }[]).filter((c) => c.estado === "revision" || c.estado === "vencido").length;
   const nominasPorConfirmar = agruparNominas(
     ((descuentos ?? []) as Record<string, unknown>[]).map(mapPortalDescuento),
     todayInStoreTimezone()
@@ -60,11 +62,14 @@ export default async function PortalEmpresaLayout({ children }: { children: Reac
       {empresa.estado === "suspendida" && (
         <p role="status" className="mt-4 rounded-md border-l-4 border-red-600 bg-red-50 px-4 py-3 font-sans text-sm text-red-800">
           Las compras con cargo a tu empresa están suspendidas
-          {empresa.motivo_estado ? `: ${empresa.motivo_estado}` : ""}. Escríbenos para reactivarlas.
+          {empresa.motivo_estado ? `: ${empresa.motivo_estado}` : ""}.{" "}
+          {empresa.motivo_estado?.startsWith("Pago vencido")
+            ? "Se reactivan en cuanto registremos tu pago."
+            : "Escríbenos para reactivarlas."}
         </p>
       )}
       <div className="mt-6">
-        <PortalNav pendientes={pendientes} pedidosPendientes={pedidosPendientes} nominasPorConfirmar={nominasPorConfirmar} />
+        <PortalNav pendientes={pendientes} pedidosPendientes={pedidosPendientes} nominasPorConfirmar={nominasPorConfirmar} cortesPorRevisar={cortesPorRevisar} />
       </div>
       <div className="mt-6">{children}</div>
     </main>
