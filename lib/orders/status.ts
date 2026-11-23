@@ -8,6 +8,7 @@ export type FulfillmentType = "pickup" | "local_delivery" | "foraneo";
 
 export type OrderStatus =
   | "pendiente_pago"
+  | "pendiente_autorizacion"
   | "pagado"
   | "preparando"
   | "listo"
@@ -21,6 +22,7 @@ export type OrderStatus =
 // lugar que la necesite.
 export const ALL_ORDER_STATUSES: OrderStatus[] = [
   "pendiente_pago",
+  "pendiente_autorizacion",
   "pagado",
   "preparando",
   "listo",
@@ -31,6 +33,7 @@ export const ALL_ORDER_STATUSES: OrderStatus[] = [
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pendiente_pago: "Pendiente de pago",
+  pendiente_autorizacion: "En espera de autorización",
   pagado: "Pagado",
   preparando: "Preparando",
   listo: "Listo",
@@ -38,6 +41,15 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   entregado: "Entregado",
   cancelado: "Cancelado",
 };
+
+// Club 57 Empresarial: un pedido con cargo a la empresa no se cobra en
+// Mercado Pago; «pagado» significa que la empresa ya lo autorizó.
+export type MetodoPago = "mercadopago" | "empresa";
+
+export function orderStatusLabel(status: OrderStatus, metodoPago?: MetodoPago | null): string {
+  if (metodoPago === "empresa" && status === "pagado") return "Autorizado";
+  return ORDER_STATUS_LABEL[status];
+}
 
 export const FULFILLMENT_TYPE_LABEL: Record<FulfillmentType, string> = {
   pickup: "Retiro en tienda",
@@ -51,6 +63,7 @@ export const FULFILLMENT_TYPE_LABEL: Record<FulfillmentType, string> = {
 // nunca queda un estatus con un color en una vista y otro en la otra.
 export const ORDER_STATUS_BADGE_CLASS: Record<OrderStatus, string> = {
   pendiente_pago: "bg-amber-100 text-amber-800",
+  pendiente_autorizacion: "bg-orange-100 text-orange-800",
   pagado: "bg-blue-100 text-blue-800",
   preparando: "bg-indigo-100 text-indigo-800",
   listo: "bg-violet-100 text-violet-800",
@@ -94,6 +107,9 @@ export function getAvailableNextStatuses(
   fulfillmentType: FulfillmentType
 ): OrderStatus[] {
   if (status === "cancelado" || status === "entregado") return [];
+  // Club 57 Empresarial: mientras la empresa no lo autoriza, la tienda solo
+  // puede cancelarlo (mismo criterio que update_order_status en la base).
+  if (status === "pendiente_autorizacion") return ["cancelado"];
   const options: OrderStatus[] = [];
   const next = getNextStatus(status, fulfillmentType);
   if (next) options.push(next);

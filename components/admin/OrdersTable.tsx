@@ -9,8 +9,9 @@ import { formatPrice } from "@/lib/formatPrice";
 import {
   FULFILLMENT_TYPE_LABEL,
   ORDER_STATUS_BADGE_CLASS,
-  ORDER_STATUS_LABEL,
+  orderStatusLabel,
   type FulfillmentType,
+  type MetodoPago,
   type OrderStatus,
 } from "@/lib/orders/status";
 import { getOrderReadiness } from "@/lib/orders/readiness";
@@ -24,6 +25,10 @@ export interface OrderRow {
   status: OrderStatus;
   total: number;
   created_at: string;
+  metodo_pago: MetodoPago;
+  autorizado_at: string | null;
+  /** Club 57 Empresarial: empresa a la que va con cargo. */
+  empresa_nombre: string | null;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("es-MX", {
@@ -181,16 +186,23 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                   <td className="max-w-[220px] px-4 py-3">
                     <p className="truncate font-medium text-brand-black">{order.customer_name}</p>
                     <p className="truncate text-xs text-brand-slate/70">{order.customer_email}</p>
+                    {order.metodo_pago === "empresa" && (
+                      <p className="mt-1 truncate text-xs font-semibold text-orange-800">
+                        Cargo a empresa{order.empresa_nombre ? ` · ${order.empresa_nombre}` : ""}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-brand-slate">{FULFILLMENT_TYPE_LABEL[order.fulfillment_type]}</td>
                   <td className="max-w-[200px] px-4 py-3 text-brand-slate">
-                    {getOrderReadiness(order.fulfillment_type, order.created_at).short}
+                    {order.status === "pendiente_autorizacion"
+                      ? "Espera autorización de la empresa"
+                      : getOrderReadiness(order.fulfillment_type, order.autorizado_at ?? order.created_at).short}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_BADGE_CLASS[order.status]}`}
                     >
-                      {ORDER_STATUS_LABEL[order.status]}
+                      {orderStatusLabel(order.status, order.metodo_pago)}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-brand-black">

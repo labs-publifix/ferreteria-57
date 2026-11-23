@@ -64,6 +64,10 @@ export interface OrderEmailData {
   subtotal: number;
   shippingCost: number;
   total: number;
+  /** Club 57 Empresarial: nombre de la empresa cuando el pedido va con
+   *  cargo a ella (ya autorizado). En ese caso createdAt es el momento de
+   *  la autorización, que es cuando empieza a correr la preparación. */
+  cargoEmpresa?: string | null;
 }
 
 // Contenido de usuario (nombre, dirección) va siempre a través de esto
@@ -239,6 +243,19 @@ function renderFulfillmentDetail(data: OrderEmailData): string {
     ${data.shippingAddress ? `<p style="margin:4px 0 0; font-size:14px; color:${COLOR_BLACK};">${formatAddress(data.shippingAddress)}</p>` : ""}`;
 }
 
+// Club 57 Empresarial: aviso al equipo de que no se cobra en mostrador y de
+// pedir identificación al entregar.
+function renderCargoEmpresaInterno(data: OrderEmailData): string {
+  if (!data.cargoEmpresa) return "";
+  return `
+    <div style="margin:0 0 12px; padding:12px 16px; background-color:${COLOR_SLATE}; border-radius:8px;">
+      <p style="margin:0; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:${COLOR_ORANGE};">Club 57 Empresarial · Cargo a empresa</p>
+      <p style="margin:6px 0 0; font-size:14px; color:${COLOR_WHITE};">
+        ${escapeHtml(data.cargoEmpresa)} autorizó este pedido. No se cobra al entregar; pide identificación oficial.
+      </p>
+    </div>`;
+}
+
 // Correo interno — a ferreteria57@proton.me (o a EMAIL_OVERRIDE mientras
 // el dominio no esté verificado). Todo lo operativo para que el equipo
 // sepa qué preparar y a quién entregárselo, sin adornos.
@@ -246,6 +263,7 @@ export function buildInternalNotificationEmail(data: OrderEmailData): { subject:
   const body = `
     <h1 style="margin:0 0 16px; font-size:18px; color:${COLOR_BLACK};">Nuevo pedido ${escapeHtml(data.orderNumber)}</h1>
 
+    ${renderCargoEmpresaInterno(data)}
     ${renderFulfillmentBanner(data, "internal")}
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
@@ -272,7 +290,12 @@ export function buildInternalNotificationEmail(data: OrderEmailData): { subject:
     </table>
   `;
 
-  return { subject: `Nuevo pedido ${data.orderNumber}`, html: renderEmailLayout(body) };
+  return {
+    subject: data.cargoEmpresa
+      ? `Nuevo pedido ${data.orderNumber} · Cargo a ${data.cargoEmpresa}`
+      : `Nuevo pedido ${data.orderNumber}`,
+    html: renderEmailLayout(body),
+  };
 }
 
 // Correo al cliente — tono directo y cercano, nada de "estimado cliente".
@@ -280,9 +303,15 @@ export function buildCustomerConfirmationEmail(data: OrderEmailData): { subject:
   const firstName = data.customerName.split(" ")[0] || data.customerName;
 
   const body = `
-    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">¡Gracias por tu compra, ${escapeHtml(firstName)}!</h1>
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">${
+      data.cargoEmpresa ? `¡Tu empresa autorizó tu pedido, ${escapeHtml(firstName)}!` : `¡Gracias por tu compra, ${escapeHtml(firstName)}!`
+    }</h1>
     <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
-      Tu pedido <strong>${escapeHtml(data.orderNumber)}</strong> ya quedó registrado.
+      ${
+        data.cargoEmpresa
+          ? `${escapeHtml(data.cargoEmpresa)} autorizó tu pedido <strong>${escapeHtml(data.orderNumber)}</strong> y ya lo estamos preparando.`
+          : `Tu pedido <strong>${escapeHtml(data.orderNumber)}</strong> ya quedó registrado.`
+      }
     </p>
 
     ${renderFulfillmentBanner(data, "customer")}
@@ -302,13 +331,20 @@ export function buildCustomerConfirmationEmail(data: OrderEmailData): { subject:
         }</td>
       </tr>
       <tr>
-        <td style="padding:8px 0 0; font-size:16px; color:${COLOR_BLACK}; font-weight:bold; border-top:2px solid ${COLOR_SLATE};">Total pagado</td>
+        <td style="padding:8px 0 0; font-size:16px; color:${COLOR_BLACK}; font-weight:bold; border-top:2px solid ${COLOR_SLATE};">${
+          data.cargoEmpresa ? `Total con cargo a ${escapeHtml(data.cargoEmpresa)}` : "Total pagado"
+        }</td>
         <td style="padding:8px 0 0; font-size:16px; color:${COLOR_BLACK}; font-weight:bold; text-align:right; border-top:2px solid ${COLOR_SLATE};">${formatPrice(data.total)}</td>
       </tr>
     </table>
 
     <h2 style="margin:24px 0 8px; font-size:15px; color:${COLOR_BLACK};">Detalles de tu entrega</h2>
     ${renderFulfillmentDetail(data)}
+    ${
+      data.cargoEmpresa && data.fulfillmentType === "pickup"
+        ? `<p style="margin:8px 0 0; font-size:14px; color:${COLOR_BLACK}; font-weight:bold;">Al recoger, presenta una identificación oficial: la compra va con cargo a tu empresa.</p>`
+        : ""
+    }
 
     <p style="margin:24px 0 0; font-size:14px; color:${COLOR_BLACK};">
       Guarda este correo como tu comprobante de compra. Si tienes alguna duda sobre tu pedido, escríbenos por
@@ -317,5 +353,10 @@ export function buildCustomerConfirmationEmail(data: OrderEmailData): { subject:
     </p>
   `;
 
-  return { subject: `Tu pedido ${data.orderNumber} está confirmado — Ferretería 57`, html: renderEmailLayout(body) };
+  return {
+    subject: data.cargoEmpresa
+      ? `Tu empresa autorizó tu pedido ${data.orderNumber} — Ferretería 57`
+      : `Tu pedido ${data.orderNumber} está confirmado — Ferretería 57`,
+    html: renderEmailLayout(body),
+  };
 }

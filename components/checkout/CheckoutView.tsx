@@ -28,8 +28,29 @@ import {
 } from "./DeliverySection";
 import { PaymentSection, type PaymentMethod } from "./PaymentSection";
 import { OrderSummary } from "./OrderSummary";
+import { formatPrice } from "@/lib/formatPrice";
 
-export function CheckoutView() {
+/** Club 57 Empresarial: crédito del empleado para «Cargo a mi empresa». */
+export interface CargoEmpresaCheckout {
+  empresa: string;
+  activa: boolean;
+  /** Lo que le queda de su línea. */
+  disponible: number;
+  /** Lo que puede cargar en esta compra (también considera el crédito de la empresa). */
+  disponibleCompra: number;
+  limitadoPorEmpresa: boolean;
+  plazoDias: number;
+  /** El pedido se guarda con el correo de la cuenta. */
+  cuentaEmail: string;
+}
+
+export function CheckoutView({
+  cargoEmpresa = null,
+  isLoggedIn = false,
+}: {
+  cargoEmpresa?: CargoEmpresaCheckout | null;
+  isLoggedIn?: boolean;
+}) {
   const router = useRouter();
   const { isHydrated, clearCart } = useCart();
   const { items, subtotal, pricesReady } = useResolvedCart();
@@ -41,7 +62,9 @@ export function CheckoutView() {
   // nunca se manda a create_order ni cuenta como "hay algo que pagar".
   const purchasableItems = items.filter((item) => item.quantity > 0);
 
-  const [contact, setContact] = useState<ContactForm>(emptyContact);
+  const [contact, setContact] = useState<ContactForm>(
+    cargoEmpresa ? { ...emptyContact, email: cargoEmpresa.cuentaEmail } : emptyContact
+  );
   // "retiro" preseleccionado por default — cambio explícito respecto al
   // comportamiento anterior, que arrancaba en "envío".
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("retiro");
@@ -91,6 +114,24 @@ export function CheckoutView() {
   const shipping = shippingResult.cost;
   const total = subtotal + (shipping ?? 0);
 
+  // «Cargo a mi empresa» se deshabilita (con el motivo) si la empresa no
+  // está activa o si el total rebasa lo disponible. El servidor lo vuelve a
+  // validar todo al confirmar.
+  const empresaDisabledReason = !cargoEmpresa
+    ? null
+    : !cargoEmpresa.activa
+      ? "El cargo a tu empresa está suspendido por ahora."
+      : total > cargoEmpresa.disponibleCompra + 0.005
+        ? cargoEmpresa.limitadoPorEmpresa
+          ? "Tu empresa alcanzó su límite de crédito con Ferretería 57."
+          : `Rebasa tu crédito disponible (${formatPrice(cargoEmpresa.disponible)}).`
+        : null;
+  const payWithEmpresa = paymentMethod === "empresa" && Boolean(cargoEmpresa) && !empresaDisabledReason;
+  const blockedHint =
+    paymentMethod === "empresa" && empresaDisabledReason
+      ? `${empresaDisabledReason} Elige otra forma de pago.`
+      : "Completa los campos marcados con * para continuar.";
+
   // Botón de avanzar deshabilitado de verdad (no solo validación nativa del
   // navegador) hasta que todos los campos obligatorios del flujo activo
   // sean válidos — requisito explícito del flujo 2. En foráneo con monto
@@ -100,6 +141,7 @@ export function CheckoutView() {
   // cargue su precio (si no, el servidor vería un precio distinto).
   const canSubmit =
     pricesReady &&
+    (paymentMethod !== "empresa" || payWithEmpresa) &&
     isContactValid(contact) &&
     (deliveryMethod === "retiro"
       ? true
@@ -133,7 +175,7 @@ export function CheckoutView() {
 
     const input: CreateOrderInput =
       deliveryMethod === "retiro"
-        ? { fulfillmentType: "pickup", contact, items: orderItems, subtotal }
+        ? { fulfillmentType: "pickup", contact, items: orderItems, subtotal, paymentMethod: payWithEmpresa ? "empresa" : "tarjeta" }
         : deliveryMethod === "envio_local"
           ? {
               fulfillmentType: "local_delivery",
@@ -142,6 +184,7 @@ export function CheckoutView() {
               subtotal,
               colonia: localAddress.colonia,
               address: localAddress,
+              paymentMethod: payWithEmpresa ? "empresa" : "tarjeta",
             }
           : {
               fulfillmentType: "foraneo",
@@ -149,6 +192,7 @@ export function CheckoutView() {
               items: orderItems,
               subtotal,
               address: foraneoAddress,
+              paymentMethod: payWithEmpresa ? "empresa" : "tarjeta",
             };
 
     const result = await createOrder(input);
@@ -209,8 +253,14 @@ export function CheckoutView() {
       subtotal,
       shipping: result.shippingCost ?? 0,
       total: result.total ?? subtotal,
+      cargoEmpresa: result.cargoEmpresa,
     });
     clearCart();
+    // Cargo a la empresa: no hay pago externo, la confirmación es interna.
+    if (result.cargoEmpresa) {
+      router.push(result.redirectUrl);
+      return;
+    }
     // Fuera del sitio a pagar en Mercado Pago (Checkout Pro) — no es
     // router.push: es un cambio de origen de verdad, no una navegación
     // interna de Next. Vuelve a /checkout/confirmacion (back_urls, ver
@@ -249,11 +299,11 @@ export function CheckoutView() {
         {!foraneoOverLimit && (
           <div className="hidden lg:block">
             <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit || isSubmitting}>
-              {isSubmitting ? "Confirmando..." : "Confirmar pedido"}
+              {isSubmitting ? "Confirmando..." : payWithEmpresa ? "Enviar a autorización" : "Confirmar pedido"}
             </Button>
             {!canSubmit && !isSubmitting && (
               <p className="mt-2 text-center font-sans text-xs text-brand-slate">
-                Completa los campos marcados con * para continuar.
+                {blockedHint}
               </p>
             )}
             {submitError && (
@@ -279,15 +329,30 @@ export function CheckoutView() {
           foraneoOverLimit={foraneoOverLimit}
           whatsappUrl={whatsappUrl}
         />
-        <PaymentSection paymentMethod={paymentMethod} onPaymentMethodChange={setPaymentMethod} />
+        <PaymentSection
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
+          empresa={
+            cargoEmpresa
+              ? {
+                  nombre: cargoEmpresa.empresa,
+                  disponible: cargoEmpresa.disponible,
+                  disabledReason: empresaDisabledReason,
+                  plazoDias: cargoEmpresa.plazoDias,
+                  cuentaEmail: cargoEmpresa.cuentaEmail,
+                }
+              : null
+          }
+          showLoginHint={!isLoggedIn}
+        />
         {!foraneoOverLimit && (
           <div className="lg:hidden">
             <Button type="submit" variant="primary" className="w-full" disabled={!canSubmit || isSubmitting}>
-              {isSubmitting ? "Confirmando..." : "Confirmar pedido"}
+              {isSubmitting ? "Confirmando..." : payWithEmpresa ? "Enviar a autorización" : "Confirmar pedido"}
             </Button>
             {!canSubmit && !isSubmitting && (
               <p className="mt-2 text-center font-sans text-xs text-brand-slate">
-                Completa los campos marcados con * para continuar.
+                {blockedHint}
               </p>
             )}
             {submitError && (

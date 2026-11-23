@@ -66,7 +66,7 @@ export interface OrderMetrics {
 }
 
 const IN_PROGRESS_STATUSES: OrderStatus[] = ["preparando", "listo", "enviado"];
-const UNPAID_STATUSES: OrderStatus[] = ["pendiente_pago", "cancelado"];
+const UNPAID_STATUSES: OrderStatus[] = ["pendiente_pago", "pendiente_autorizacion", "cancelado"];
 
 interface OrderMetricsRow {
   status: OrderStatus;

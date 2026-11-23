@@ -340,7 +340,7 @@ function CerrarModal({ empleado, onClose }: { empleado: PortalEmpleado; onClose:
         <p className="font-sans text-sm text-brand-slate">
           {esSolicitud
             ? "El colaborador recibirá un aviso con el motivo. Puede volver a solicitarlo más adelante."
-            : "Deja de poder comprar con cargo a tu empresa de inmediato. Su cuenta de Club 57 sigue activa como cliente."}
+            : "Deja de poder comprar con cargo a tu empresa de inmediato y sus pedidos en espera de autorización se cancelan. Los que ya autorizaste se quedan en tu cuenta. Su cuenta de Club 57 sigue activa como cliente."}
         </p>
         <div>
           <label htmlFor={`${baseId}-m`} className={labelClass}>

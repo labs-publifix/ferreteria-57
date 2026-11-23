@@ -103,3 +103,16 @@ export async function avisarRegistroConEmpresa(email: string): Promise<void> {
     console.error("[club57 empresarial] aviso tras registro", error instanceof Error ? error.message : error);
   }
 }
+
+/** El empleado cancela su pedido con cargo a la empresa mientras sigue en espera. */
+export async function cancelarPedidoEmpresa(orderId: string): Promise<{ error?: string }> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+    return { error: "Pedido no encontrado." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("club57_cancelar_mi_pedido_empresa", { p_order_id: orderId });
+  if (error) return { error: error.message || "No se pudo cancelar el pedido." };
+  revalidatePath("/cuenta");
+  revalidatePath("/empresa", "layout");
+  return {};
+}

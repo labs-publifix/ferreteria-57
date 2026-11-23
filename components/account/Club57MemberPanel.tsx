@@ -9,11 +9,11 @@ import { requestClub57Redemption } from "@/app/(site)/cuenta/actions";
 import { CLUB57_REDEMPTION_ESTADO_LABEL, CLUB57_TIPO_LABEL } from "@/lib/club57/labels";
 import { club57AnotarCorrecciones, club57MotivoTexto } from "@/lib/club57/correcciones";
 import { club57MotivoCortesiaCliente, esMovimientoCortesia } from "@/lib/club57/cortesias";
-import { ORDER_STATUS_BADGE_CLASS, ORDER_STATUS_LABEL, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
+import { ORDER_STATUS_BADGE_CLASS, orderStatusLabel, type FulfillmentType, type MetodoPago, type OrderStatus } from "@/lib/orders/status";
 import { Club57ItemQuickView } from "@/components/account/Club57ItemQuickView";
 import { Club57OrderDetailModal, type Club57OrderItemRow } from "@/components/account/Club57OrderDetailModal";
 import { MisGuias } from "./MisGuias";
-import { EmpresarialPanel, type MiVinculoEmpresa } from "./EmpresarialPanel";
+import { EmpresarialPanel, type MiCreditoEmpresa, type MiVinculoEmpresa } from "./EmpresarialPanel";
 import { Club57PartnersDirectory } from "./Club57PartnersDirectory";
 import type { SociosCuenta } from "@/lib/club57/socios/member";
 import type { MiGuia } from "@/lib/blog/mis-guias";
@@ -66,6 +66,11 @@ export interface Club57OrderRow {
   subtotal: number;
   shipping_cost: number;
   items: Club57OrderItemRow[];
+  /** Club 57 Empresarial: "empresa" = con cargo a la empresa del empleado. */
+  metodo_pago?: MetodoPago;
+  autorizacion_vence_at?: string | null;
+  empresa_resolucion?: string | null;
+  empresa_motivo?: string | null;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" });
@@ -116,6 +121,7 @@ export function Club57MemberPanel({
   guias,
   socios,
   empresarial = [],
+  creditoEmpresa = null,
 }: {
   referralCode: string | null;
   saldoDisponible: number;
@@ -136,6 +142,8 @@ export function Club57MemberPanel({
   socios: SociosCuenta;
   /** Club 57 Empresarial: vínculos del miembro con empresas. */
   empresarial?: MiVinculoEmpresa[];
+  /** Club 57 Empresarial: crédito del vínculo activo. */
+  creditoEmpresa?: MiCreditoEmpresa | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -611,8 +619,11 @@ export function Club57MemberPanel({
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_BADGE_CLASS[pedido.status]}`}
                           >
-                            {ORDER_STATUS_LABEL[pedido.status]}
+                            {orderStatusLabel(pedido.status, pedido.metodo_pago)}
                           </span>
+                          {pedido.metodo_pago === "empresa" && (
+                            <span className="ml-2 whitespace-nowrap text-xs text-brand-slate">Cargo a empresa</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -724,7 +735,11 @@ export function Club57MemberPanel({
       </TabPanel>
 
       <TabPanel id="empresarial" idPrefix="cuenta" activeId={activeTab}>
-        <EmpresarialPanel vinculos={empresarial} />
+        <EmpresarialPanel
+          vinculos={empresarial}
+          credito={creditoEmpresa}
+          pedidos={pedidos.filter((pedido) => pedido.metodo_pago === "empresa")}
+        />
       </TabPanel>
 
       <ConfirmDialog

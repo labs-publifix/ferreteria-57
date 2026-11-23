@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isValidStatusTransition, type FulfillmentType, type OrderStatus } from "@/lib/orders/status";
+import { notificarPedidosEmpresaCancelados } from "@/lib/club57/empresas/pedidosNotificaciones";
 
 export interface OrderActionResult {
   error?: string;
@@ -58,6 +59,10 @@ export async function updateOrderStatus(
     p_new_status: nextStatus,
   });
   if (error) return { error: error.message };
+
+  // Club 57 Empresarial: si era un pedido con cargo a empresa, se le avisa
+  // al colaborador (la función ignora los pedidos con tarjeta).
+  if (nextStatus === "cancelado") await notificarPedidosEmpresaCancelados([orderId]);
 
   revalidatePath("/admin/pedidos");
   revalidatePath(`/admin/pedidos/${orderId}`);

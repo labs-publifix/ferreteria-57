@@ -14,6 +14,8 @@ interface AdminOrdersFilters {
   q: string;
   estatus: string;
   entrega: string;
+  /** "" = todos, "mercadopago" o "empresa" (Club 57 Empresarial). */
+  pago: string;
   page: number;
 }
 
@@ -27,18 +29,28 @@ interface AdminOrdersFilters {
 // escala cuando la tabla crezca; con `q` presente se trae el conjunto ya
 // acotado por estatus/entrega (normalmente chico) y se pagina en memoria
 // sobre el resultado filtrado por texto.
+// La empresa embebida llega como objeto o arreglo según el join.
+function toOrderRow(row: Record<string, unknown>): OrderRow {
+  const empresa = row.club57_empresas as { nombre_comercial: string } | { nombre_comercial: string }[] | null;
+  return {
+    ...(row as unknown as OrderRow),
+    empresa_nombre: (Array.isArray(empresa) ? empresa[0] : empresa)?.nombre_comercial ?? null,
+  };
+}
+
 async function getAdminOrders(filters: AdminOrdersFilters): Promise<{ orders: OrderRow[]; totalCount: number }> {
   const supabase = await createClient();
 
   let query = supabase
     .from("orders")
-    .select("id, order_number, customer_name, customer_email, fulfillment_type, status, total, created_at", {
+    .select("id, order_number, customer_name, customer_email, fulfillment_type, status, total, created_at, autorizado_at, metodo_pago, club57_empresas(nombre_comercial)", {
       count: "exact",
     })
     .order("created_at", { ascending: false });
 
   if (filters.estatus) query = query.eq("status", filters.estatus);
   if (filters.entrega) query = query.eq("fulfillment_type", filters.entrega);
+  if (filters.pago === "mercadopago" || filters.pago === "empresa") query = query.eq("metodo_pago", filters.pago);
 
   const q = filters.q.trim().toLowerCase();
 
@@ -47,12 +59,12 @@ async function getAdminOrders(filters: AdminOrdersFilters): Promise<{ orders: Or
     query = query.range(from, from + PAGE_SIZE - 1);
     const { data, error, count } = await query;
     if (error) throw new Error(error.message);
-    return { orders: (data ?? []) as unknown as OrderRow[], totalCount: count ?? 0 };
+    return { orders: ((data ?? []) as Record<string, unknown>[]).map(toOrderRow), totalCount: count ?? 0 };
   }
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  const filtered = ((data ?? []) as unknown as OrderRow[]).filter(
+  const filtered = ((data ?? []) as Record<string, unknown>[]).map(toOrderRow).filter(
     (row) => row.order_number.toLowerCase().includes(q) || row.customer_email.toLowerCase().includes(q)
   );
   const from = (filters.page - 1) * PAGE_SIZE;
@@ -62,12 +74,13 @@ async function getAdminOrders(filters: AdminOrdersFilters): Promise<{ orders: Or
 export default async function AdminPedidosPage({
   searchParams,
 }: {
-  searchParams: { q?: string; estatus?: string; entrega?: string; page?: string };
+  searchParams: { q?: string; estatus?: string; entrega?: string; pago?: string; page?: string };
 }) {
   const filters: AdminOrdersFilters = {
     q: searchParams.q ?? "",
     estatus: searchParams.estatus ?? "",
     entrega: searchParams.entrega ?? "",
+    pago: searchParams.pago ?? "",
     page: Math.max(1, Number.parseInt(searchParams.page ?? "1", 10) || 1),
   };
 
@@ -87,6 +100,7 @@ export default async function AdminPedidosPage({
     if (filters.q) params.set("q", filters.q);
     if (filters.estatus) params.set("estatus", filters.estatus);
     if (filters.entrega) params.set("entrega", filters.entrega);
+    if (filters.pago) params.set("pago", filters.pago);
     if (page > 1) params.set("page", String(page));
     const query = params.toString();
     return query ? `/admin/pedidos?${query}` : "/admin/pedidos";
@@ -97,8 +111,9 @@ export default async function AdminPedidosPage({
       <div>
         <h1 className="font-display text-xl uppercase text-brand-slate sm:text-2xl">Pedidos</h1>
         <p className="mt-2 max-w-prose font-sans text-sm text-brand-slate/70">
-          Pedidos creados desde el checkout de la tienda. Todo pedido nace &quot;Pendiente de pago&quot;
-          y pasa a &quot;Pagado&quot; cuando Mercado Pago confirma el cobro.
+          Pedidos creados desde el checkout de la tienda. Un pedido con tarjeta nace &quot;Pendiente de pago&quot; y pasa
+          a &quot;Pagado&quot; cuando Mercado Pago confirma el cobro. Uno de Club 57 Empresarial nace &quot;En espera de
+          autorización&quot; y pasa a &quot;Autorizado&quot; cuando la empresa lo aprueba; desde ahí se prepara igual.
         </p>
       </div>
 
@@ -142,6 +157,20 @@ export default async function AdminPedidosPage({
             options={[
               { value: "", label: "Todas" },
               ...Object.entries(FULFILLMENT_TYPE_LABEL).map(([value, label]) => ({ value, label })),
+            ]}
+          />
+        </div>
+
+        <div>
+          <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Pago</span>
+          <FilterSelectField
+            name="pago"
+            defaultValue={filters.pago}
+            label="Pago"
+            options={[
+              { value: "", label: "Todos" },
+              { value: "mercadopago", label: "Tarjeta (Mercado Pago)" },
+              { value: "empresa", label: "Club 57 Empresarial" },
             ]}
           />
         </div>

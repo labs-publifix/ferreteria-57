@@ -8,6 +8,7 @@ import {
   getAvailableNextStatuses,
   ORDER_STATUS_LABEL,
   type FulfillmentType,
+  type MetodoPago,
   type OrderStatus,
 } from "@/lib/orders/status";
 
@@ -18,10 +19,12 @@ export function OrderStatusControl({
   orderId,
   status,
   fulfillmentType,
+  metodoPago = "mercadopago",
 }: {
   orderId: string;
   status: OrderStatus;
   fulfillmentType: FulfillmentType;
+  metodoPago?: MetodoPago;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<OrderStatus | "">("");
@@ -98,7 +101,11 @@ export function OrderStatusControl({
       <ConfirmDialog
         open={confirmingCancel}
         title="Cancelar pedido"
-        description="¿Cancelar este pedido? Esta acción no se puede deshacer."
+        description={
+          metodoPago === "empresa"
+            ? "¿Cancelar este pedido? Sale de la cuenta de la empresa, el producto regresa al inventario y avisamos al colaborador. Esta acción no se puede deshacer."
+            : "¿Cancelar este pedido? Esta acción no se puede deshacer."
+        }
         confirmLabel="Cancelar pedido"
         tone="danger"
         onConfirm={() => {
