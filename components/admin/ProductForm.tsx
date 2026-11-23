@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { Copy, Plus, X } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 import { ProductImageUploader } from "@/components/admin/ProductImageUploader";
 import { detectBrandFromName, KNOWN_BRANDS } from "@/lib/catalog/detectBrandFromName";
 import { slugify } from "@/lib/slugify";
@@ -92,7 +92,6 @@ export function ProductForm({
 }) {
   const nameId = useId();
   const slugId = useId();
-  const categoryId = useId();
   const brandId = useId();
   const brandListId = useId();
   const claveId = useId();
@@ -252,25 +251,14 @@ export function ProductForm({
         <h2 className="font-display text-base uppercase text-brand-slate">Datos generales</h2>
 
         <div>
-          <label htmlFor={categoryId} className={labelClass}>
-            Categoría
-          </label>
-          <select
-            id={categoryId}
-            required
+          <span className={labelClass}>Categoría</span>
+          <Select
             value={values.categoryId}
-            onChange={(event) => setValues((current) => ({ ...current, categoryId: event.target.value }))}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              Elige una categoría
-            </option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setValues((current) => ({ ...current, categoryId: value }))}
+            options={categories.map((category) => ({ value: category.id, label: category.name }))}
+            label="Categoría"
+            placeholder="Elige una categoría"
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
