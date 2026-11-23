@@ -6,6 +6,8 @@ import { Button, PasswordInput } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/authErrors";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
+import { avisarRegistroConEmpresa, validarCodigoEmpresa } from "@/app/(site)/cuenta/empresarialActions";
+import { textoAutorizacion } from "@/lib/club57/empresas/empleados";
 
 type Tab = "login" | "signup";
 type LoginView = "credentials" | "forgot";
@@ -218,7 +220,15 @@ function SignupForm({ next }: { next: string | null }) {
   const emailId = useId();
   const passwordId = useId();
   const referralCodeId = useId();
+  const empresaCodigoId = useId();
+  const empresaNumeroId = useId();
   const [fullName, setFullName] = useState("");
+  // Club 57 Empresarial: «Tengo código de empresa» (opcional).
+  const [conEmpresa, setConEmpresa] = useState(false);
+  const [empresaCodigo, setEmpresaCodigo] = useState("");
+  const [empresaNumero, setEmpresaNumero] = useState("");
+  const [empresaAcepta, setEmpresaAcepta] = useState(false);
+  const [empresaInfo, setEmpresaInfo] = useState<{ nombre: string; exigeNumero: boolean } | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -250,6 +260,31 @@ function SignupForm({ next }: { next: string | null }) {
       }
     }
 
+    // Código de empresa: se valida antes de crear la cuenta para que el
+    // empleado sepa en ese momento si está mal. El vínculo lo crea la base
+    // al crear la cuenta (queda en revisión de su empresa).
+    let empresa: { nombre: string; exigeNumero: boolean } | null = null;
+    if (conEmpresa) {
+      const info = await validarCodigoEmpresa(empresaCodigo);
+      if (info.error || !info.nombre) {
+        setError(info.error ?? "No encontramos ese código de empresa.");
+        setIsSubmitting(false);
+        return;
+      }
+      empresa = { nombre: info.nombre, exigeNumero: Boolean(info.exigeNumero) };
+      setEmpresaInfo(empresa);
+      if (empresa.exigeNumero && !empresaNumero.trim()) {
+        setError(`${empresa.nombre} pide tu número de empleado.`);
+        setIsSubmitting(false);
+        return;
+      }
+      if (!empresaAcepta) {
+        setError("Marca la autorización para vincularte con tu empresa.");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -257,6 +292,13 @@ function SignupForm({ next }: { next: string | null }) {
         data: {
           full_name: fullName,
           ...(trimmedReferralCode ? { referred_by_code: trimmedReferralCode } : {}),
+          ...(empresa
+            ? {
+                empresa_codigo: empresaCodigo.trim().toUpperCase(),
+                empresa_numero: empresaNumero.trim(),
+                empresa_acepta: "true",
+              }
+            : {}),
         },
       },
     });
@@ -266,6 +308,9 @@ function SignupForm({ next }: { next: string | null }) {
       setIsSubmitting(false);
       return;
     }
+
+    // Avisa al responsable de la empresa que hay una solicitud nueva.
+    if (empresa) await avisarRegistroConEmpresa(email);
 
     // Con confirmación de correo activada (default de Supabase), signUp
     // crea el usuario pero no regresa sesión hasta que confirme el enlace
@@ -341,6 +386,54 @@ function SignupForm({ next }: { next: string | null }) {
         value={referralCode}
         onChange={setReferralCode}
       />
+      <div className="rounded-lg border border-brand-slate/20 p-3 text-left">
+        <label className="flex min-h-11 items-center gap-2 font-sans text-sm font-medium text-brand-black">
+          <input
+            type="checkbox"
+            checked={conEmpresa}
+            onChange={(event) => setConEmpresa(event.target.checked)}
+            className="size-5 rounded border-brand-slate/40 accent-brand-orange"
+          />
+          Tengo código de empresa (Club 57 Empresarial)
+        </label>
+        {conEmpresa && (
+          <div className="mt-2 flex flex-col gap-3">
+            <FormField
+              id={empresaCodigoId}
+              label="Código de tu empresa"
+              type="text"
+              autoComplete="off"
+              placeholder="F57-XXXX-XXXX"
+              value={empresaCodigo}
+              onChange={(value) => {
+                setEmpresaCodigo(value.toUpperCase());
+                setEmpresaInfo(null);
+              }}
+            />
+            <FormField
+              id={empresaNumeroId}
+              label={empresaInfo?.exigeNumero ? "Número de empleado" : "Número de empleado (si tu empresa lo pide)"}
+              type="text"
+              autoComplete="off"
+              required={Boolean(empresaInfo?.exigeNumero)}
+              value={empresaNumero}
+              onChange={setEmpresaNumero}
+            />
+            <label className="flex items-start gap-2 font-sans text-xs text-brand-black">
+              <input
+                type="checkbox"
+                checked={empresaAcepta}
+                onChange={(event) => setEmpresaAcepta(event.target.checked)}
+                className="mt-0.5 size-5 shrink-0 rounded border-brand-slate/40 accent-brand-orange"
+              />
+              <span>{textoAutorizacion(empresaInfo?.nombre ?? "mi empresa")}</span>
+            </label>
+            <p className="font-sans text-xs text-brand-slate/70">
+              Tu empresa revisará tu solicitud antes de que puedas comprar con cargo a ella.
+            </p>
+          </div>
+        )}
+      </div>
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Creando cuenta…" : "Crear cuenta"}
       </Button>

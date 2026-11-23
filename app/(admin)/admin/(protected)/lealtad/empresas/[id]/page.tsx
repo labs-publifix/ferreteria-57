@@ -4,12 +4,15 @@ import { notFound } from "next/navigation";
 import { EmpresaForm, type EmpresaFormValues } from "@/components/admin/empresas/EmpresaForm";
 import { EmpresaEstadoAcciones } from "@/components/admin/empresas/EmpresaEstadoAcciones";
 import { EstadoEmpresaBadge } from "@/components/admin/empresas/EstadoEmpresaBadge";
+import { AccesoResponsable } from "@/components/admin/empresas/AccesoResponsable";
+import { ESTADO_EMPLEADO_LABEL, type EstadoEmpleado } from "@/lib/club57/empresas/empleados";
 import { createClient } from "@/lib/supabase/server";
 import { CONVENIO_SUGERIDO, diaCorteLabel, nominaLabel, type EstadoEmpresa, type FrecuenciaNomina } from "@/lib/club57/empresas/datos";
 
 export const metadata: Metadata = { title: "Empresa — Club 57 Empresarial" };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const pesos = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const fechaHora = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Mexico_City" });
 
 const ACCION_LABEL: Record<string, string> = {
@@ -23,6 +26,8 @@ const ACCION_LABEL: Record<string, string> = {
   datos: "Datos actualizados",
   convenio: "Convenio actualizado",
   codigo: "Código cambiado",
+  responsable: "Responsable",
+  nomina: "Nómina",
 };
 
 const s = (v: unknown) => (v === null || v === undefined ? "" : String(v));
@@ -36,7 +41,7 @@ export default async function AdminEmpresaPage({
 }) {
   if (!UUID_RE.test(params.id)) notFound();
   const supabase = await createClient();
-  const [{ data: e }, { data: bitacora }, { data: personal }] = await Promise.all([
+  const [{ data: e }, { data: bitacora }, { data: personal }, { data: empleadosData }] = await Promise.all([
     supabase.from("club57_empresas").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("club57_empresas_bitacora")
@@ -45,6 +50,12 @@ export default async function AdminEmpresaPage({
       .order("created_at", { ascending: false })
       .limit(50),
     supabase.from("profiles").select("id, full_name").in("role", ["admin", "operador"]),
+    // Empleados de la empresa: línea, nunca el salario (no es visible para el personal).
+    supabase
+      .from("club57_empresa_empleados")
+      .select("id, estado, numero_empleado, linea_credito, solicitado_at, motivo, club57_members(full_name, email)")
+      .eq("empresa_id", params.id)
+      .order("solicitado_at", { ascending: false }),
   ]);
   if (!e) notFound();
 
@@ -53,6 +64,22 @@ export default async function AdminEmpresaPage({
   const sugerido = (valor: unknown, porDefecto: string) =>
     valor === null || valor === undefined ? (e.estado === "solicitud" ? porDefecto : "") : String(valor);
   const d = CONVENIO_SUGERIDO;
+
+  const empleados = (empleadosData ?? []).map((row) => {
+    const m = (Array.isArray(row.club57_members) ? row.club57_members[0] : row.club57_members) as
+      | { full_name: string; email: string }
+      | null;
+    return {
+      id: row.id as string,
+      estado: row.estado as EstadoEmpleado,
+      numero: row.numero_empleado as string | null,
+      linea: row.linea_credito === null ? null : Number(row.linea_credito),
+      solicitado_at: row.solicitado_at as string,
+      motivo: row.motivo as string | null,
+      nombre: m?.full_name ?? "—",
+      correo: m?.email ?? "",
+    };
+  });
 
   const nombres = new Map((personal ?? []).map((p) => [p.id as string, (p.full_name as string | null)?.trim() || "Personal"]));
   const estado = e.estado as EstadoEmpresa;
@@ -135,10 +162,59 @@ export default async function AdminEmpresaPage({
           ))}
         </dl>
         <EmpresaEstadoAcciones empresaId={e.id} nombre={e.nombre_comercial} estado={estado} codigo={e.codigo} />
-        {estado === "activa" && (
-          <p className="font-sans text-xs text-brand-slate/70">
-            El acceso del responsable al Portal Empresa y el registro de empleados con el código llegan en la siguiente etapa.
+        <AccesoResponsable
+          empresaId={e.id}
+          correo={e.responsable_correo}
+          tieneAcceso={Boolean(e.responsable_user_id)}
+          habilitado={estado === "activa" || estado === "suspendida"}
+        />
+      </section>
+
+      <section className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-base uppercase text-brand-slate">Empleados</h2>
+          <p className="font-sans text-sm text-brand-slate/70">
+            {empleados.filter((x) => x.estado === "activo").length} activos ·{" "}
+            {empleados.filter((x) => x.estado === "pendiente").length} en revisión · líneas asignadas{" "}
+            {pesos.format(empleados.filter((x) => x.estado === "activo").reduce((sum, x) => sum + (x.linea ?? 0), 0))}
           </p>
+        </div>
+        <p className="mt-1 font-sans text-xs text-brand-slate/70">
+          La empresa aprueba a sus empleados y define su línea desde su portal. El salario solo lo ve la empresa.
+        </p>
+        {empleados.length === 0 ? (
+          <p className="mt-3 font-sans text-sm text-brand-slate/70">Todavía no hay empleados vinculados.</p>
+        ) : (
+          <div className="mt-3 min-w-0 overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left font-sans text-sm">
+              <thead>
+                <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
+                  <th className="py-2 pr-3">Empleado</th>
+                  <th className="py-2 pr-3">Número</th>
+                  <th className="py-2 pr-3 text-right">Línea</th>
+                  <th className="py-2 pr-3">Estado</th>
+                  <th className="py-2">Solicitud</th>
+                </tr>
+              </thead>
+              <tbody>
+                {empleados.map((x) => (
+                  <tr key={x.id} className="border-b border-brand-slate/10 last:border-0">
+                    <td className="py-2 pr-3">
+                      <p className="text-brand-black">{x.nombre}</p>
+                      <p className="text-xs text-brand-slate/70">{x.correo}</p>
+                    </td>
+                    <td className="py-2 pr-3 text-brand-slate">{x.numero ?? "—"}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-brand-black">{x.linea === null ? "—" : pesos.format(x.linea)}</td>
+                    <td className="py-2 pr-3 text-brand-slate">
+                      {ESTADO_EMPLEADO_LABEL[x.estado]}
+                      {x.motivo && x.estado !== "activo" ? <span className="block text-xs text-brand-slate/70">{x.motivo}</span> : null}
+                    </td>
+                    <td className="py-2 text-brand-slate">{fechaHora.format(new Date(x.solicitado_at))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
