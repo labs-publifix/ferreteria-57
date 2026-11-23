@@ -8,13 +8,15 @@ export interface Club57MemberRow {
   saldoDisponible: number;
   /** Solo en la vista de admin: quién dio de alta al cliente. */
   vendedorLabel?: string;
+  /** Solo en la vista de admin: lista de precio asignada. */
+  listaLabel?: string;
 }
 
 // basePath: la vista de vendedor (/admin/vendedor/clientes) reutiliza esta
 // misma tabla — sin esto, el enlace de cada fila mandaría a un vendedor a
 // la ruta de admin, que el middleware le rechaza por no ser suya.
 // showVendedor: columna «Vendedor», solo para el admin (el vendedor ya solo
-// ve a sus propios clientes).
+// ve a sus propios clientes) y «Lista de precio».
 export function Club57MembersTable({
   members,
   basePath = "/admin/lealtad/clientes",
@@ -34,12 +36,13 @@ export function Club57MembersTable({
 
   return (
     <div className="min-w-0 overflow-x-auto rounded-lg bg-white shadow-sm">
-      <table className={`w-full text-left font-sans text-sm ${showVendedor ? "min-w-[720px]" : "min-w-[560px]"}`}>
+      <table className={`w-full text-left font-sans text-sm ${showVendedor ? "min-w-[860px]" : "min-w-[560px]"}`}>
         <thead>
           <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
             <th className="px-4 py-3">Cliente</th>
             <th className="px-4 py-3">Teléfono</th>
             {showVendedor && <th className="px-4 py-3">Vendedor</th>}
+            {showVendedor && <th className="px-4 py-3">Lista de precio</th>}
             <th className="px-4 py-3">Saldo de puntos</th>
           </tr>
         </thead>
@@ -57,6 +60,9 @@ export function Club57MembersTable({
               </td>
               <td className="px-4 py-3 text-brand-slate">{member.phone}</td>
               {showVendedor && <td className="px-4 py-3 text-brand-slate">{member.vendedorLabel ?? "—"}</td>}
+              {showVendedor && (
+                <td className="whitespace-nowrap px-4 py-3 text-brand-slate">{member.listaLabel ?? "Precio de tienda"}</td>
+              )}
               <td className="px-4 py-3 font-medium text-brand-black">{member.saldoDisponible} pts</td>
             </tr>
           ))}

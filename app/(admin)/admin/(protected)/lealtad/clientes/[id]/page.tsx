@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Club57AssignVendedor } from "@/components/admin/Club57AssignVendedor";
+import { Club57AssignListaPrecio } from "@/components/admin/Club57AssignListaPrecio";
+import { getStoreList } from "@/lib/catalog/productWrite";
+import { listaPrecioLabel } from "@/lib/club57/listaPrecio";
 import { Club57GrantCortesia } from "@/components/admin/Club57GrantCortesia";
 import { Club57RegisterPurchaseForm } from "@/components/admin/Club57RegisterPurchaseForm";
 import { Club57StaffLedgerHistory, type Club57StaffLedgerRow } from "@/components/admin/Club57StaffLedgerHistory";
@@ -20,6 +23,7 @@ interface MemberDetail {
   referral_code: string;
   origen_alta: "vendedor" | "autoregistro";
   creado_por_vendedor_id: string | null;
+  lista_precio: number | null;
   created_at: string;
 }
 
@@ -35,7 +39,7 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
 
   const { data: member } = await supabase
     .from("club57_members")
-    .select("id, full_name, email, phone, referral_code, origen_alta, creado_por_vendedor_id, created_at")
+    .select("id, full_name, email, phone, referral_code, origen_alta, creado_por_vendedor_id, lista_precio, created_at")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -46,7 +50,7 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
   // consulta falla, los nombres caen a «Sin nombre» en vez de romper la
   // página.
   const vendedorId = (member as MemberDetail).creado_por_vendedor_id;
-  const [{ data: personal }, { data: asignaciones }] = await Promise.all([
+  const [{ data: personal }, { data: asignaciones }, { data: cambiosLista }, storeList] = await Promise.all([
     supabase.from("profiles").select("id, full_name, role").in("role", ["admin", "operador", "vendedor"]),
     supabase
       .from("club57_asignaciones_vendedor")
@@ -54,6 +58,13 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
       .eq("member_id", params.id)
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("club57_cambios_lista_precio")
+      .select("id, lista_anterior, lista_nueva, actor_id, created_at")
+      .eq("member_id", params.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    getStoreList(supabase),
   ]);
   const nombrePorId = new Map(
     (personal ?? []).map((p) => [p.id as string, (p.full_name as string | null)?.trim() || "Sin nombre"])
@@ -158,6 +169,15 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
                 vendedores={vendedores}
               />
             </div>
+            <div className="flex justify-between gap-3 py-1">
+              <dt className="shrink-0 text-brand-slate/70">Lista de precio</dt>
+              <Club57AssignListaPrecio
+                memberId={memberDetail.id}
+                memberName={memberDetail.full_name}
+                currentLista={memberDetail.lista_precio}
+                storeList={storeList}
+              />
+            </div>
           </dl>
           {(asignaciones ?? []).length > 0 && (
             <div className="mt-4 border-t border-brand-slate/10 pt-3">
@@ -171,6 +191,25 @@ export default async function AdminClub57ClienteDetailPage({ params }: { params:
                     {nombreVendedor(cambio.vendedor_anterior_id as string | null)} →{" "}
                     <span className="font-medium text-brand-black">
                       {nombreVendedor(cambio.vendedor_nuevo_id as string | null)}
+                    </span>
+                    {cambio.actor_id && <> · por {nombrePorId.get(cambio.actor_id as string) ?? "personal"}</>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {(cambiosLista ?? []).length > 0 && (
+            <div className="mt-4 border-t border-brand-slate/10 pt-3">
+              <h3 className="font-sans text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
+                Cambios de lista de precio
+              </h3>
+              <ul className="mt-2 flex flex-col gap-1.5 font-sans text-xs text-brand-slate">
+                {(cambiosLista ?? []).map((cambio) => (
+                  <li key={cambio.id as string}>
+                    {dateFormatter.format(new Date(cambio.created_at as string))}:{" "}
+                    {listaPrecioLabel(cambio.lista_anterior as number | null)} →{" "}
+                    <span className="font-medium text-brand-black">
+                      {listaPrecioLabel(cambio.lista_nueva as number | null)}
                     </span>
                     {cambio.actor_id && <> · por {nombrePorId.get(cambio.actor_id as string) ?? "personal"}</>}
                   </li>

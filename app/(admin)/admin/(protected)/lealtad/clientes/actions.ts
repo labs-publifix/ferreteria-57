@@ -387,6 +387,47 @@ export async function assignClub57Vendedor(memberId: string, vendedorId: string)
   return {};
 }
 
+// Lista de precio del cliente (admin u operador): 1 a 4, o null = precio de
+// tienda. La regla y el registro del cambio viven en
+// club57_asignar_lista_precio().
+export async function assignClub57ListaPrecio(memberId: string, lista: number | null): Promise<{ error?: string }> {
+  const staff = await requireStaff();
+  if (!staff || staff.role !== "admin") return { error: "No autorizado." };
+  if (!UUID_RE.test(memberId)) return { error: "Cliente no encontrado." };
+  if (lista !== null && ![1, 2, 3, 4].includes(lista)) return { error: "Lista inválida." };
+
+  const { error } = await staff.supabase.rpc("club57_asignar_lista_precio", {
+    p_member_id: memberId,
+    p_lista: lista,
+  });
+  if (error) return { error: error.message || "No se pudo cambiar la lista de precio." };
+
+  revalidatePath("/admin/lealtad/clientes", "layout");
+  return {};
+}
+
+// Compra en tienda: precio que le toca al cliente por el producto elegido
+// del catálogo (su lista, si tiene; si no, el de tienda). Admin, operador y
+// el vendedor del cliente; la base lo vuelve a verificar.
+export async function getClub57PrecioMiembro(
+  memberId: string,
+  productId: string,
+  sku: string | null
+): Promise<{ precio?: number; precioTienda?: number; error?: string }> {
+  const staff = await requireStaff();
+  if (!staff) return { error: "No autorizado." };
+  if (!UUID_RE.test(memberId) || !UUID_RE.test(productId)) return { error: "Producto no encontrado." };
+
+  const { data, error } = await staff.supabase.rpc("club57_precio_para_miembro", {
+    p_member_id: memberId,
+    p_product_id: productId,
+    p_sku: sku?.trim() || null,
+  });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row) return { error: error?.message ?? "Producto no encontrado." };
+  return { precio: Number(row.precio), precioTienda: Number(row.precio_tienda) };
+}
+
 export interface GrantCortesiaInput {
   memberId: string;
   puntos: string;

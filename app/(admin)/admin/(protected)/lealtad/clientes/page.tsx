@@ -6,6 +6,7 @@ import { FilterSelectField } from "@/components/admin/FilterSelectField";
 import { buttonClassName } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { club57VendedorLabel } from "@/lib/club57/labels";
+import { listaPrecioLabel, parseListaPrecioFiltro, type ListaPrecioFiltro } from "@/lib/club57/listaPrecio";
 
 export const metadata: Metadata = { title: "Clientes — Club 57" };
 
@@ -38,13 +39,14 @@ async function getVendedores(): Promise<VendedorOption[]> {
 async function getClub57Members(
   query: string,
   vendedor: string,
-  vendedores: VendedorOption[]
+  vendedores: VendedorOption[],
+  lista: ListaPrecioFiltro
 ): Promise<{ members: Club57MemberRow[]; error?: string }> {
   const supabase = await createClient();
 
   let membersQuery = supabase
     .from("club57_members")
-    .select("id, full_name, email, phone, origen_alta, creado_por_vendedor_id")
+    .select("id, full_name, email, phone, origen_alta, creado_por_vendedor_id, lista_precio")
     .order("created_at", { ascending: false });
 
   const q = query.trim();
@@ -56,6 +58,10 @@ async function getClub57Members(
   } else if (UUID_RE.test(vendedor)) {
     membersQuery = membersQuery.eq("creado_por_vendedor_id", vendedor);
   }
+
+  if (lista === "con") membersQuery = membersQuery.not("lista_precio", "is", null);
+  else if (lista === "sin") membersQuery = membersQuery.is("lista_precio", null);
+  else if (lista !== "todas") membersQuery = membersQuery.eq("lista_precio", Number(lista));
 
   const { data: members, error: membersError } = await membersQuery;
   if (membersError) return { members: [], error: membersError.message };
@@ -88,6 +94,7 @@ async function getClub57Members(
         member.creado_por_vendedor_id,
         member.creado_por_vendedor_id ? nombreByVendedor.get(member.creado_por_vendedor_id) : null
       ),
+      listaLabel: listaPrecioLabel(member.lista_precio),
     })),
   };
 }
@@ -95,12 +102,13 @@ async function getClub57Members(
 export default async function AdminClub57ClientesPage({
   searchParams,
 }: {
-  searchParams: { q?: string; vendedor?: string };
+  searchParams: { q?: string; vendedor?: string; lista?: string };
 }) {
   const q = searchParams.q ?? "";
   const vendedor = searchParams.vendedor ?? "";
+  const lista = parseListaPrecioFiltro(searchParams.lista);
   const vendedores = await getVendedores();
-  const { members, error } = await getClub57Members(q, vendedor, vendedores);
+  const { members, error } = await getClub57Members(q, vendedor, vendedores, lista);
 
   return (
     <div className="flex flex-col gap-6">
@@ -143,6 +151,23 @@ export default async function AdminClub57ClientesPage({
               { value: "", label: "Todos" },
               ...vendedores.map((option) => ({ value: option.id, label: option.nombre })),
               { value: SIN_VENDEDOR, label: "Sin vendedor" },
+            ]}
+          />
+        </div>
+        <div className="min-w-[200px]">
+          <span className="mb-1.5 block font-sans text-sm font-medium text-brand-black">Lista de precio</span>
+          <FilterSelectField
+            name="lista"
+            defaultValue={lista === "todas" ? "" : lista}
+            label="Lista de precio"
+            options={[
+              { value: "", label: "Todas" },
+              { value: "con", label: "Con lista asignada" },
+              { value: "sin", label: "Precio de tienda" },
+              { value: "1", label: "Precio 1" },
+              { value: "2", label: "Precio 2" },
+              { value: "3", label: "Precio 3" },
+              { value: "4", label: "Precio 4" },
             ]}
           />
         </div>

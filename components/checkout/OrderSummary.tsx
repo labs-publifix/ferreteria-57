@@ -42,7 +42,7 @@ export function OrderSummary({
       </h2>
 
       <div className="flex flex-col gap-3">
-        {items.map(({ product, variant, quantity, wasReduced }) => (
+        {items.map(({ product, variant, quantity, wasReduced, unitPrice, isMemberPrice }) => (
           <div key={`${product.id}-${variant.id}`} className="flex gap-3">
             <ProductThumbnail product={product} className="size-14 shrink-0" />
             <div className="flex flex-1 flex-col">
@@ -54,6 +54,7 @@ export function OrderSummary({
               )}
               <p className="font-sans text-xs text-brand-slate">
                 {quantity === 0 ? "Ya no disponible" : `Cantidad: ${quantity}`}
+                {isMemberPrice && quantity > 0 && " · Precio Club 57"}
               </p>
               {/* Mismo ajuste automático que ya muestra /carrito (ver
                   CartLineItem) — aquí sin el botón de WhatsApp, checkout es
@@ -66,7 +67,7 @@ export function OrderSummary({
               )}
             </div>
             <p className="shrink-0 font-sans text-sm font-semibold text-brand-black">
-              {formatPrice(variant.price * quantity)}
+              {formatPrice(unitPrice * quantity)}
             </p>
           </div>
         ))}

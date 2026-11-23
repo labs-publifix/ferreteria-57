@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
-import { Button, PriceTag, RatingStars } from "@/components/ui";
+import { Button, RatingStars } from "@/components/ui";
+import { ClubPriceTag } from "@/components/club57/ClubPriceTag";
 import { StockLimitNotice } from "@/components/product/StockLimitNotice";
 import type { Product } from "@/types/catalog";
 
@@ -82,7 +83,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         </div>
       )}
 
-      <PriceTag price={variant?.price ?? 0} previousPrice={variant?.compareAtPrice} />
+      <ClubPriceTag variantId={variant?.id} price={variant?.price ?? 0} previousPrice={variant?.compareAtPrice} />
 
       {hasMultipleVariants && (
         <div>

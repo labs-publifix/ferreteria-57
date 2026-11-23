@@ -13,6 +13,8 @@ export function CartLineItem({
   variant,
   quantity,
   wasReduced = false,
+  unitPrice = variant.price,
+  isMemberPrice = false,
 }: {
   product: Product;
   variant: ProductVariant;
@@ -21,9 +23,12 @@ export function CartLineItem({
    *  porque el stock bajó desde que se agregó — dispara el aviso de abajo
    *  aunque el cliente no haya tocado el stepper +/-. */
   wasReduced?: boolean;
+  /** Precio que se cobra (Club 57 si le toca al miembro). */
+  unitPrice?: number;
+  isMemberPrice?: boolean;
 }) {
   const { setQuantity, removeItem } = useCart();
-  const lineTotal = variant.price * quantity;
+  const lineTotal = unitPrice * quantity;
   const atStockLimit = quantity >= variant.stock;
 
   return (
@@ -72,8 +77,16 @@ export function CartLineItem({
             </div>
 
             <p className="font-sans text-sm text-brand-slate">
-              {formatPrice(variant.price)} c/u
+              {formatPrice(unitPrice)} c/u
+              {isMemberPrice && (
+                <span className="ml-1.5 whitespace-nowrap rounded bg-brand-orange/10 px-1.5 py-0.5 text-xs font-semibold text-brand-black">
+                  Precio Club 57
+                </span>
+              )}
             </p>
+            {isMemberPrice && (
+              <p className="font-sans text-xs text-brand-slate/70">Precio tienda {formatPrice(variant.price)}</p>
+            )}
           </div>
         </div>
 

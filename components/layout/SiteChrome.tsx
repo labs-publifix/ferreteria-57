@@ -5,6 +5,7 @@ import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { ProductCatalogProvider } from "@/components/cart/ProductCatalogProvider";
+import { MemberPricesProvider } from "@/components/club57/MemberPricesProvider";
 import { ToastProvider } from "@/components/ui";
 import { getVisibleArticles } from "@/lib/blog/content";
 import { getVisibleTopBanner } from "@/lib/marketing/queries";
@@ -38,15 +39,19 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
     // contra datos de prueba.
     <ToastProvider>
       <AuthProvider>
-        <ProductCatalogProvider>
-          <CartProvider>
-            <Header categories={categories} topBanner={topBanner} showBlog={showBlog} />
-            {children}
-            <Footer categories={categories} showBlog={showBlog} />
-            <WhatsAppButton />
-            <PopupBannerGate banner={popupBanner} />
-          </CartProvider>
-        </ProductCatalogProvider>
+        {/* Precio Club 57 del miembro con sesión: lo leen tarjetas, ficha,
+            carrito y checkout. */}
+        <MemberPricesProvider>
+          <ProductCatalogProvider>
+            <CartProvider>
+              <Header categories={categories} topBanner={topBanner} showBlog={showBlog} />
+              {children}
+              <Footer categories={categories} showBlog={showBlog} />
+              <WhatsAppButton />
+              <PopupBannerGate banner={popupBanner} />
+            </CartProvider>
+          </ProductCatalogProvider>
+        </MemberPricesProvider>
       </AuthProvider>
     </ToastProvider>
   );

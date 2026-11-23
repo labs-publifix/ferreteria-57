@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
-import { Badge, Button, PriceTag, RatingStars } from "@/components/ui";
+import { Badge, Button, RatingStars } from "@/components/ui";
+import { ClubPriceTag } from "@/components/club57/ClubPriceTag";
 import { ProductThumbnail } from "./ProductThumbnail";
 import type { Product, ProductVariant } from "@/types/catalog";
 
@@ -128,7 +129,7 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
       {/* hideBadge: el descuento ya se muestra arriba, sobre la imagen; no
           repetir el mismo pill aquí abajo. El tachado del precio anterior
           sí se conserva porque es un dato distinto (cuánto costaba antes). */}
-      <PriceTag price={price} previousPrice={previousPrice} hideBadge />
+      <ClubPriceTag variantId={variant?.id} price={price} previousPrice={previousPrice} hideBadge compact />
 
       <Button
         type="button"
