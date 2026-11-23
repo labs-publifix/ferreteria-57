@@ -12,6 +12,7 @@ import { isContactValid, isForaneoAddressValid, isLocalAddressValid } from "@/li
 import type { ContactForm, ForaneoAddressForm, LocalAddressForm } from "@/lib/checkout/validation";
 import { createCheckoutPreference } from "@/lib/mercadopago/createCheckoutPreference";
 import { MercadoPagoNotConnectedError } from "@/lib/mercadopago/getSellerAccessToken";
+import { checkCartAgainstQuote, hasValidQuantities, roundMoney, type CartQuote } from "@/lib/checkout/priceCheck";
 
 export interface CreateOrderItemInput {
   productName: string;
@@ -46,7 +47,13 @@ export interface CreateOrderResult {
    *  'pagado' cuando el webhook confirma el cobro, ver
    *  app/api/mercadopago/webhook/route.ts. */
   redirectUrl?: string;
+  /** true cuando los precios del carrito ya no son los vigentes para quien
+   *  compra: el navegador vuelve a pedir los precios y el cliente revisa. */
+  pricesChanged?: boolean;
 }
+
+const PRICES_CHANGED_MESSAGE =
+  "Los precios de tu carrito se actualizaron. Revisa el total antes de continuar con el pago.";
 
 // Todo lo que ya validó el formulario en el navegador (botón deshabilitado
 // hasta que los campos son válidos) se vuelve a validar aquí — nunca se
@@ -60,18 +67,30 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     return { error: "Tu carrito está vacío." };
   }
 
-  // El subtotal se confía en general (recalcular el precio de cada
-  // producto es trabajo de otra fase, ver decisión documentada en el
-  // resumen de esta tarea), pero si no coincide con la suma de sus propios
-  // renglones es una señal clara de manipulación o de un bug — se rechaza
-  // en vez de guardar un pedido con números que no cuadran entre sí.
-  const computedSubtotal = input.items.reduce(
-    (sum, item) => sum + item.unitPrice * item.quantity,
-    0
-  );
-  if (Math.abs(computedSubtotal - input.subtotal) > 0.01) {
-    return { error: "El subtotal no coincide con los productos del pedido. Actualiza la página e intenta de nuevo." };
+  if (!hasValidQuantities(input.items)) {
+    return { error: "Revisa las cantidades de tu carrito." };
   }
+
+  // Los precios NUNCA se toman del navegador: el servidor cotiza cada
+  // presentación con el precio que le corresponde a quien compra (lista de
+  // Club 57 o precio de tienda) y create_order() los vuelve a calcular al
+  // guardar. Si lo que vio el cliente ya no coincide (precio actualizado o
+  // datos manipulados), se le pide revisar en vez de cobrar otra cosa.
+  const supabase = await createClient();
+  const { data: quoteRows, error: quoteError } = await supabase.rpc("cotizar_carrito", {
+    p_variant_ids: [...new Set(input.items.map((item) => item.variantId))],
+  });
+  if (quoteError) {
+    console.error("[createOrder] cotizar_carrito", quoteError.message);
+    return { error: "No se pudo registrar tu pedido. Intenta de nuevo." };
+  }
+  const check = checkCartAgainstQuote(input.items, (quoteRows ?? []) as CartQuote[]);
+  if (!check.ok) {
+    return check.reason === "unavailable"
+      ? { error: "Un producto de tu carrito ya no está disponible. Actualiza tu carrito e intenta de nuevo.", pricesChanged: true }
+      : { error: PRICES_CHANGED_MESSAGE, pricesChanged: true };
+  }
+  const subtotal = check.subtotal;
 
   let shippingCost: number;
   let colonia: string | null = null;
@@ -100,7 +119,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
 
     const zoneCost = getLocalZoneCost(input.colonia, zonas);
-    const result = computeShipping({ method: "envio_local", subtotal: input.subtotal, zoneCost });
+    const result = computeShipping({ method: "envio_local", subtotal, zoneCost });
     // result.cost solo es null cuando zoneCost es null, y aquí siempre se
     // le pasa un número — el `?? zoneCost` nada más satisface el tipo.
     shippingCost = result.cost ?? zoneCost;
@@ -114,7 +133,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     // checkout estándar que completar, así que ni siquiera se intenta
     // crear el pedido — la UI ya reemplaza el botón por el CTA de
     // WhatsApp en este caso, esta es la segunda capa de esa misma regla.
-    if (isForaneoOverLimit(input.subtotal)) {
+    if (isForaneoOverLimit(subtotal)) {
       return {
         error:
           "Tu pedido supera el monto máximo para envío foráneo estándar — contáctanos por WhatsApp para cotizar tu envío.",
@@ -124,9 +143,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     shippingAddress = { ...input.address };
   }
 
-  const total = input.subtotal + shippingCost;
+  const expectedTotal = roundMoney(subtotal + shippingCost);
 
-  const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_order", {
     p_customer_email: input.contact.email,
     p_customer_name: `${input.contact.firstName} ${input.contact.lastName}`.trim(),
@@ -135,15 +153,17 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     p_colonia: colonia,
     p_shipping_address: shippingAddress,
     p_shipping_cost: shippingCost,
-    p_subtotal: input.subtotal,
-    p_total: total,
-    p_items: input.items.map((item) => ({
-      product_name: item.productName,
-      variant_label: item.variantLabel,
-      sku: item.sku,
-      variant_id: item.variantId,
-      unit_price: item.unitPrice,
-      quantity: item.quantity,
+    // create_order() ignora subtotal, total y unit_price: los calcula en la
+    // base. Se mandan por compatibilidad con la firma de la función.
+    p_subtotal: subtotal,
+    p_total: expectedTotal,
+    p_items: check.lines.map((line) => ({
+      variant_id: line.variantId,
+      quantity: line.quantity,
+      product_name: line.productName,
+      variant_label: line.variantLabel,
+      sku: line.sku,
+      unit_price: line.unitPrice,
     })),
   });
 
@@ -155,12 +175,29 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     if (error.code === "F57NS") {
       return { error: error.message };
     }
+    // F57NA: un producto del carrito se desactivó o se borró justo antes.
+    if (error.code === "F57NA") {
+      return { error: error.message, pricesChanged: true };
+    }
     console.error("[createOrder]", error.message);
     return { error: "No se pudo registrar tu pedido. Intenta de nuevo." };
   }
-  const row = data?.[0] as { id: string; order_number: string; created_at: string } | undefined;
+  const row = data?.[0] as
+    | { id: string; order_number: string; created_at: string; subtotal: number | string; total: number | string }
+    | undefined;
   if (!row) {
     return { error: "No se pudo registrar tu pedido. Intenta de nuevo." };
+  }
+
+  // El total guardado es el que manda: si un precio cambió entre la
+  // cotización y la creación (ventana de milisegundos), el pedido se cancela
+  // y se le pide al cliente revisar, en vez de cobrar un monto distinto al
+  // que vio.
+  const total = roundMoney(Number(row.total));
+  if (Math.abs(total - expectedTotal) > 0.005) {
+    const { error: cancelError } = await createAdminClient().rpc("mark_order_payment_failed", { p_order_id: row.id });
+    if (cancelError) console.error("[createOrder] no se pudo cancelar el pedido con precio cambiado", row.id, cancelError.message);
+    return { error: PRICES_CHANGED_MESSAGE, pricesChanged: true };
   }
 
   // El pedido ya existe en 'pendiente_pago' (con su stock ya reservado)
@@ -180,10 +217,11 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       orderNumber: row.order_number,
       customerName,
       customerEmail: input.contact.email,
-      items: input.items.map((item) => ({
-        title: item.variantLabel ? `${item.productName} (${item.variantLabel})` : item.productName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
+      // Los mismos precios y nombres que quedaron guardados en el pedido.
+      items: check.lines.map((line) => ({
+        title: line.variantLabel && line.variantLabel !== "Único" ? `${line.productName} (${line.variantLabel})` : line.productName,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
       })),
       shippingCost,
     });

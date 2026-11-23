@@ -52,7 +52,9 @@ export function useResolvedCart() {
     // getProductById cambia de referencia cada vez que carga el catálogo
     // (una sola vez); agregarlo aquí no aporta nada, solo repetiría el
     // cálculo sin necesidad.
-  }, [lines]); // eslint-disable-line react-hooks/exhaustive-deps
+    // getProductById cambia cuando llegan datos vigentes del catálogo (precio
+    // o stock actualizados): el carrito se vuelve a resolver con ellos.
+  }, [lines, getProductById]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, { variant, quantity }) => sum + variant.price * quantity, 0),

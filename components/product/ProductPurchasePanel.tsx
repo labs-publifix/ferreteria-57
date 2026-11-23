@@ -35,7 +35,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
 
   function handleAddToCart() {
     if (!variant || !inStock) return;
-    addItem(product.id, variant.id, quantity);
+    addItem(product, variant.id, quantity);
   }
 
   return (

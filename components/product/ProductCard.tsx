@@ -135,7 +135,7 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
         variant="primary"
         className="relative z-10 mt-auto w-full"
         disabled={!variant || !inStock}
-        onClick={() => variant && addItem(product.id, variant.id, 1)}
+        onClick={() => variant && addItem(product, variant.id, 1)}
       >
         {inStock ? "Agregar al carrito" : "Agotado"}
       </Button>
