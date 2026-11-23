@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { useProductCatalog } from "@/components/cart/ProductCatalogProvider";
 import { useToast } from "@/components/ui";
+import { CART_STORAGE_KEY } from "@/components/cart/cartStorage";
+import type { Product } from "@/types/catalog";
 
 export interface CartLine {
   productId: string;
@@ -21,7 +23,7 @@ type CartAction =
   | { type: "REMOVE_ITEM"; productId: string; variantId: string }
   | { type: "CLEAR" };
 
-const STORAGE_KEY = "ferreteria57:cart";
+const STORAGE_KEY = CART_STORAGE_KEY;
 
 function sameLine(line: CartLine, productId: string, variantId: string) {
   return line.productId === productId && line.variantId === variantId;
@@ -87,7 +89,9 @@ interface CartContextValue {
   // sea true, para no confundir "todavía no leímos localStorage" con
   // "el carrito de verdad no tiene nada".
   isHydrated: boolean;
-  addItem: (productId: string, variantId: string, quantity?: number) => void;
+  /** Recibe el producto completo (la tarjeta o la ficha ya lo tienen en
+   *  pantalla) para que el carrito lo conozca sin cargar todo el catálogo. */
+  addItem: (product: Product, variantId: string, quantity?: number) => void;
   setQuantity: (productId: string, variantId: string, quantity: number) => void;
   removeItem: (productId: string, variantId: string) => void;
   clearCart: () => void;
@@ -108,7 +112,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { lines: [] });
   const { showToast } = useToast();
-  const { isLoaded: catalogLoaded, getProductById } = useProductCatalog();
+  const { isLoaded: catalogLoaded, getProductById, registerProduct } = useProductCatalog();
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Espera a que el catálogo real esté listo (no solo a que exista
@@ -154,11 +158,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.lines, isHydrated]);
 
-  function addItem(productId: string, variantId: string, quantity = 1) {
-    const product = getProductById(productId);
-    const variant = product?.variants.find((item) => item.id === variantId);
-    if (!product || !variant || variant.stock <= 0) return;
-    dispatch({ type: "ADD_ITEM", productId, variantId, quantity, maxStock: variant.stock });
+  function addItem(product: Product, variantId: string, quantity = 1) {
+    const variant = product.variants.find((item) => item.id === variantId);
+    if (!variant || variant.stock <= 0) return;
+    registerProduct(product);
+    dispatch({ type: "ADD_ITEM", productId: product.id, variantId, quantity, maxStock: variant.stock });
     // Confirmación sin navegar (Baymard): el usuario se queda donde está,
     // con un link opcional para ir al carrito si así lo decide.
     showToast({

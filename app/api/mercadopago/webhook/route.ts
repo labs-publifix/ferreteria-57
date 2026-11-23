@@ -9,11 +9,14 @@ import {
   type OrderEmailAddress,
 } from "@/lib/email/orderEmails";
 import type { FulfillmentType } from "@/lib/orders/status";
+import { paymentMatchesOrderTotal } from "@/lib/mercadopago/paymentAmount";
 
 interface MpPaymentResource {
   id: number;
   status: string;
   external_reference: string | null;
+  /** Monto cobrado (productos + envío), en la moneda del pago. */
+  transaction_amount?: number | null;
 }
 
 // Nunca se confía en el cuerpo del webhook por sí solo (cualquiera puede
@@ -89,6 +92,30 @@ export async function POST(request: NextRequest) {
   const adminClient = createAdminClient();
 
   if (payment.status === "approved") {
+    // El pedido solo se confirma si lo cobrado coincide con su total
+    // guardado. Un monto distinto (pago armado fuera del checkout, datos
+    // manipulados) no se da por bueno: el pedido se queda en pendiente para
+    // que el personal lo revise en /admin/pedidos.
+    const { data: order, error: orderError } = await adminClient
+      .from("orders")
+      .select("total, status")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (orderError) {
+      console.error("[mercadopago/webhook] no se pudo leer el pedido", orderId, orderError.message);
+      return NextResponse.json({ error: "No se pudo verificar el pedido." }, { status: 500 });
+    }
+    if (!order) {
+      return NextResponse.json({ ok: true, ignored: true });
+    }
+    if (!paymentMatchesOrderTotal(payment.transaction_amount, order.total)) {
+      console.error(
+        "[mercadopago/webhook] el monto pagado no coincide con el total del pedido; no se confirma",
+        { orderId, paymentId: payment.id, paid: payment.transaction_amount, total: order.total }
+      );
+      return NextResponse.json({ ok: true, ignored: true, reason: "amount_mismatch" });
+    }
+
     const { error } = await adminClient.rpc("confirm_order_payment", {
       p_order_id: orderId,
       p_mp_payment_id: String(payment.id),

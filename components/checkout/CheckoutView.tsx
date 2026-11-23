@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/CartProvider";
 import { useResolvedCart } from "@/components/cart/useResolvedCart";
+import { useProductCatalog } from "@/components/cart/ProductCatalogProvider";
 import { Button } from "@/components/ui";
 import { saveLastOrder } from "@/lib/checkout/lastOrder";
 import { NO_LISTADA_KEY } from "@/lib/checkout/constants";
@@ -32,6 +33,7 @@ export function CheckoutView() {
   const router = useRouter();
   const { isHydrated, clearCart } = useCart();
   const { items, subtotal } = useResolvedCart();
+  const { refreshProducts } = useProductCatalog();
   const { zonas } = useZonasEnvio();
   // quantity 0 = se agotó por completo mientras estaba en el carrito
   // (useResolvedCart ya lo topó ahí, no aquí) — OrderSummary sigue
@@ -149,6 +151,9 @@ export function CheckoutView() {
     const result = await createOrder(input);
 
     if (result.error || !result.orderNumber || !result.redirectUrl) {
+      // Precios o disponibilidad cambiaron: se vuelven a pedir para que el
+      // resumen muestre lo vigente antes de que el cliente lo intente otra vez.
+      if (result.pricesChanged) await refreshProducts();
       setSubmitError(result.error ?? "No se pudo registrar tu pedido. Intenta de nuevo.");
       setIsSubmitting(false);
       return;
