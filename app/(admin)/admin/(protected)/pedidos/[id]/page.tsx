@@ -6,10 +6,12 @@ import { formatPrice } from "@/lib/formatPrice";
 import {
   FULFILLMENT_TYPE_LABEL,
   ORDER_STATUS_BADGE_CLASS,
-  ORDER_STATUS_LABEL,
+  orderStatusLabel,
   type FulfillmentType,
+  type MetodoPago,
   type OrderStatus,
 } from "@/lib/orders/status";
+import { RESOLUCION_PEDIDO_LABEL, ultimoDiaPlazo } from "@/lib/club57/empresas/pedidos";
 import { getOrderReadiness } from "@/lib/orders/readiness";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,6 +31,19 @@ interface OrderDetail {
   total: number;
   status: OrderStatus;
   created_at: string;
+  metodo_pago: MetodoPago;
+  autorizacion_vence_at: string | null;
+  autorizado_at: string | null;
+  empresa_resolucion: string | null;
+  empresa_motivo: string | null;
+  club57_empresas: { id: string; nombre_comercial: string } | { id: string; nombre_comercial: string }[] | null;
+  club57_empresa_empleados: { numero_empleado: string | null } | { numero_empleado: string | null }[] | null;
+}
+
+const conPunto = (texto: string) => (texto.endsWith(".") ? texto : `${texto}.`);
+
+function uno<T>(value: T | T[] | null): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
 interface OrderItemRow {
@@ -82,7 +97,7 @@ export default async function AdminPedidoDetailPage({ params }: { params: { id: 
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, order_number, customer_email, customer_name, customer_phone, fulfillment_type, colonia, shipping_address, shipping_cost, subtotal, total, status, created_at"
+      "id, order_number, customer_email, customer_name, customer_phone, fulfillment_type, colonia, shipping_address, shipping_cost, subtotal, total, status, created_at, metodo_pago, autorizacion_vence_at, autorizado_at, empresa_resolucion, empresa_motivo, club57_empresas(id, nombre_comercial), club57_empresa_empleados(numero_empleado)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -96,6 +111,10 @@ export default async function AdminPedidoDetailPage({ params }: { params: { id: 
 
   const orderDetail = order as OrderDetail;
   const orderItems = (items ?? []) as OrderItemRow[];
+  const esEmpresa = orderDetail.metodo_pago === "empresa";
+  const empresa = uno(orderDetail.club57_empresas);
+  const numeroEmpleado = uno(orderDetail.club57_empresa_empleados)?.numero_empleado ?? null;
+  const enEsperaEmpresa = orderDetail.status === "pendiente_autorizacion";
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,7 +132,7 @@ export default async function AdminPedidoDetailPage({ params }: { params: { id: 
           <span
             className={`rounded-full px-3 py-1 font-sans text-xs font-semibold uppercase ${ORDER_STATUS_BADGE_CLASS[orderDetail.status]}`}
           >
-            {ORDER_STATUS_LABEL[orderDetail.status]}
+            {orderStatusLabel(orderDetail.status, orderDetail.metodo_pago)}
           </span>
         </div>
         <p className="mt-1 font-sans text-sm text-brand-slate/70">
@@ -124,11 +143,45 @@ export default async function AdminPedidoDetailPage({ params }: { params: { id: 
       {/* Prominente y arriba de todo lo demás: es la pregunta operativa
           que el equipo de la tienda necesita responder de un vistazo al
           entrar al detalle — para cuándo debe estar listo este pedido. */}
-      <div className="rounded-lg border-2 border-brand-orange/40 bg-brand-orange/10 p-4">
-        <p className="font-sans text-sm font-semibold text-brand-black">
-          {getOrderReadiness(orderDetail.fulfillment_type, orderDetail.created_at).long}
-        </p>
-      </div>
+      {esEmpresa && (
+        <div className="rounded-lg bg-brand-slate p-4 text-white">
+          <p className="font-sans text-xs font-semibold uppercase tracking-wide text-brand-orange">Club 57 Empresarial · Cargo a empresa</p>
+          <p className="mt-1 font-sans text-sm">
+            {empresa ? (
+              <Link href={`/admin/lealtad/empresas/${empresa.id}`} className="font-semibold underline underline-offset-2">
+                {empresa.nombre_comercial}
+              </Link>
+            ) : (
+              "Empresa"
+            )}
+            {numeroEmpleado && <> · Núm. de empleado {numeroEmpleado}</>}
+          </p>
+          <p className="mt-1 font-sans text-sm text-white/85">
+            {enEsperaEmpresa
+              ? `En espera de que la empresa lo autorice (a más tardar el ${
+                  orderDetail.autorizacion_vence_at ? ultimoDiaPlazo(orderDetail.autorizacion_vence_at) : "—"
+                }). No lo prepares todavía; si vence, se cancela solo.`
+              : orderDetail.empresa_resolucion
+                ? conPunto(
+                    `${RESOLUCION_PEDIDO_LABEL[orderDetail.empresa_resolucion] ?? "Resuelto"}${
+                      orderDetail.autorizado_at && orderDetail.empresa_resolucion === "autorizado"
+                        ? ` el ${dateFormatter.format(new Date(orderDetail.autorizado_at))}`
+                        : ""
+                    }${orderDetail.empresa_motivo && orderDetail.status === "cancelado" ? ` · ${orderDetail.empresa_motivo}` : ""}`
+                  )
+                : ""}
+            {!enEsperaEmpresa && orderDetail.status !== "cancelado" && " No se cobra al entregar: pide identificación oficial."}
+          </p>
+        </div>
+      )}
+
+      {!enEsperaEmpresa && orderDetail.status !== "cancelado" && (
+        <div className="rounded-lg border-2 border-brand-orange/40 bg-brand-orange/10 p-4">
+          <p className="font-sans text-sm font-semibold text-brand-black">
+            {getOrderReadiness(orderDetail.fulfillment_type, orderDetail.autorizado_at ?? orderDetail.created_at).long}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-lg bg-white p-5 shadow-sm">
@@ -211,6 +264,7 @@ export default async function AdminPedidoDetailPage({ params }: { params: { id: 
           orderId={orderDetail.id}
           status={orderDetail.status}
           fulfillmentType={orderDetail.fulfillment_type}
+          metodoPago={orderDetail.metodo_pago}
         />
       </div>
     </div>

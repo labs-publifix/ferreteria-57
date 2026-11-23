@@ -41,7 +41,7 @@ export default async function AdminEmpresaPage({
 }) {
   if (!UUID_RE.test(params.id)) notFound();
   const supabase = await createClient();
-  const [{ data: e }, { data: bitacora }, { data: personal }, { data: empleadosData }] = await Promise.all([
+  const [{ data: e }, { data: bitacora }, { data: personal }, { data: empleadosData }, { data: pedidosData }] = await Promise.all([
     supabase.from("club57_empresas").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("club57_empresas_bitacora")
@@ -56,6 +56,8 @@ export default async function AdminEmpresaPage({
       .select("id, estado, numero_empleado, linea_credito, solicitado_at, motivo, club57_members(full_name, email)")
       .eq("empresa_id", params.id)
       .order("solicitado_at", { ascending: false }),
+    // Pedidos con cargo a la empresa (para el crédito comprometido).
+    supabase.from("orders").select("status, total").eq("empresa_id", params.id).eq("metodo_pago", "empresa"),
   ]);
   if (!e) notFound();
 
@@ -64,6 +66,10 @@ export default async function AdminEmpresaPage({
   const sugerido = (valor: unknown, porDefecto: string) =>
     valor === null || valor === undefined ? (e.estado === "solicitud" ? porDefecto : "") : String(valor);
   const d = CONVENIO_SUGERIDO;
+
+  const pedidosEmpresa = (pedidosData ?? []) as { status: string; total: number | string }[];
+  const enEspera = pedidosEmpresa.filter((p) => p.status === "pendiente_autorizacion");
+  const comprometido = pedidosEmpresa.filter((p) => p.status !== "cancelado").reduce((sum, p) => sum + Number(p.total), 0);
 
   const empleados = (empleadosData ?? []).map((row) => {
     const m = (Array.isArray(row.club57_members) ? row.club57_members[0] : row.club57_members) as
@@ -168,6 +174,42 @@ export default async function AdminEmpresaPage({
           tieneAcceso={Boolean(e.responsable_user_id)}
           habilitado={estado === "activa" || estado === "suspendida"}
         />
+      </section>
+
+      <section className="rounded-lg bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-base uppercase text-brand-slate">Pedidos con cargo a la empresa</h2>
+          <a
+            href="/admin/pedidos?pago=empresa"
+            className="font-sans text-sm font-semibold text-brand-slate underline underline-offset-2 hover:text-brand-black"
+          >
+            Ver en Pedidos
+          </a>
+        </div>
+        <dl className="mt-3 grid grid-cols-1 gap-3 font-sans text-sm sm:grid-cols-3">
+          <div className="rounded-md bg-brand-gray/60 px-4 py-3">
+            <dt className="text-brand-slate/70">Crédito comprometido</dt>
+            <dd className="font-semibold text-brand-black">
+              {pesos.format(comprometido)}
+              {e.limite_credito !== null && <span className="font-normal text-brand-slate"> de {pesos.format(Number(e.limite_credito))}</span>}
+            </dd>
+          </div>
+          <div className="rounded-md bg-brand-gray/60 px-4 py-3">
+            <dt className="text-brand-slate/70">En espera de autorización</dt>
+            <dd className="font-semibold text-brand-black">
+              {enEspera.length} · {pesos.format(enEspera.reduce((sum, p) => sum + Number(p.total), 0))}
+            </dd>
+          </div>
+          <div className="rounded-md bg-brand-gray/60 px-4 py-3">
+            <dt className="text-brand-slate/70">Autorizados</dt>
+            <dd className="font-semibold text-brand-black">
+              {pedidosEmpresa.filter((p) => !["pendiente_autorizacion", "cancelado"].includes(p.status)).length}
+            </dd>
+          </div>
+        </dl>
+        <p className="mt-2 font-sans text-xs text-brand-slate/70">
+          Comprometido: pedidos con cargo a la empresa en espera o autorizados, sin contar los cancelados.
+        </p>
       </section>
 
       <section className="rounded-lg bg-white p-4 shadow-sm sm:p-6">

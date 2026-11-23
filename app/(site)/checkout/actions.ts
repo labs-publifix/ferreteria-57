@@ -12,7 +12,8 @@ import { isContactValid, isForaneoAddressValid, isLocalAddressValid } from "@/li
 import type { ContactForm, ForaneoAddressForm, LocalAddressForm } from "@/lib/checkout/validation";
 import { createCheckoutPreference } from "@/lib/mercadopago/createCheckoutPreference";
 import { MercadoPagoNotConnectedError } from "@/lib/mercadopago/getSellerAccessToken";
-import { checkCartAgainstQuote, hasValidQuantities, roundMoney, type CartQuote } from "@/lib/checkout/priceCheck";
+import { checkCartAgainstQuote, hasValidQuantities, roundMoney, type CartQuote, type QuotedLine } from "@/lib/checkout/priceCheck";
+import { notificarPedidoEmpresaCreado } from "@/lib/club57/empresas/pedidosNotificaciones";
 
 export interface CreateOrderItemInput {
   productName: string;
@@ -29,6 +30,10 @@ interface CreateOrderBase {
   contact: ContactForm;
   items: CreateOrderItemInput[];
   subtotal: number;
+  /** "empresa" = Club 57 Empresarial: el pedido se carga a la empresa del
+   *  empleado y queda en espera de su autorización (no pasa por Mercado
+   *  Pago). Por omisión, tarjeta en Mercado Pago. */
+  paymentMethod?: "tarjeta" | "empresa";
 }
 
 export type CreateOrderInput =
@@ -50,6 +55,8 @@ export interface CreateOrderResult {
   /** true cuando los precios del carrito ya no son los vigentes para quien
    *  compra: el navegador vuelve a pedir los precios y el cliente revisa. */
   pricesChanged?: boolean;
+  /** Solo en pedidos con cargo a la empresa. */
+  cargoEmpresa?: { empresa: string; venceAt: string };
 }
 
 const PRICES_CHANGED_MESSAGE =
@@ -144,6 +151,16 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   }
 
   const expectedTotal = roundMoney(subtotal + shippingCost);
+
+  if (input.paymentMethod === "empresa") {
+    return createOrderConCargoAEmpresa(supabase, input, {
+      colonia,
+      shippingAddress,
+      shippingCost,
+      expectedTotal,
+      lines: check.lines,
+    });
+  }
 
   const { data, error } = await supabase.rpc("create_order", {
     p_customer_email: input.contact.email,
@@ -261,4 +278,69 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     console.error("[createOrder] fallo al crear la preferencia de pago:", err);
     return { error: "No se pudo iniciar el pago. Intenta de nuevo." };
   }
+}
+
+// Club 57 Empresarial: «Cargo a mi empresa». club57_crear_pedido_empresa()
+// crea el pedido con create_order() (mismos precios y stock) y valida en la
+// misma transacción que el vínculo esté activo, que la empresa esté activa
+// y que alcancen la línea del empleado y el crédito de la empresa. El
+// pedido queda en espera de autorización y se guarda con el correo de la
+// cuenta, para que aparezca en Mi cuenta.
+const CARGO_EMPRESA_ERRORES = new Set(["F57E1", "F57E2", "F57E3", "F57E4", "F57NS"]);
+
+async function createOrderConCargoAEmpresa(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  input: CreateOrderInput,
+  datos: {
+    colonia: string | null;
+    shippingAddress: Record<string, string> | null;
+    shippingCost: number;
+    expectedTotal: number;
+    lines: QuotedLine[];
+  }
+): Promise<CreateOrderResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Inicia sesión para cargar tu compra a tu empresa." };
+
+  const { data: creditoRows } = await supabase.rpc("club57_mi_credito_empresa");
+  const credito = ((creditoRows ?? []) as { empresa_nombre: string }[])[0];
+  if (!credito) return { error: "No tienes una empresa vinculada activa. Puedes pagar con tarjeta." };
+
+  const { data, error } = await supabase.rpc("club57_crear_pedido_empresa", {
+    p_customer_name: `${input.contact.firstName} ${input.contact.lastName}`.trim(),
+    p_customer_phone: input.contact.phone,
+    p_fulfillment_type: input.fulfillmentType,
+    p_colonia: datos.colonia,
+    p_shipping_address: datos.shippingAddress,
+    p_shipping_cost: datos.shippingCost,
+    p_items: datos.lines.map((line) => ({ variant_id: line.variantId, quantity: line.quantity })),
+  });
+  if (error) {
+    if (CARGO_EMPRESA_ERRORES.has(error.code)) return { error: error.message };
+    if (error.code === "F57NA") return { error: error.message, pricesChanged: true };
+    console.error("[createOrder empresa]", error.message);
+    return { error: "No se pudo registrar tu pedido. Intenta de nuevo." };
+  }
+  const row = (data as { id: string; order_number: string; created_at: string; total: number | string; autorizacion_vence_at: string }[] | null)?.[0];
+  if (!row) return { error: "No se pudo registrar tu pedido. Intenta de nuevo." };
+
+  const total = roundMoney(Number(row.total));
+  if (Math.abs(total - datos.expectedTotal) > 0.005) {
+    const { error: cancelError } = await supabase.rpc("club57_cancelar_mi_pedido_empresa", { p_order_id: row.id });
+    if (cancelError) console.error("[createOrder empresa] no se pudo cancelar el pedido con precio cambiado", row.id, cancelError.message);
+    return { error: PRICES_CHANGED_MESSAGE, pricesChanged: true };
+  }
+
+  await notificarPedidoEmpresaCreado(row.id);
+
+  return {
+    orderNumber: row.order_number,
+    shippingCost: datos.shippingCost,
+    total,
+    createdAt: row.created_at,
+    redirectUrl: "/checkout/confirmacion?pago=empresa",
+    cargoEmpresa: { empresa: credito.empresa_nombre, venceAt: row.autorizacion_vence_at },
+  };
 }

@@ -30,6 +30,9 @@ export interface ConfirmedOrder {
   subtotal: number;
   shipping: number;
   total: number;
+  /** Club 57 Empresarial: pedido con cargo a la empresa, en espera de su
+   *  autorización (venceAt = fin del plazo para autorizar). */
+  cargoEmpresa?: { empresa: string; venceAt: string };
 }
 
 const LAST_ORDER_KEY = "ferreteria57:lastOrder";

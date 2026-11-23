@@ -5,7 +5,8 @@ import { Modal } from "@/components/ui";
 import {
   FULFILLMENT_TYPE_LABEL,
   ORDER_STATUS_BADGE_CLASS,
-  ORDER_STATUS_LABEL,
+  orderStatusLabel,
+  type MetodoPago,
   type FulfillmentType,
   type OrderStatus,
 } from "@/lib/orders/status";
@@ -31,6 +32,7 @@ export interface Club57OrderDetail {
   shipping_cost: number;
   total: number;
   items: Club57OrderItemRow[];
+  metodo_pago?: MetodoPago;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeStyle: "short" });
@@ -84,11 +86,12 @@ export function Club57OrderDetailModal({ order, onClose }: { order: Club57OrderD
           <span
             className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_BADGE_CLASS[order.status]}`}
           >
-            {ORDER_STATUS_LABEL[order.status]}
+            {orderStatusLabel(order.status, order.metodo_pago)}
           </span>
         </div>
         <p className="-mt-2 font-sans text-xs text-brand-slate/60">
           {dateFormatter.format(new Date(order.created_at))} · {FULFILLMENT_TYPE_LABEL[order.fulfillment_type]}
+          {order.metodo_pago === "empresa" && " · Cargo a empresa"}
         </p>
 
         <div>

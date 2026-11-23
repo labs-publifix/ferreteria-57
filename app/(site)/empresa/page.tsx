@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CodigoEmpresaCard } from "@/components/empresa/CodigoEmpresaCard";
 import { NominaForm } from "@/components/empresa/NominaForm";
-import { getPortalEmpresa, mapPortalEmpleado } from "@/lib/club57/empresas/portal";
+import { getPortalEmpresa, mapPortalEmpleado, mapPortalPedido } from "@/lib/club57/empresas/portal";
 import { diaCorteLabel } from "@/lib/club57/empresas/datos";
 import { appUrl } from "@/lib/club57/empresas/notificaciones";
 
@@ -12,21 +12,46 @@ const pesos = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN
 export default async function PortalEmpresaInicio() {
   const { supabase, empresa } = await getPortalEmpresa();
   if (!empresa) return null;
-  const { data } = await supabase.rpc("club57_portal_empleados");
+  const [{ data }, { data: pedidosData }] = await Promise.all([
+    supabase.rpc("club57_portal_empleados"),
+    supabase.rpc("club57_portal_pedidos"),
+  ]);
   const empleados = ((data ?? []) as Record<string, unknown>[]).map(mapPortalEmpleado);
+  const pedidos = ((pedidosData ?? []) as Record<string, unknown>[]).map(mapPortalPedido);
+  const pedidosPorAutorizar = pedidos.filter((p) => p.status === "pendiente_autorizacion");
+  // Crédito con Ferretería 57 comprometido: pedidos con cargo a la empresa
+  // no cancelados (en espera o autorizados).
+  const comprometido = pedidos.filter((p) => p.status !== "cancelado").reduce((sum, p) => sum + p.total, 0);
   const activos = empleados.filter((e) => e.estado === "activo");
   const pendientes = empleados.filter((e) => e.estado === "pendiente").length;
   const lineaAsignada = activos.reduce((sum, e) => sum + (e.linea_credito ?? 0), 0);
 
   const resumen = [
+    { label: "Pedidos por autorizar", value: String(pedidosPorAutorizar.length) },
     { label: "Empleados activos", value: String(activos.length) },
-    { label: "Solicitudes por revisar", value: String(pendientes) },
     { label: "Líneas asignadas", value: pesos.format(lineaAsignada) },
-    { label: "Límite de crédito con Ferretería 57", value: empresa.limite_credito === null ? "—" : pesos.format(empresa.limite_credito) },
+    {
+      label: "Crédito disponible con Ferretería 57",
+      value: empresa.limite_credito === null ? "—" : pesos.format(Math.max(empresa.limite_credito - comprometido, 0)),
+      nota: empresa.limite_credito === null ? null : `de ${pesos.format(empresa.limite_credito)}`,
+    },
   ];
 
   return (
     <div className="flex flex-col gap-6">
+      {pedidosPorAutorizar.length > 0 && (
+        <Link
+          href="/empresa/pedidos"
+          className="flex items-center justify-between gap-3 rounded-lg border-l-4 border-brand-orange bg-white px-4 py-3 font-sans text-sm text-brand-black shadow-sm hover:bg-brand-gray/50"
+        >
+          <span>
+            {pedidosPorAutorizar.length === 1 ? "Tienes 1 pedido" : `Tienes ${pedidosPorAutorizar.length} pedidos`} esperando tu autorización (
+            {pesos.format(pedidosPorAutorizar.reduce((sum, p) => sum + p.total, 0))}).
+          </span>
+          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+        </Link>
+      )}
+
       {pendientes > 0 && (
         <Link
           href="/empresa/empleados"
@@ -44,6 +69,7 @@ export default async function PortalEmpresaInicio() {
           <div key={item.label} className="rounded-lg bg-white px-4 py-3 shadow-sm">
             <dt className="font-sans text-xs text-brand-slate/70">{item.label}</dt>
             <dd className="mt-1 font-display text-xl text-brand-black sm:text-2xl">{item.value}</dd>
+            {"nota" in item && item.nota && <dd className="font-sans text-xs text-brand-slate/70">{item.nota}</dd>}
           </div>
         ))}
       </dl>

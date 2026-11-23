@@ -2,9 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { procesarAvisos } from "@/lib/club57/avisos/processor";
 import { getAvisosBaseUrl, isAvisosEnabled } from "@/lib/club57/avisos/config";
+import { procesarPedidosEmpresaDiario } from "@/lib/club57/empresas/pedidosNotificaciones";
 
 // Cron diario (vercel.json, 15:00 UTC = 9:00 CDMX) que manda los avisos
-// por email de promociones de Club 57 que tocan hoy. Protegido con
+// por email de promociones de Club 57 que tocan hoy. En la primera
+// invocación del día también corre Club 57 Empresarial: vence los pedidos
+// con cargo a empresa que no se autorizaron a tiempo y recuerda a cada
+// empresa los que siguen en espera. Protegido con
 // CRON_SECRET (Vercel lo manda como "Authorization: Bearer <secreto>");
 // sin secreto configurado responde 401 siempre.
 //
@@ -46,17 +50,29 @@ export async function GET(request: NextRequest) {
   if (!autorizado(request)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
-  if (!isAvisosEnabled()) {
-    return NextResponse.json({ ok: true, desactivado: true });
+  const eslabon = Number.parseInt(request.headers.get("x-club57-eslabon") ?? "0", 10) || 0;
+  const inicio = Date.now();
+
+  let empresarial: Awaited<ReturnType<typeof procesarPedidosEmpresaDiario>> | { error: true } | undefined;
+  if (eslabon === 0) {
+    try {
+      empresarial = await procesarPedidosEmpresaDiario();
+    } catch (error) {
+      console.error("[cron club57-avisos] empresarial", error);
+      empresarial = { error: true };
+    }
   }
 
-  const eslabon = Number.parseInt(request.headers.get("x-club57-eslabon") ?? "0", 10) || 0;
+  if (!isAvisosEnabled()) {
+    return NextResponse.json({ ok: true, desactivado: true, empresarial });
+  }
+
   try {
-    const resultado = await procesarAvisos({ presupuestoMs: PRESUPUESTO_MS });
+    const resultado = await procesarAvisos({ presupuestoMs: Math.max(PRESUPUESTO_MS - (Date.now() - inicio), 10_000) });
     if (resultado.detenidoPor === "tiempo" && eslabon < MAX_ESLABONES) {
       await encadenar(eslabon + 1);
     }
-    return NextResponse.json({ ok: true, eslabon, ...resultado });
+    return NextResponse.json({ ok: true, eslabon, empresarial, ...resultado });
   } catch (error) {
     console.error("[cron club57-avisos]", error);
     return NextResponse.json({ ok: false }, { status: 500 });

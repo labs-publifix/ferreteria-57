@@ -22,7 +22,7 @@ import { getAllGuides } from "@/lib/blog/guide-content";
 import { buildMisGuias, type MiGuia } from "@/lib/blog/mis-guias";
 import { getNow } from "@/lib/blog/now";
 import type { MemberPartner, SociosCuenta } from "@/lib/club57/socios/member";
-import type { MiVinculoEmpresa } from "@/components/account/EmpresarialPanel";
+import type { MiCreditoEmpresa, MiVinculoEmpresa } from "@/components/account/EmpresarialPanel";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { buttonClassName } from "@/components/ui";
@@ -92,6 +92,7 @@ export default async function CuentaPage({
   let guias: MiGuia[] = [];
   let socios: SociosCuenta = { acceso: "sin_membresia" };
   let empresarial: MiVinculoEmpresa[] = [];
+  let creditoEmpresa: MiCreditoEmpresa | null = null;
   let empresaResponsable: string | null = null;
 
   if (user) {
@@ -135,7 +136,7 @@ export default async function CuentaPage({
         supabase
           .from("orders")
           .select(
-            "id, order_number, created_at, total, status, fulfillment_type, colonia, shipping_address, subtotal, shipping_cost"
+            "id, order_number, created_at, total, status, fulfillment_type, colonia, shipping_address, subtotal, shipping_cost, metodo_pago, autorizacion_vence_at, empresa_resolucion, empresa_motivo"
           )
           .eq("customer_email", user.email ?? "")
           .order("created_at", { ascending: false }),
@@ -161,7 +162,7 @@ export default async function CuentaPage({
 
     // Club 57 Empresarial: sus vínculos con empresas y, si es el responsable
     // de una, el acceso al Portal Empresa.
-    const [vinculosResult, responsableResult] = await Promise.all([
+    const [vinculosResult, responsableResult, creditoResult] = await Promise.all([
       supabase.rpc("club57_mis_empresas"),
       supabase
         .from("club57_empresas")
@@ -170,7 +171,16 @@ export default async function CuentaPage({
         .in("estado", ["activa", "suspendida"])
         .limit(1)
         .maybeSingle(),
+      supabase.rpc("club57_mi_credito_empresa"),
     ]);
+    const credito = ((creditoResult.data ?? []) as Record<string, unknown>[])[0];
+    creditoEmpresa = credito
+      ? {
+          linea: Number(credito.linea_credito),
+          comprometido: Number(credito.comprometido),
+          disponible: Number(credito.disponible),
+        }
+      : null;
     empresarial = ((vinculosResult.data ?? []) as MiVinculoEmpresa[]).map((v) => ({
       ...v,
       linea_credito: v.linea_credito === null ? null : Number(v.linea_credito),
@@ -299,6 +309,7 @@ export default async function CuentaPage({
             guias={guias}
             socios={socios}
             empresarial={empresarial}
+            creditoEmpresa={creditoEmpresa}
           />
         </>
       ) : (

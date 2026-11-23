@@ -37,8 +37,12 @@ export default async function PortalEmpresaLayout({ children }: { children: Reac
     );
   }
 
-  const { data: empleados } = await supabase.rpc("club57_portal_empleados");
+  const [{ data: empleados }, { data: pedidos }] = await Promise.all([
+    supabase.rpc("club57_portal_empleados"),
+    supabase.rpc("club57_portal_pedidos"),
+  ]);
   const pendientes = ((empleados ?? []) as { estado: string }[]).filter((e) => e.estado === "pendiente").length;
+  const pedidosPendientes = ((pedidos ?? []) as { status: string }[]).filter((p) => p.status === "pendiente_autorizacion").length;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8">
@@ -53,7 +57,7 @@ export default async function PortalEmpresaLayout({ children }: { children: Reac
         </p>
       )}
       <div className="mt-6">
-        <PortalNav pendientes={pendientes} />
+        <PortalNav pendientes={pendientes} pedidosPendientes={pedidosPendientes} />
       </div>
       <div className="mt-6">{children}</div>
     </main>

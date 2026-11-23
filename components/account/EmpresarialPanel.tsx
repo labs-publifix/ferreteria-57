@@ -3,14 +3,36 @@
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, MessageCircle } from "lucide-react";
-import { Button, buttonClassName } from "@/components/ui";
+import { Button, buttonClassName, ConfirmDialog } from "@/components/ui";
 import {
+  cancelarPedidoEmpresa,
   cancelarVinculoEmpresa,
   validarCodigoEmpresa,
   vincularEmpresa,
 } from "@/app/(site)/cuenta/empresarialActions";
 import { ESTADO_EMPLEADO_LABEL, textoAutorizacion, type EstadoEmpleado } from "@/lib/club57/empresas/empleados";
 import { STORE_WHATSAPP_PHONE } from "@/lib/store-info";
+import { estadoPedidoEmpresaLabel, RESOLUCION_PEDIDO_LABEL, ultimoDiaPlazo } from "@/lib/club57/empresas/pedidos";
+
+/** Crédito del vínculo activo (club57_mi_credito_empresa). */
+export interface MiCreditoEmpresa {
+  linea: number;
+  /** Pedidos con cargo a la empresa en espera o autorizados. */
+  comprometido: number;
+  disponible: number;
+}
+
+/** Pedido con cargo a la empresa, tal como lo lee Mi cuenta. */
+export interface MiPedidoEmpresa {
+  id: string;
+  order_number: string;
+  created_at: string;
+  total: number;
+  status: string;
+  autorizacion_vence_at?: string | null;
+  empresa_resolucion?: string | null;
+  empresa_motivo?: string | null;
+}
 
 export interface MiVinculoEmpresa {
   id: string;
@@ -35,13 +57,22 @@ const WHATSAPP_HREF = `https://wa.me/${STORE_WHATSAPP_PHONE}?text=${encodeURICom
 
 // Pestaña «Empresarial» de Mi cuenta: el vínculo del miembro con su empresa
 // (Club 57 Empresarial), su línea de crédito y su historial.
-export function EmpresarialPanel({ vinculos }: { vinculos: MiVinculoEmpresa[] }) {
+export function EmpresarialPanel({
+  vinculos,
+  credito = null,
+  pedidos = [],
+}: {
+  vinculos: MiVinculoEmpresa[];
+  credito?: MiCreditoEmpresa | null;
+  pedidos?: MiPedidoEmpresa[];
+}) {
   const vigente = vinculos.find((v) => v.estado === "activo" || v.estado === "pendiente") ?? null;
   const anteriores = vinculos.filter((v) => v !== vigente);
 
   return (
     <div className="flex flex-col gap-4 text-left">
-      {vigente?.estado === "activo" && <VinculoActivo vinculo={vigente} />}
+      {vigente?.estado === "activo" && <VinculoActivo vinculo={vigente} credito={credito} />}
+      {pedidos.length > 0 && <PedidosEmpresa pedidos={pedidos} />}
       {vigente?.estado === "pendiente" && <VinculoPendiente vinculo={vigente} />}
       {!vigente && <VincularForm />}
 
@@ -78,7 +109,7 @@ export function EmpresarialPanel({ vinculos }: { vinculos: MiVinculoEmpresa[] })
   );
 }
 
-function VinculoActivo({ vinculo }: { vinculo: MiVinculoEmpresa }) {
+function VinculoActivo({ vinculo, credito }: { vinculo: MiVinculoEmpresa; credito: MiCreditoEmpresa | null }) {
   const suspendida = vinculo.empresa_estado !== "activa";
   return (
     <div className="rounded-lg bg-white p-5 shadow-sm">
@@ -104,14 +135,17 @@ function VinculoActivo({ vinculo }: { vinculo: MiVinculoEmpresa }) {
         <div className="rounded-md bg-brand-gray px-4 py-3">
           <dt className="font-sans text-xs text-brand-slate/70">Crédito disponible</dt>
           <dd className="font-display text-2xl text-brand-black">
-            {vinculo.linea_credito === null ? "—" : pesos.format(vinculo.linea_credito)}
+            {credito ? pesos.format(credito.disponible) : vinculo.linea_credito === null ? "—" : pesos.format(vinculo.linea_credito)}
           </dd>
+          {credito && credito.comprometido > 0 && (
+            <dd className="font-sans text-xs text-brand-slate">{pesos.format(credito.comprometido)} en pedidos con cargo a tu empresa</dd>
+          )}
         </div>
       </dl>
       <p className="mt-3 font-sans text-sm text-brand-slate">
         {suspendida
           ? "Las compras con cargo a tu empresa están pausadas por el momento. Puedes seguir comprando con tarjeta."
-          : "Tu crédito se renueva conforme tu empresa te descuenta vía nómina. Muy pronto podrás elegir «Cargo a mi empresa» al pagar en la tienda en línea."}
+          : "Al pagar en la tienda en línea, elige «Cargo a mi empresa». Tu crédito se renueva conforme tu empresa te descuenta vía nómina."}
       </p>
     </div>
   );
@@ -257,5 +291,97 @@ function VincularForm() {
         {trabajando ? "Enviando…" : "Vincular mi empresa"}
       </Button>
     </form>
+  );
+}
+
+// Pedidos con cargo a la empresa: los que esperan autorización se pueden
+// cancelar; el resto muestra cómo se resolvieron.
+function PedidosEmpresa({ pedidos }: { pedidos: MiPedidoEmpresa[] }) {
+  const router = useRouter();
+  const [confirmar, setConfirmar] = useState<MiPedidoEmpresa | null>(null);
+  const [cancelando, setCancelando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function cancelar() {
+    if (!confirmar) return;
+    const pedido = confirmar;
+    setConfirmar(null);
+    setCancelando(true);
+    setError(null);
+    const result = await cancelarPedidoEmpresa(pedido.id);
+    setCancelando(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <div className="rounded-lg bg-white p-5 shadow-sm">
+      <h3 className="font-display text-sm uppercase text-brand-slate">Pedidos con cargo a tu empresa</h3>
+      {error && (
+        <p role="alert" className="mt-2 rounded-md bg-red-50 px-4 py-2.5 font-sans text-sm text-red-700">
+          {error}
+        </p>
+      )}
+      <ul className="mt-2 flex flex-col divide-y divide-brand-slate/10">
+        {pedidos.map((pedido) => {
+          const enEspera = pedido.status === "pendiente_autorizacion";
+          const cancelado = pedido.status === "cancelado";
+          return (
+            <li key={pedido.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 font-sans text-sm">
+                <p className="text-brand-black">
+                  <span className="font-semibold">{pedido.order_number}</span> · {fecha.format(new Date(pedido.created_at))} ·{" "}
+                  <span className={cancelado ? "line-through" : ""}>{pesos.format(Number(pedido.total))}</span>
+                </p>
+                <p className="mt-0.5 text-xs">
+                  <span
+                    className={`rounded-full px-2 py-0.5 font-semibold ${
+                      enEspera ? "bg-orange-100 text-orange-800" : cancelado ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
+                    }`}
+                  >
+                    {cancelado && pedido.empresa_resolucion
+                      ? RESOLUCION_PEDIDO_LABEL[pedido.empresa_resolucion] ?? "Cancelado"
+                      : estadoPedidoEmpresaLabel(pedido.status)}
+                  </span>
+                  {enEspera && pedido.autorizacion_vence_at && (
+                    <span className="ml-2 text-brand-slate">Tu empresa tiene hasta el {ultimoDiaPlazo(pedido.autorizacion_vence_at)}</span>
+                  )}
+                  {cancelado && pedido.empresa_resolucion === "rechazado" && pedido.empresa_motivo && (
+                    <span className="ml-2 text-brand-slate">{pedido.empresa_motivo}</span>
+                  )}
+                </p>
+              </div>
+              {enEspera && (
+                <button
+                  type="button"
+                  disabled={cancelando}
+                  onClick={() => setConfirmar(pedido)}
+                  className={buttonClassName("secondary", "shrink-0")}
+                >
+                  Cancelar pedido
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <ConfirmDialog
+        open={Boolean(confirmar)}
+        title="¿Cancelar este pedido?"
+        description={
+          confirmar
+            ? `El pedido ${confirmar.order_number} se cancela y tu crédito disponible se ajusta. No se hace ningún cargo.`
+            : undefined
+        }
+        confirmLabel="Cancelar pedido"
+        cancelLabel="Volver"
+        tone="danger"
+        onConfirm={cancelar}
+        onCancel={() => setConfirmar(null)}
+      />
+    </div>
   );
 }

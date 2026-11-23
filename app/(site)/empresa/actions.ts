@@ -7,6 +7,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getPortalEmpresa } from "@/lib/club57/empresas/portal";
 import { notificarVinculoResuelto } from "@/lib/club57/empresas/notificaciones";
 import {
+  notificarCanceladosPorBaja,
+  notificarPedidosAutorizados,
+  notificarPedidosEmpresaCancelados,
+} from "@/lib/club57/empresas/pedidosNotificaciones";
+import {
   claveColumna,
   marcarDuplicados,
   parseNumero,
@@ -69,6 +74,8 @@ export async function cerrarEmpleado(empleadoId: string, motivo: string): Promis
   });
   if (error) return { error: error.message || "No se pudo guardar." };
   await notificarVinculoResuelto(empleadoId);
+  // Sus pedidos en espera de autorización se cancelaron con la baja.
+  await notificarCanceladosPorBaja(empleadoId);
   revalidar();
   return {};
 }
@@ -228,4 +235,38 @@ export async function confirmarPrecarga(filas: PrecargaFila[]): Promise<{ error?
 
   revalidar();
   return { cargadas: row.cargadas, aprobadas: row.aprobadas };
+}
+
+// ---------------------------------------------------------------------
+// Pedidos con cargo a la empresa
+// ---------------------------------------------------------------------
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Autoriza uno o varios pedidos en espera. */
+export async function autorizarPedidos(orderIds: string[]): Promise<{ error?: string; autorizados?: number }> {
+  const ids = [...new Set(orderIds)].filter((id) => UUID_RE.test(id));
+  if (ids.length === 0) return { error: "Elige al menos un pedido." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("club57_portal_autorizar_pedidos", { p_order_ids: ids });
+  if (error) return { error: error.message || "No se pudieron autorizar." };
+  const autorizados = ((data ?? []) as (string | Record<string, string>)[]).map((row) =>
+    typeof row === "string" ? row : Object.values(row)[0]
+  );
+  await notificarPedidosAutorizados(autorizados);
+  revalidar();
+  return { autorizados: autorizados.length };
+}
+
+/** Rechaza un pedido en espera, con motivo (se le avisa al empleado). */
+export async function rechazarPedido(orderId: string, motivo: string): Promise<{ error?: string }> {
+  if (!UUID_RE.test(orderId)) return { error: "Pedido no encontrado." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("club57_portal_rechazar_pedido", {
+    p_order_id: orderId,
+    p_motivo: motivo.trim().slice(0, 500),
+  });
+  if (error) return { error: error.message || "No se pudo rechazar." };
+  await notificarPedidosEmpresaCancelados([orderId]);
+  revalidar();
+  return {};
 }

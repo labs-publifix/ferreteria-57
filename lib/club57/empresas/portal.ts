@@ -82,3 +82,39 @@ export function mapPortalEmpleado(row: Record<string, unknown>): PortalEmpleado 
     salario_mensual: num(row.salario_mensual),
   };
 }
+
+// Pedidos con cargo a la empresa, como los devuelve club57_portal_pedidos().
+export interface PortalPedido {
+  id: string;
+  order_number: string;
+  created_at: string;
+  status: string;
+  fulfillment_type: "pickup" | "local_delivery" | "foraneo";
+  subtotal: number;
+  shipping_cost: number;
+  total: number;
+  empleado_nombre: string;
+  empleado_correo: string;
+  numero_empleado: string | null;
+  autorizacion_vence_at: string | null;
+  autorizado_at: string | null;
+  empresa_resolucion: string | null;
+  empresa_motivo: string | null;
+  items: { product_name: string; variant_label: string | null; quantity: number; unit_price: number }[];
+}
+
+export function mapPortalPedido(row: Record<string, unknown>): PortalPedido {
+  const items = (Array.isArray(row.items) ? row.items : []) as Record<string, unknown>[];
+  return {
+    ...(row as unknown as PortalPedido),
+    subtotal: Number(row.subtotal),
+    shipping_cost: Number(row.shipping_cost),
+    total: Number(row.total),
+    items: items.map((item) => ({
+      product_name: String(item.product_name),
+      variant_label: (item.variant_label as string | null) ?? null,
+      quantity: Number(item.quantity),
+      unit_price: Number(item.unit_price),
+    })),
+  };
+}

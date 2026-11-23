@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/empresa", label: "Inicio" },
+  { href: "/empresa/pedidos", label: "Pedidos" },
   { href: "/empresa/empleados", label: "Empleados" },
 ];
 
-export function PortalNav({ pendientes }: { pendientes: number }) {
+export function PortalNav({ pendientes, pedidosPendientes = 0 }: { pendientes: number; pedidosPendientes?: number }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Portal Empresa" className="flex gap-1 overflow-x-auto border-b border-brand-slate/15">
@@ -24,11 +25,14 @@ export function PortalNav({ pendientes }: { pendientes: number }) {
             }`}
           >
             {item.label}
-            {item.href === "/empresa/empleados" && pendientes > 0 && (
-              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-orange px-1.5 text-xs font-bold text-brand-black">
-                {pendientes}
-              </span>
-            )}
+            {(() => {
+              const n = item.href === "/empresa/empleados" ? pendientes : item.href === "/empresa/pedidos" ? pedidosPendientes : 0;
+              return n > 0 ? (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-orange px-1.5 text-xs font-bold text-brand-black">
+                  {n}
+                </span>
+              ) : null;
+            })()}
           </Link>
         );
       })}
