@@ -141,6 +141,12 @@ export function Footer({ categories, showBlog = false }: { categories: Category[
           >
             Conoce Club 57
           </Link>
+          <Link
+            href="/club57/empresarial"
+            className="mt-2 block font-sans text-sm text-white/85 underline underline-offset-2 hover:text-white"
+          >
+            Club 57 Empresarial
+          </Link>
 
           {showBlog && (
             <>
