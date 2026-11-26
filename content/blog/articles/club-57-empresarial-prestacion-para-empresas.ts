@@ -22,8 +22,8 @@ export default defineArticle({
   ],
   cluster: "marca-y-club-57",
   pillar: false,
-  publishAt: "2026-11-26T08:00:00-06:00",
-  updatedAt: "2026-11-26T08:00:00-06:00",
+  publishAt: "2026-11-26T00:00:00-06:00",
+  updatedAt: "2026-11-26T00:00:00-06:00",
   intro:
     "**Club 57 Empresarial** es el programa de Ferretería 57 para que los colaboradores de una empresa compren herramienta y material en la tienda en línea **con cargo a su empresa**, sin pagar en el momento. La empresa autoriza cada pedido, lo recupera vía nómina en los descuentos que acuerde y paga a Ferretería 57 una sola factura al mes. Es una prestación que tu equipo usa en su casa y en su trabajo, y que Recursos Humanos controla desde un portal propio. Aquí te explicamos qué gana tu empresa, cómo funciona paso a paso y cómo unirte.",
   blocks: [

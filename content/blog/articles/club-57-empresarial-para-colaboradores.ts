@@ -21,8 +21,8 @@ export default defineArticle({
   ],
   cluster: "marca-y-club-57",
   pillar: false,
-  publishAt: "2026-11-26T08:00:00-06:00",
-  updatedAt: "2026-11-26T08:00:00-06:00",
+  publishAt: "2026-11-26T00:00:00-06:00",
+  updatedAt: "2026-11-26T00:00:00-06:00",
   intro:
     "**Club 57 Empresarial para colaboradores** es el beneficio que tienes si tu empresa firmó un convenio con Ferretería 57: compras herramienta y material en la tienda en línea **sin pagar en el momento** y el importe se descuenta de tu nómina, repartido en varios pagos. Para empezar solo necesitas el código de tu empresa y tu cuenta de Club 57. Aquí te explicamos cómo afiliarte, cómo hacer tu primera compra con «Cargo a mi empresa», cómo funcionan los descuentos y qué pasa con tus puntos.",
   blocks: [
