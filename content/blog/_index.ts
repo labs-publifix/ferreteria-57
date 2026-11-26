@@ -5,36 +5,40 @@ import a0 from "./articles/brocha-o-rodillo-segun-pintura-vinilica-esmalte";
 import a1 from "./articles/calibre-de-cable-electrico-para-cada-electrodomestico";
 import a2 from "./articles/cinta-teflon-que-es-para-que-sirve-como-aplicarla";
 import a3 from "./articles/club-57-como-ganar-puntos-ferreteria-57";
-import a4 from "./articles/como-destapar-tuberia-lavabo-sin-danar-pvc";
-import a5 from "./articles/como-elegir-candado-anticizalla-exteriores-cortinas";
-import a6 from "./articles/como-escoger-broca-correcta-para-cada-material";
-import a7 from "./articles/como-purgar-boiler-calentador-de-agua-sarro";
-import a8 from "./articles/conectores-electricos-capuchones-cinta-aislar-regletas";
-import a9 from "./articles/diferencias-tuberia-ppr-pvc-cpvc-cobre";
-import a10 from "./articles/instalar-tinaco-o-cisterna-queretaro";
-import a11 from "./articles/kit-basico-herramientas-hogar";
-import a12 from "./articles/mantenimiento-calentador-solar-antes-del-frio";
-import a13 from "./articles/marcas-truper-pretul-foset-volteck-guia";
-import a14 from "./articles/peligro-diablitos-y-falsos-contactos-instalacion-electrica";
-import a15 from "./articles/salitre-y-humedad-en-muros-queretaro";
-import a16 from "./articles/tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco";
+import a4 from "./articles/club-57-empresarial-para-colaboradores";
+import a5 from "./articles/club-57-empresarial-prestacion-para-empresas";
+import a6 from "./articles/como-destapar-tuberia-lavabo-sin-danar-pvc";
+import a7 from "./articles/como-elegir-candado-anticizalla-exteriores-cortinas";
+import a8 from "./articles/como-escoger-broca-correcta-para-cada-material";
+import a9 from "./articles/como-purgar-boiler-calentador-de-agua-sarro";
+import a10 from "./articles/conectores-electricos-capuchones-cinta-aislar-regletas";
+import a11 from "./articles/diferencias-tuberia-ppr-pvc-cpvc-cobre";
+import a12 from "./articles/instalar-tinaco-o-cisterna-queretaro";
+import a13 from "./articles/kit-basico-herramientas-hogar";
+import a14 from "./articles/mantenimiento-calentador-solar-antes-del-frio";
+import a15 from "./articles/marcas-truper-pretul-foset-volteck-guia";
+import a16 from "./articles/peligro-diablitos-y-falsos-contactos-instalacion-electrica";
+import a17 from "./articles/salitre-y-humedad-en-muros-queretaro";
+import a18 from "./articles/tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco";
 
 export const ARTICLE_SOURCES: readonly ArticleSource[] = [
   { file: "brocha-o-rodillo-segun-pintura-vinilica-esmalte", article: a0 },
   { file: "calibre-de-cable-electrico-para-cada-electrodomestico", article: a1 },
   { file: "cinta-teflon-que-es-para-que-sirve-como-aplicarla", article: a2 },
   { file: "club-57-como-ganar-puntos-ferreteria-57", article: a3 },
-  { file: "como-destapar-tuberia-lavabo-sin-danar-pvc", article: a4 },
-  { file: "como-elegir-candado-anticizalla-exteriores-cortinas", article: a5 },
-  { file: "como-escoger-broca-correcta-para-cada-material", article: a6 },
-  { file: "como-purgar-boiler-calentador-de-agua-sarro", article: a7 },
-  { file: "conectores-electricos-capuchones-cinta-aislar-regletas", article: a8 },
-  { file: "diferencias-tuberia-ppr-pvc-cpvc-cobre", article: a9 },
-  { file: "instalar-tinaco-o-cisterna-queretaro", article: a10 },
-  { file: "kit-basico-herramientas-hogar", article: a11 },
-  { file: "mantenimiento-calentador-solar-antes-del-frio", article: a12 },
-  { file: "marcas-truper-pretul-foset-volteck-guia", article: a13 },
-  { file: "peligro-diablitos-y-falsos-contactos-instalacion-electrica", article: a14 },
-  { file: "salitre-y-humedad-en-muros-queretaro", article: a15 },
-  { file: "tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco", article: a16 },
+  { file: "club-57-empresarial-para-colaboradores", article: a4 },
+  { file: "club-57-empresarial-prestacion-para-empresas", article: a5 },
+  { file: "como-destapar-tuberia-lavabo-sin-danar-pvc", article: a6 },
+  { file: "como-elegir-candado-anticizalla-exteriores-cortinas", article: a7 },
+  { file: "como-escoger-broca-correcta-para-cada-material", article: a8 },
+  { file: "como-purgar-boiler-calentador-de-agua-sarro", article: a9 },
+  { file: "conectores-electricos-capuchones-cinta-aislar-regletas", article: a10 },
+  { file: "diferencias-tuberia-ppr-pvc-cpvc-cobre", article: a11 },
+  { file: "instalar-tinaco-o-cisterna-queretaro", article: a12 },
+  { file: "kit-basico-herramientas-hogar", article: a13 },
+  { file: "mantenimiento-calentador-solar-antes-del-frio", article: a14 },
+  { file: "marcas-truper-pretul-foset-volteck-guia", article: a15 },
+  { file: "peligro-diablitos-y-falsos-contactos-instalacion-electrica", article: a16 },
+  { file: "salitre-y-humedad-en-muros-queretaro", article: a17 },
+  { file: "tipos-de-taquetes-tablaroca-concreto-ladrillo-hueco", article: a18 },
 ];
