@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getPortalEmpresa } from "@/lib/club57/empresas/portal";
 import { notificarVinculoResuelto } from "@/lib/club57/empresas/notificaciones";
+import { notificarCanjeEmpresa } from "@/lib/club57/empresas/puntosNotificaciones";
 import {
   notificarCanceladosPorBaja,
   notificarPedidosAutorizados,
@@ -318,6 +319,22 @@ export async function observarPedidoCorte(cicloId: string, orderId: string, come
     p_comentario: comentario.trim().slice(0, 500),
   });
   if (error) return { error: error.message || "No se pudo guardar la observación." };
+  revalidar();
+  return {};
+}
+
+// Canje de puntos de la empresa por un artículo del catálogo de canje. La
+// base valida saldo, stock y que la empresa esté activa, y descuenta al
+// momento; el artículo se entrega en tienda.
+export async function canjearPuntosEmpresa(itemId: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("club57_portal_canjear", { p_item_id: itemId }).single();
+  if (error) {
+    if (error.code === "F57NS") return { error: "Este artículo ya no tiene stock disponible." };
+    if (error.code === "F57PI") return { error: "Tu empresa no tiene puntos suficientes para este artículo." };
+    return { error: error.message || "No se pudo registrar el canje." };
+  }
+  await notificarCanjeEmpresa((data as { id: string }).id);
   revalidar();
   return {};
 }

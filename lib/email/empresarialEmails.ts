@@ -498,7 +498,7 @@ export function buildCorteMovimientoEmail(data: {
     </p>
     ${aviso("Pago recibido", pesos(data.monto))}
     <p style="margin:0 0 4px; font-size:14px; color:${COLOR_BLACK};">
-      ${data.reactivada ? "Las compras con cargo a tu empresa ya están activas de nuevo. " : ""}Los puntos Club 57 de las compras de este corte ya están disponibles para tus colaboradores.
+      ${data.reactivada ? "Las compras con cargo a tu empresa ya están activas de nuevo. " : ""}Los puntos Club 57 de las compras de este corte ya están disponibles para tu empresa: úsalos en la sección Puntos de tu portal.
     </p>
     ${boton(data.url, "Ver estados de cuenta")}`;
   return {
@@ -562,4 +562,41 @@ export function buildEmpresaSuspensionEmail(data: {
     baja: `${data.empresa} dejó Club 57 Empresarial`,
   }[data.tipo];
   return { subject, html: renderEmailLayout(body) };
+}
+
+/** Canje de puntos de la empresa: aviso interno a Ferretería 57 y confirmación al responsable. */
+export function buildCanjeEmpresaEmail(data: {
+  destino: "interno" | "responsable";
+  empresa: string;
+  responsableNombre: string;
+  articulo: string;
+  puntos: number;
+  url: string;
+}): { subject: string; html: string } {
+  const firstName = data.responsableNombre.split(" ")[0] || data.responsableNombre;
+  const puntos = `${data.puntos.toLocaleString("es-MX")} puntos`;
+  const body =
+    data.destino === "interno"
+      ? `
+    <h1 style="margin:0 0 16px; font-size:18px; color:${COLOR_BLACK};">Canje de puntos de una empresa</h1>
+    <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
+      <strong>${escapeHtml(data.empresa)}</strong> canjeó puntos Club 57 de su empresa. Prepara el artículo para entregarlo
+      en tienda y márcalo como entregado en Lealtad → Canjes.
+    </p>
+    ${aviso(data.articulo, puntos)}
+    ${boton(data.url, "Ver canjes")}`
+      : `
+    <h1 style="margin:0 0 4px; font-size:18px; color:${COLOR_BLACK};">Hola, ${escapeHtml(firstName)}</h1>
+    <p style="margin:0 0 16px; font-size:14px; color:${COLOR_SLATE};">
+      Registramos el canje de puntos Club 57 de ${escapeHtml(data.empresa)}. Te contactaremos para coordinar la entrega en tienda.
+    </p>
+    ${aviso(data.articulo, puntos)}
+    ${boton(data.url, "Ver puntos de mi empresa")}`;
+  return {
+    subject:
+      data.destino === "interno"
+        ? `Canje de puntos: ${data.empresa} · ${data.articulo}`
+        : `Canje registrado · ${data.articulo} · Club 57 Empresarial`,
+    html: renderEmailLayout(body),
+  };
 }

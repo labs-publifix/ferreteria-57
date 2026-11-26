@@ -40,7 +40,7 @@ export default async function PortalEmpresaCortes() {
       <p className="max-w-prose font-sans text-sm text-brand-slate">
         Cada corte ({diaCorteLabel(empresa.dia_corte).toLowerCase()}) reúne los pedidos que autorizaste. Revisa el estado de cuenta,
         da tu conformidad u observa algún pedido; con eso emitimos la factura. Al registrar tu pago se libera tu crédito y los puntos
-        Club 57 de tus colaboradores.
+        Club 57 de tu empresa.
       </p>
       <CortesManager
         ciclos={ciclos}

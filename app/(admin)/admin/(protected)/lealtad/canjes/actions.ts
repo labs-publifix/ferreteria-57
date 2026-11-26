@@ -31,3 +31,21 @@ export async function updateClub57RedemptionStatus(
   revalidatePath("/admin/vendedor/canjes");
   return {};
 }
+
+// Canjes de puntos de una empresa (Club 57 Empresarial): entregar o cancelar.
+// Cancelar reembolsa los puntos a la empresa y regresa el stock (RPC
+// club57_admin_empresa_canje_estado, solo administradores).
+export async function updateEmpresaCanjeStatus(
+  canjeId: string,
+  nuevoEstado: "entregado" | "cancelado"
+): Promise<Club57RedemptionActionResult> {
+  const staff = await requireStaff();
+  if (!staff) return { error: "No autorizado." };
+  const { error } = await staff.supabase.rpc("club57_admin_empresa_canje_estado", {
+    p_canje_id: canjeId,
+    p_estado: nuevoEstado,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/lealtad/canjes");
+  return {};
+}

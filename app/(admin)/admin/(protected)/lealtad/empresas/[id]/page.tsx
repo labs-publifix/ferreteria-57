@@ -52,6 +52,7 @@ export default async function AdminEmpresaPage({
     { data: ciclosData },
     { data: obsData },
     { data: creditoData },
+    { data: puntosData },
   ] = await Promise.all([
     supabase.from("club57_empresas").select("*").eq("id", params.id).maybeSingle(),
     supabase
@@ -76,6 +77,7 @@ export default async function AdminEmpresaPage({
       .eq("empresa_id", params.id)
       .order("created_at"),
     supabase.rpc("club57_empresa_credito", { p_empresa_id: params.id }),
+    supabase.rpc("club57_empresa_puntos_saldo", { p_empresa_id: params.id }),
   ]);
   const ciclos = ((ciclosData ?? []) as Record<string, unknown>[]).map(mapCiclo);
   const observacionesCorte: ObservacionAdmin[] = ((obsData ?? []) as Record<string, unknown>[]).map((o) => {
@@ -90,6 +92,7 @@ export default async function AdminEmpresaPage({
     };
   });
   const credito = ((creditoData ?? []) as Record<string, unknown>[])[0];
+  const puntos = ((puntosData ?? []) as { disponible: number; pendiente: number }[])[0];
   if (!e) notFound();
 
   // Una solicitud del sitio llega sin convenio: se proponen los valores
@@ -159,6 +162,12 @@ export default async function AdminEmpresaPage({
     { label: "Corte", value: diaCorteLabel(e.dia_corte) },
     { label: "Plazo de pago", value: e.plazo_pago_dias === null ? "Sin definir" : `${e.plazo_pago_dias} días` },
     { label: "Nómina", value: nominaLabel(e.nomina_frecuencia as FrecuenciaNomina | null, e.nomina_dia_semana, e.nomina_dia_mes) },
+    {
+      label: "Puntos de la empresa",
+      value: puntos
+        ? `${Number(puntos.disponible).toLocaleString("es-MX")} disponibles · ${Number(puntos.pendiente).toLocaleString("es-MX")} pendientes`
+        : "—",
+    },
   ];
 
   return (
@@ -191,7 +200,7 @@ export default async function AdminEmpresaPage({
       )}
 
       <section className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:p-6">
-        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           {resumen.map((item) => (
             <div key={item.label} className="rounded-md border border-brand-slate/15 px-3 py-2.5">
               <dt className="font-sans text-xs text-brand-slate/70">{item.label}</dt>

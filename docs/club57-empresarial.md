@@ -18,6 +18,7 @@ Programa para que los colaboradores de una empresa compren en la tienda en líne
   - `20261129010000_club57_empresarial_pedidos.sql`
   - `20261130010000_club57_empresarial_nomina.sql`
   - `20261201010000_club57_empresarial_cortes.sql`
+  - `20261202010000_club57_empresarial_puntos_empresa.sql`
 - [ ] En Supabase → Storage existe el bucket **privado** `club57-facturas` (lo crea la última migración).
 - [ ] Tarea diaria activa: `vercel.json` llama a `/api/cron/club57-avisos` todos los días a las 9:00 (CDMX). En Vercel debe existir `CRON_SECRET`.
 - [ ] `APP_BASE_URL` (o la URL del sitio) apunta al dominio de producción: los enlaces de los correos la usan.
@@ -40,7 +41,7 @@ Haz el recorrido completo con **cuentas del equipo**, nunca con clientes reales.
    - en **Mi cuenta** se vea el crédito.
 8. En la ficha de la empresa pulsa **Cerrar corte ahora**. En el portal descarga el PDF y los Excel y da tu conformidad.
 9. Registra una factura de prueba con PDF y XML pequeños y comprueba que se descargan desde el portal. Después registra el pago.
-10. Confirma que los puntos del colaborador quedaron disponibles. Luego da de baja la empresa de prueba.
+10. En el portal, pestaña **Puntos**, confirma que los puntos de la empresa quedaron disponibles y canjea un artículo de prueba. Márcalo como entregado en Lealtad → Canjes. Luego da de baja la empresa de prueba.
 
 ## 3. Alta de la empresa piloto
 
@@ -79,6 +80,7 @@ La tarea diaria:
   - **En revisión:** responder observaciones. Si un pedido no corresponde, cancélalo en Pedidos antes de facturar.
   - **Por facturar:** emitir la factura por los medios habituales con base en el estado de cuenta y registrarla (folio, fecha, monto, PDF y XML).
   - **Por cobrar / Vencidos:** registrar el pago. La empresa se reactiva sola si estaba suspendida por ese pago.
+- **Canjes de puntos de empresas** (Panel → Club 57 → Canjes, sección «Canjes de empresas»): preparar el artículo, entregarlo en tienda y marcarlo como entregado. Si se cancela, los puntos regresan a la empresa.
 
 ### Empresa (responsable)
 
@@ -86,13 +88,18 @@ La tarea diaria:
 - **Nómina:** descargar el Excel antes de cada fecha de pago. Después confirmar lo que se descontó: «Se aplicó», «Monto distinto» o «No se aplicó». Lo que falte pasa a la siguiente nómina del colaborador.
 - **Estados de cuenta:** dar conformidad u observar un pedido. Pagar la factura antes de la fecha límite.
 - **Empleados:** aprobar, ajustar la línea y dar de baja. En las bajas, el saldo pendiente queda indicado para el finiquito.
+- **Puntos:** ver el saldo de puntos de la empresa y canjearlos por artículos del catálogo de canje.
 
 ## 5. Reglas clave
 
 - **Línea del colaborador:** un % del salario neto o un monto fijo. Nunca más del 100 % del salario. El salario solo lo ve la empresa.
 - **Crédito revolvente:** cada compra se reparte en N descuentos de nómina. El crédito del colaborador se libera con cada descuento aplicado.
 - **Crédito de la empresa con Ferretería 57:** suman los pedidos en espera y los autorizados cuyo corte no se ha pagado. Se libera al registrar el pago.
-- **Puntos Club 57:** se generan como pendientes al autorizarse el pedido y se liberan cuando se paga su corte. Si el pedido se cancela, se revierten. Una baja no quita puntos.
+- **Puntos Club 57:**
+  - Las compras con «Cargo a mi empresa» suman puntos **a favor de la empresa**, no del colaborador.
+  - Se generan como pendientes al autorizarse el pedido y se liberan cuando se paga su corte. Si el pedido se cancela, se revierten.
+  - La empresa solo los usa para canjear artículos del catálogo de canje: nunca como saldo a favor, y no puede cederlos a sus colaboradores.
+  - Las compras que el colaborador paga con tarjeta suman a su propia cuenta de Club 57, como cualquier miembro. Una baja no le quita sus puntos.
 - **Cancelaciones:**
   - En espera: el colaborador, la empresa o la tienda la cancelan; el stock y el crédito regresan.
   - Autorizado y antes de facturar: sale del estado de cuenta.
@@ -115,7 +122,8 @@ La tarea diaria:
 | Pedido rechazado, vencido o cancelado | Colaborador |
 | Nómina próxima (con el Excel) | Responsable |
 | Estado de cuenta listo | Responsable y Ferretería 57 |
-| Factura registrada / pago registrado | Responsable |
+| Factura registrada / pago registrado (con los puntos liberados de la empresa) | Responsable |
+| Canje de puntos de la empresa | Ferretería 57 y responsable |
 | Empresa suspendida (por pago vencido o desde el panel), reactivada o dada de baja | Responsable y colaboradores activos |
 
 ## 7. «¿No encuentras tu producto?»
