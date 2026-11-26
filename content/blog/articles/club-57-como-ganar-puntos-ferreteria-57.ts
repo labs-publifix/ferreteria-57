@@ -22,7 +22,7 @@ export default defineArticle({
   cluster: "marca-y-club-57",
   pillar: false,
   publishAt: "2026-10-15T08:00:00-06:00",
-  updatedAt: "2026-11-26T08:00:00-06:00",
+  updatedAt: "2026-11-26T00:00:00-06:00",
   intro:
     "**Club 57 (Ferretería 57)** es el programa de lealtad gratuito de la tienda: te registras una vez, en línea o en el mostrador, y desde ese momento tus compras suman puntos que después cambias por artículos del catálogo de canje. Además, como miembro descargas gratis las guías prácticas en PDF de cada artículo del blog, ves las promociones exclusivas y ganas puntos extra cuando recomiendas a alguien. Aquí te explicamos cómo registrarte, cómo se ganan y se usan los puntos, y qué encuentras en tu cuenta.",
   blocks: [
