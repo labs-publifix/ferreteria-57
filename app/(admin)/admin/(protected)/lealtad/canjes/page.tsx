@@ -34,6 +34,29 @@ export default async function AdminClub57CanjesPage() {
     };
   });
 
+  // Canjes de puntos de empresas de Club 57 Empresarial.
+  const { data: empresaData } = await supabase
+    .from("club57_empresa_canjes")
+    .select("id, puntos_usados, estado, created_at, club57_empresas(nombre_comercial, responsable_correo), club57_redemption_catalog(nombre)")
+    .order("created_at", { ascending: false });
+  const canjesEmpresa: Club57RedemptionRow[] = (empresaData ?? []).map((row) => {
+    const emp = row.club57_empresas as { nombre_comercial: string; responsable_correo: string } | { nombre_comercial: string; responsable_correo: string }[] | null;
+    const item = row.club57_redemption_catalog as { nombre: string } | { nombre: string }[] | null;
+    const empInfo = Array.isArray(emp) ? emp[0] : emp;
+    const itemInfo = Array.isArray(item) ? item[0] : item;
+    return {
+      id: row.id,
+      puntosUsados: row.puntos_usados,
+      estado: row.estado,
+      createdAt: row.created_at,
+      memberNombre: empInfo?.nombre_comercial ?? "Empresa",
+      memberEmail: empInfo?.responsable_correo ?? "",
+      itemNombre: itemInfo?.nombre ?? "Artículo",
+    };
+  });
+  const empresaPendientes = canjesEmpresa.filter((r) => r.estado === "pendiente");
+  const empresaResueltos = canjesEmpresa.filter((r) => r.estado !== "pendiente");
+
   const pendientes = redemptions.filter((r) => r.estado === "pendiente");
   const resueltos = redemptions.filter((r) => r.estado !== "pendiente");
 
@@ -57,6 +80,26 @@ export default async function AdminClub57CanjesPage() {
         <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Resueltos</h2>
         <Club57RedemptionsTable rows={resueltos} showActions={false} />
       </div>
+
+      {canjesEmpresa.length > 0 && (
+        <>
+          <div>
+            <h2 className="mb-1 font-display text-base uppercase text-brand-slate">
+              Canjes de empresas {empresaPendientes.length > 0 && `(${empresaPendientes.length} por entregar)`}
+            </h2>
+            <p className="mb-3 max-w-prose font-sans text-sm text-brand-slate/70">
+              Puntos de Club 57 Empresarial: los canjea el responsable de la empresa desde su portal.
+            </p>
+            <Club57RedemptionsTable rows={empresaPendientes} showActions empresa />
+          </div>
+          {empresaResueltos.length > 0 && (
+            <div>
+              <h2 className="mb-3 font-display text-base uppercase text-brand-slate">Canjes de empresas resueltos</h2>
+              <Club57RedemptionsTable rows={empresaResueltos} showActions={false} empresa />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

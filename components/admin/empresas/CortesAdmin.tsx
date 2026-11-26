@@ -253,7 +253,7 @@ function PagoForm({ ciclo, empresaId }: { ciclo: Ciclo; empresaId: string }) {
     <div className="mt-3 rounded-md border border-brand-slate/15 p-3">
       <p className="font-sans text-sm font-semibold text-brand-black">Registrar pago</p>
       <p className="font-sans text-xs text-brand-slate">
-        Libera el crédito de la empresa y los puntos Club 57 de sus colaboradores. Si estaba suspendida por este pago, se reactiva.
+        Libera el crédito de la empresa y sus puntos Club 57. Si estaba suspendida por este pago, se reactiva.
       </p>
       <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/ui";
-import { updateClub57RedemptionStatus } from "@/app/(admin)/admin/(protected)/lealtad/canjes/actions";
+import { updateClub57RedemptionStatus, updateEmpresaCanjeStatus } from "@/app/(admin)/admin/(protected)/lealtad/canjes/actions";
 import { CLUB57_REDEMPTION_ESTADO_LABEL } from "@/lib/club57/labels";
 
 export interface Club57RedemptionRow {
@@ -32,9 +32,12 @@ const ESTADO_STYLE: Record<string, string> = {
 export function Club57RedemptionsTable({
   rows,
   showActions,
+  empresa = false,
 }: {
   rows: Club57RedemptionRow[];
   showActions: boolean;
+  /** Canjes de puntos de empresas (Club 57 Empresarial) en vez de miembros. */
+  empresa?: boolean;
 }) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -44,7 +47,7 @@ export function Club57RedemptionsTable({
   async function handleResolve(id: string, estado: "entregado" | "cancelado") {
     setPendingId(id);
     setRowErrors((current) => ({ ...current, [id]: "" }));
-    const result = await updateClub57RedemptionStatus(id, estado);
+    const result = await (empresa ? updateEmpresaCanjeStatus : updateClub57RedemptionStatus)(id, estado);
     if (result.error) setRowErrors((current) => ({ ...current, [id]: result.error! }));
     setPendingId(null);
     router.refresh();
@@ -72,7 +75,7 @@ export function Club57RedemptionsTable({
           <thead>
             <tr className="border-b border-brand-slate/10 text-xs font-semibold uppercase tracking-wide text-brand-slate/70">
               <th className="px-4 py-3">Fecha</th>
-              <th className="px-4 py-3">Cliente</th>
+              <th className="px-4 py-3">{empresa ? "Empresa" : "Cliente"}</th>
               <th className="px-4 py-3">Artículo</th>
               <th className="px-4 py-3">Puntos</th>
               <th className="px-4 py-3">Estado</th>
@@ -132,7 +135,7 @@ export function Club57RedemptionsTable({
         title="Cancelar canje"
         description={
           cancelTarget
-            ? `¿Cancelar el canje de "${cancelTarget.itemNombre}"? Se le reembolsan ${cancelTarget.puntosUsados} puntos al cliente y se restaura el stock del artículo.`
+            ? `¿Cancelar el canje de "${cancelTarget.itemNombre}"? Se le reembolsan ${cancelTarget.puntosUsados} puntos ${empresa ? "a la empresa" : "al cliente"} y se restaura el stock del artículo.`
             : undefined
         }
         confirmLabel="Cancelar canje"

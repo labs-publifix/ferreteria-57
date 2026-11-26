@@ -9,6 +9,7 @@ const ITEMS = [
   { href: "/empresa/nomina", label: "Nómina" },
   { href: "/empresa/cortes", label: "Estados de cuenta" },
   { href: "/empresa/empleados", label: "Empleados" },
+  { href: "/empresa/puntos", label: "Puntos" },
 ];
 
 export function PortalNav({
