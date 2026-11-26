@@ -61,12 +61,12 @@ describe("parseWorkbook", () => {
     expect(row.guia).toMatchObject({ titulo: "Checklist", paginas: 2, contenido: "Pág. 1: checklist" });
   });
 
-  test("el Excel real del repo tiene los 58 temas con brief y guía, y coincide con el CSV", async () => {
+  test("el Excel real del repo tiene los 60 temas (58 del calendario + 2 especiales) con brief y guía, y coincide con el CSV", async () => {
     const root = path.join(__dirname, "..", "..");
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.readFile(path.join(root, "docs", "blog", "backlog_blog_ferreteria57.xlsx"));
     const topics = parseWorkbook(wb);
-    expect(topics).toHaveLength(58);
+    expect(topics).toHaveLength(60);
     expect(topics.every((t) => t.brief && t.guia)).toBe(true);
     // Los de Reserva (B57, B58) no tienen fecha: quedan al final de la cola.
     expect(topics.filter((t) => !t.fecha).map((t) => t.id)).toEqual(["B57", "B58"]);
